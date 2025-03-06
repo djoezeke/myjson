@@ -1,0 +1,14 @@
+{
+    "friuts": [
+        "mango",
+        "orange",
+        "pear",
+        "pawpaw",
+        "lemon",
+        "grape",
+        {
+            "zeke": "apple",
+            "gad": "melon"
+        }
+    ]
+}

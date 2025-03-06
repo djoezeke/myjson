@@ -1,0 +1,17 @@
+[
+    {
+        "name": "John Doe",
+        "age": 30,
+        "isStudent": false
+    },
+    {
+        "name": "Jane Smith",
+        "age": 25,
+        "isStudent": true
+    },
+    {
+        "name": "Emily Johnson",
+        "age": 22,
+        "isStudent": true
+    }
+]
