@@ -1,18 +1,16 @@
-<p align="center"><h1 align="center">MY JSON 🚀</h1></p>
+<p align="center"><h1 align="center">🚀 Jsonfy: Modern C++ JSON Library</h1></p>
+
 <p align="center">
-    <em><code>C/C++ Json Serializer and Deserializer Library.
-</code></em>
+    <em><code>Lightweight, modern, and easy-to-use C++ JSON serializer & deserializer.</code></em>
 </p>
 <p align="center">
-    <img src="https://img.shields.io/github/license/djoezeke/jsonfy?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
-    <img src="https://img.shields.io/github/last-commit/djoezeke/jsonfy?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
-    <img src="https://img.shields.io/github/languages/top/djoezeke/jsonfy?style=default&color=0080ff" alt="repo-top-language">
-    <img src="https://img.shields.io/github/languages/count/djoezeke/jsonfy?style=default&color=0080ff" alt="repo-language-count">
+    <img src="https://img.shields.io/github/license/djoezeke/jsonfy?style=flat-square&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
+    <img src="https://img.shields.io/github/last-commit/djoezeke/jsonfy?style=flat-square&logo=git&logoColor=white&color=0080ff" alt="last-commit">
+    <img src="https://img.shields.io/github/languages/top/djoezeke/jsonfy?style=flat-square&color=0080ff" alt="repo-top-language">
+    <img src="https://img.shields.io/github/languages/count/djoezeke/jsonfy?style=flat-square&color=0080ff" alt="repo-language-count">
 </p>
-<p align="center"></p>
-<p align="center">
-</p>
-<br>
+
+---
 
 <details><summary>Table of Contents</summary>
 
@@ -33,241 +31,197 @@
 
 ## 📍 Overview
 
-Jsonfy is a lightweight JSON parsing and serialization library for C++. It provides an easy-to-use interface for working with JSON data, including parsing JSON strings, creating JSON objects, and serializing JSON objects to strings.
+**Jsonfy** is a modern, lightweight JSON parsing and serialization library for C++. It provides an easy-to-use interface for working with JSON data, including parsing JSON strings, creating JSON objects, and serializing JSON objects to strings.It provides a simple, type-safe API for working with JSON data in C++ projects.
 
-### lookup
+---
 
-```
-    Supports the following objects and types by default:
+## ✨ Features
 
-    +-------------------+---------------+
-    | MYJSON            | JSON          |
-    +===================+===============+
-    | Type::OBJECT      | object        |
-    +-------------------+---------------+
-    | Type::ARRAY       | array         |
-    +-------------------+---------------+
-    | Type::STRING      | string        |
-    +-------------------+---------------+
-    | Type::INTEGER     | number        |
-    +-------------------+---------------+
-    | Type::DOUBLE      | number        |
-    +-------------------+---------------+
-    | Type::BOOLEAN     | true          |
-    +-------------------+---------------+
-    | Type::BOOLEAN     | false         |
-    +-------------------+---------------+
-    | Type::NULL        | null          |
-    +-------------------+---------------+
+- ⚡ **Fast**: Efficient parsing and serialization
+- 🧩 **Type-safe**: Strong C++ type system for all JSON types
+- 🛠️ **Easy API**: Intuitive interface for manipulating JSON objects and arrays
+- 📝 **Modern C++**: Uses smart pointers, `std::variant`, and other C++17 features
+- 🧪 **Tested**: Includes unit tests and examples
+- 📦 **Header-only**: Just include and use!
 
+---
+
+## 📦 Supported Types
+
+| Jsonfy Type      | JSON Type   | Example Value      |
+|------------------|-------------|--------------------|
+| `Type::OBJECT`   | object      | `{ "a": 1 }`       |
+| `Type::ARRAY`    | array       | `[1, 2, 3]`        |
+| `Type::STRING`   | string      | `"hello"`          |
+| `Type::INTEGER`  | number      | `42`               |
+| `Type::DOUBLE`   | number      | `3.14`             |
+| `Type::BOOLEAN`  | true/false  | `true` / `false`   |
+| `Type::NONE`     | null        | `null`             |
+
+---
+
+## 📁 Project Structure
+
+```sh
+Jsonfy/
+├── CMakeLists.txt
+├── LICENSE
+├── myjson.hpp
+├── myjson.cpp
+├── tests/
+│   ├── test.c
+│   └── test.cpp
+└── examples/
+    ├── basic.c
+    ├── basic.cpp
+    └── sample.cpp
 ```
 
 ---
 
 
-## Features ✨
-
-- Parse JSON strings into JSON objects
-- Serialize JSON objects to strings
-- Support for JSON types: null, boolean, number, string, array, and object
-- Easy-to-use API for manipulating JSON data
-
-## 📁 Project Structure
-
-```sh
-└── Jsonfy/
-    ├── CMakeLists.txt
-    ├── LICENSE
-    │
-    ├── myjson.hpp
-    ├── myjson.cpp
-    │
-    ├── tests
-    │   ├── test.c
-    │   └── test.cpp
-    └── examples
-        ├── basic.c
-        ├── basic.cpp
-        └── sample.cpp
-```
-
 ## 🚀 Getting Started
 
-<div align="center">
-<img src="readme/use-this-template-button.png">
-</div>
+- **Programming Language:** C, Cpp
+- **Package Manager:** Cmake
 
 ### ☑️ Prerequisites
 
 Before getting started with jsonfy, ensure your runtime environment meets the following requirements:
 
-- **Programming Language:** C, Cpp
-- **Package Manager:** Cmake
+- **C++17** or newer compiler
+- **CMake** (for building examples/tests)
 
 ### Installation 🛠️
 
-To use Jsonfy in your project, simply include the `myjson.hpp` and `myjson.cpp` files in your project.
+1. **Clone the repository:**
+    ```sh
+    git clone https://github.com/djoezeke/jsonfy.git
+    ```
 
-1. Clone the repository:
+2. **Add to your project:**
+    - Copy `myjson.hpp` and `myjson.cpp` into your project.
+    - Or add as a submodule and include in your build.
 
-```sh
-❯ git clone https://github.com/djoezeke/jsonfy.git
-```
+3. **Include in your code:**
+    ```cpp
+    #include "myjson.hpp"
+    ```
 
-2. Include the header and source files in your project:
+4. **Compile:**
+    ```sh
+    g++ my_source.cpp myjson.cpp -std=c++17 -o main
+    ```
+---
 
-```cpp
-   #include "myjson.hpp"
-```
+## 🤖 Usage
 
-3. Compiling your project:
-
-```sh
-❯ g++ my_source.cpp myjson.cpp -o main
-```
-
-### Usage 📚
-
-#### Creating JSON
-
-To create a JSON object, use the `json::JSON` class:
+### Create JSON
 
 ```cpp
 #include "myjson.hpp"
+#include <iostream>
 
 int main() {
-    json::JSON jsonObject(json::Type::OBJECT);
-    jsonObject.Add("name", json::JSON(json::Type::STRING, "John"));
-    jsonObject.Add("age", json::JSON(json::Type::INTEGER, 30));
-    jsonObject.Add("isStudent", json::JSON(json::Type::BOOLEAN, false));
-
-    std::cout << jsonObject.String() << std::endl;
-
-    return 0;
+    json::JSON obj(json::Type::OBJECT);
+    obj.Add("name", json::JSON(json::Type::STRING, "Alice"));
+    obj.Add("age", json::JSON(json::Type::INTEGER, 25));
+    obj.Add("isStudent", json::JSON(json::Type::BOOLEAN, true));
+    std::cout << obj.String() << std::endl;
 }
 ```
 
-#### Deserialization
-
-To parse a JSON string into a JSON object, use the `load` function:
-Deserialize a json `str` to a MYJSON `obj`.
+### Parse (Deserialize) JSON
 
 ```cpp
 #include "myjson.hpp"
+#include <iostream>
 
 int main() {
-    std::string jsonString = R"({"name": "John", "age": 30, "isStudent": false})";
-    json::JSON jsonObject = json::load(jsonString);
-
-    std::cout << "Name: " << jsonObject.Get("name").String() << std::endl;
-    std::cout << "Age: " << static_cast<int>(jsonObject.Get("age")) << std::endl;
-    std::cout << "Is Student: " << static_cast<bool>(jsonObject.Get("isStudent")) << std::endl;
-
-    return 0;
+    std::string jsonStr = R"({"name": "Bob", "age": 30, "isStudent": false})";
+    json::JSON obj = json::load(jsonStr);
+    std::cout << "Name: " << obj.Get("name").String() << std::endl;
+    std::cout << "Age: " << obj.Get("age").String() << std::endl;
+    std::cout << "Is Student: " << obj.Get("isStudent").String() << std::endl;
 }
 ```
 
-#### Serialization
-
-To serialize a JSON object to a string, use the `dump` function:
-Serialize `obj` to a JSON formatted `str`.
-
-```cpp
-    // out        : where to the result string.
-    // indent     : whether to indent , for pretty print.
-    // skipkeys   : whether to exclude keys in the result string.
-    // default    : default string to return if error or null string.
-    std::cout << json::dump(jsonObject,out= nullptr ,indent=true,skipkeys=False,default=None, sort_keys=False);
-```
+### Serialize (Dump) JSON
 
 ```cpp
 #include "myjson.hpp"
+#include <iostream>
 
 int main() {
-    json::JSON jsonObject(json::Type::OBJECT);
-    jsonObject.Add("name", json::JSON(json::Type::STRING, "John"));
-    jsonObject.Add("age", json::JSON(json::Type::INTEGER, 30));
-    jsonObject.Add("isStudent", json::JSON(json::Type::BOOLEAN, false));
-
-    std::string jsonString = json::dump(jsonObject);
-    std::cout << jsonString << std::endl;
-
-    return 0;
+    json::JSON obj(json::Type::OBJECT);
+    obj.Add("project", json::JSON(json::Type::STRING, "Jsonfy"));
+    obj.Add("stars", json::JSON(json::Type::INTEGER, 100));
+    std::string jsonStr = json::dump(obj);
+    std::cout << jsonStr << std::endl;
 }
 ```
 
-#### Pretty Printing
-
-code:
+### Pretty Print
 
 ```cpp
 #include "myjson.hpp"
+#include <iostream>
 
 int main() {
-    json::JSON jsonObject(json::Type::OBJECT);
-    jsonObject.Add("name", json::JSON(json::Type::STRING, "John"));
-    jsonObject.Add("age", json::JSON(json::Type::INTEGER, 30));
-    jsonObject.Add("isStudent", json::JSON(json::Type::BOOLEAN, false));
-
-    std::cout << json::dump(jsonObject,indent=true,skipkeys=False);
-
-    return 0;
+    json::JSON obj(json::Type::OBJECT);
+    obj.Add("foo", json::JSON(json::Type::STRING, "bar"));
+    obj.Add("baz", json::JSON(json::Type::INTEGER, 123));
+    json::print(obj, true); // pretty print
 }
 ```
 
-output:
-
-```sh
-{
-    "name": "John",
-    "age": 30,
-    "isStudent": false
-}
-```
-
-### 🧪 Testing
-
-Run the test suite using the following command:
-**Using `cmake`** &nbsp; [<img align="center" src="" />]()
-
-```sh
-❯ echo 'INSERT-TEST-COMMAND-HERE'
-```
-
-## Building
-
-To configure and build the project, do the following from the root directory of the repository:
-
-```bash
-mkdir build
-cd build
-cmake ..
-```
-
-This will configure the CMake and will generate platform-specific build files. To build, execute the following from within the build directory:
-
-```bash
-cmake --build .
-```
-
-Or build using whatever generated build system CMake produced.
-
-## Errors
-
-```cpp
-throw JSONDecodeError("Illegal trailing comma before end of object", s, comma_idx)
-throw JSONDecodeError("Expecting property name enclosed in double quotes", s, end - 1)
-throw JSONDecodeError("Expecting ',' delimiter", s, end - 1)
-throw JSONDecodeError("Expecting value", s, err.value)
-throw JSONDecodeError("Expecting property name enclosed in double quotes", s, end)
-throw JSONDecodeError("Extra data", s, end)
-throw TypeError(f'keys must be str, int, float, bool or None, 'f'not {key.__class__.__name__}')
-
+Output:
+```json
+{"foo":"bar","baz":123}
 ```
 
 ---
 
-## 🔰 Contributing
+## 🧪 Testing
+
+To run tests:
+
+```sh
+mkdir build
+cd build
+cmake ..
+cmake --build .
+# Run the test executable (e.g., ./tests/test)
+```
+
+---
+
+## 🛣️ Roadmap
+
+- [ ] Pretty-print with indentation
+- [ ] Unicode and UTF-8 support
+- [ ] Custom serialization hooks
+- [ ] More robust error messages
+- [ ] Performance benchmarks
+
+---
+
+## 🐛 Error Handling
+
+Jsonfy throws `json::Exception` for all parsing and runtime errors.  
+You can catch and inspect errors as follows:
+
+```cpp
+try {
+    auto obj = json::load("invalid json");
+} catch (const json::Exception& ex) {
+    std::cerr << "Jsonfy error: " << ex.what() << std::endl;
+}
+```
+
+---
+
+## 🤝 Contributing
 
 - **💬 [Join the Discussions](https://github.com/djoezeke/jsonfy/discussions)**: Share your insights, provide feedback, or ask questions.
 - **🐛 [Report Issues](https://github.com/djoezeke/jsonfy/issues)**: Submit bugs found or log feature requests for the `jsonfy` project.
@@ -308,21 +262,7 @@ throw TypeError(f'keys must be str, int, float, bool or None, 'f'not {key.__clas
 </p>
 </details>
 
----
-
 
 ## 📄 License 
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## 📧 Contact 
-
-For any questions or suggestions, please open an issue or contact the repository owner.
-
----
-## 🙌 Acknowledgments
-
-### References
-
----
-

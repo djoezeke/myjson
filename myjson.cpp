@@ -1,1119 +1,531 @@
-#include <sstream>
-#include <string>
-#include <iostream>
-#include <cstring>
-
 #include "myjson.hpp"
+#include <sstream>
+#include <iostream>
+#include <cctype>
+#include <stdexcept>
 
 namespace json
 {
 
-#pragma region parsing
+Exception::Exception()
+    : m_Msg("(UNKNOWN) -> UNKNOWN ERROR TYPE"), m_ErrType(json::Error::UNKNOWN) {}
 
-    /**
-     * @brief Parses a JSON value from a string.
-     * @param json The JSON string to parse.
-     * @param index The current position in the string.
-     * @return The parsed JSON value.
-     * @throws json::Exception if the JSON is invalid.
-     */
-    json::JSON parse_value(const std::string &json, size_t &index);
+Exception::Exception(json::Error errorType)
+    : m_Msg("(" + GetErrName(errorType) + ") -> ERROR MESSAGE EMPTY"), m_ErrType(errorType) {}
 
-    /**
-     * @brief Skips whitespace characters in the JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     */
-    void skip_whitespace(const std::string &json, size_t &index)
+Exception::Exception(const std::string &message, json::Error errorType)
+    : m_Msg("(" + GetErrName(errorType) + ") -> " + message), m_ErrType(errorType) {}
+
+const char *Exception::what() const noexcept { return m_Msg.c_str(); }
+json::Error Exception::GetErrType() const noexcept { return m_ErrType; }
+std::string Exception::GetErrName(json::Error error) const noexcept
+{
+    std::string name;
+    switch (error)
     {
-        while (index < json.size() && std::isspace(json[index]))
-        {
-            ++index;
-        }
+        CASEFY_ERROR(Error::UNKNOWN);
+        CASEFY_ERROR(Error::MISSING_SEPARATOR);
+        CASEFY_ERROR(Error::MISSING_VALUE);
+        CASEFY_ERROR(Error::KEY_NOT_FOUND);
+        CASEFY_ERROR(Error::VALUE_NOT_FOUND);
+        CASEFY_ERROR(Error::NON_BOOL_TYPE);
+        CASEFY_ERROR(Error::NON_NULL_TYPE);
+        CASEFY_ERROR(Error::NON_NUMBER_TYPE);
+        CASEFY_ERROR(Error::NON_OBJECT_TYPE);
+        CASEFY_ERROR(Error::NON_ARRAY_TYPE);
+        CASEFY_ERROR(Error::NON_STRING_TYPE);
+        CASEFY_ERROR(Error::INVALID_OBJECT);
+        CASEFY_ERROR(Error::INVALID_ARRAY);
+        CASEFY_ERROR(Error::INVALID_STRING);
+        CASEFY_ERROR(Error::INVALID_BOOL);
+        CASEFY_ERROR(Error::INVALID_NUMBER);
+        CASEFY_ERROR(Error::INVALID_NULL);
+        CASEFY_ERROR(Error::INVALID_JSON);
+        CASEFY_ERROR(Error::KEY_ALREADY_EXISTS);
+        CASEFY_ERROR(Error::VALUE_CANT_BE_NULL);
+        CASEFY_ERROR(Error::WRONG_TYPE_CAST);
     }
+    return name;
+}
 
-    /**
-     * @brief Parses a null value from a JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     * @return A JSON object representing a null value.
-     * @throws json::Exception if the null value is invalid.
-     */
-    json::JSON parse_null(const std::string &json, size_t &index)
-    {
-        if (json.substr(index, 4) == "null")
-        {
-            index += 4;
-            return json::JSON(json::Type::NONE);
-        }
-        throw json::Exception("Invalid null value", json::Error::INVALID_NULL);
-    }
+JSON::JSON() : m_Type(json::Type::UNKNOWN), m_Value(std::monostate{}) {}
 
-    /**
-     * @brief Parses a boolean value from a JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     * @return A JSON object representing a boolean value.
-     * @throws json::Exception if the boolean value is invalid.
-     */
-    json::JSON parse_boolean(const std::string &json, size_t &index)
-    {
-        if (json.substr(index, 4) == "true")
-        {
-            index += 4;
-            return json::JSON(json::Type::BOOLEAN, true);
-        }
-        else if (json.substr(index, 5) == "false")
-        {
-            index += 5;
-            return json::JSON(json::Type::BOOLEAN, false);
-        }
-        throw json::Exception("Invalid boolean value", json::Error::INVALID_BOOL);
-    }
-
-    /**
-     * @brief Parses a number (integer or double) from a JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     * @return A JSON object representing a number.
-     * @throws json::Exception if the number is invalid.
-     */
-    json::JSON parse_number(const std::string &json, size_t &index)
-    {
-        size_t start = index;
-        if (json[index] == '-')
-        {
-            ++index;
-        }
-        while (index < json.size() && std::isdigit(json[index]))
-        {
-            ++index;
-        }
-        if (index < json.size() && json[index] == '.')
-        {
-            ++index;
-            while (index < json.size() && std::isdigit(json[index]))
-            {
-                ++index;
-            }
-            return json::JSON(json::Type::DOUBLE, std::stod(json.substr(start, index - start)));
-        }
-        return json::JSON(json::Type::INTEGER, std::stoi(json.substr(start, index - start)));
-    }
-
-    std::string get_parse_string(const std::string &json, size_t &index)
-    {
-        ++index; // Skip the opening quote
-        size_t start = index;
-        while (index < json.size() && json[index] != '"')
-        {
-            if (json[index] == '\\')
-            {
-                ++index; // Skip the escape character
-            }
-            ++index;
-        }
-        if (index >= json.size())
-        {
-            throw json::Exception("Unterminated String", json::Error::INVALID_STRING);
-        }
-        std::string value = json.substr(start, index - start);
-        ++index; // Skip the closing quote
-        return value;
-    }
-
-    /**
-     * @brief Parses a string value from a JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     * @return A JSON object representing a string.
-     * @throws json::Exception if the string is invalid.
-     */
-    json::JSON parse_string(const std::string &json, size_t &index)
-    {
-        return json::JSON(json::Type::STRING, get_parse_string(json, index));
-    }
-
-    /**
-     * @brief Parses an array from a JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     * @return A JSON object representing an array.
-     * @throws json::Exception if the array is invalid.
-     */
-    json::JSON parse_array(const std::string &json, size_t &index)
-    {
-        ++index; // Skip the opening bracket
-        json::JSON array(json::Type::ARRAY);
-        skip_whitespace(json, index);
-        if (json[index] == ']')
-        {
-            ++index; // Skip the closing bracket
-            return array;
-        }
-        // int key = -1;
-        while (index < json.size())
-        {
-            // array.m_Array[key] = new json::JSON(parse_value(json, index));
-
-            array.m_Array[array.m_Array.size()] = new json::JSON(parse_value(json, index));
-            skip_whitespace(json, index);
-            if (json[index] == ']')
-            {
-                ++index; // Skip the closing bracket
-                return array;
-            }
-            if (json[index] != ',')
-            {
-                throw json::Exception("Expected ',' in Array", json::Error::MISSING_SEPARATOR);
-            }
-            ++index; // Skip the comma
-            skip_whitespace(json, index);
-        }
-        throw json::Exception("Unterminated Array", json::Error::INVALID_ARRAY);
-    }
-
-    /**
-     * @brief Parses an object from a JSON string.
-     * @param json The JSON string.
-     * @param index The current position in the string.
-     * @return A JSON object representing an object.
-     * @throws json::Exception if the object is invalid.
-     */
-    json::JSON parse_object(const std::string &json, size_t &index)
-    {
-        ++index; // Skip the opening brace
-        json::JSON object(json::Type::OBJECT);
-        skip_whitespace(json, index);
-        if (json[index] == '}')
-        {
-            ++index; // Skip the closing brace
-            return object;
-        }
-        while (index < json.size())
-        {
-            std::string key = get_parse_string(json, index);
-            skip_whitespace(json, index);
-            if (json[index] != ':')
-            {
-                throw json::Exception("Expected ':' in Object", json::Error::MISSING_VALUE);
-            }
-            ++index; // Skip the colon
-            skip_whitespace(json, index);
-            object.m_Object[key] = new json::JSON(parse_value(json, index));
-            skip_whitespace(json, index);
-            if (json[index] == '}')
-            {
-                ++index; // Skip the closing brace
-                return object;
-            }
-            if (json[index] != ',')
-            {
-                throw json::Exception("Expected ',' in Object", json::Error::MISSING_SEPARATOR);
-            }
-            ++index; // Skip the comma
-            skip_whitespace(json, index);
-        }
-        throw json::Exception("Unterminated Object", json::Error::INVALID_OBJECT);
-    }
-
-    json::JSON parse_value(const std::string &json, size_t &index)
-    {
-        skip_whitespace(json, index);
-
-        if (index >= json.size() || json.size() < 3)
-        {
-            throw json::Exception("Unexpected End of Input", json::Error::INVALID_OBJECT);
-        }
-
-        char ch = json[index];
-
-        if (ch == 'n')
-        {
-            return parse_null(json, index);
-        }
-        else if (ch == 't' || ch == 'f')
-        {
-            return parse_boolean(json, index);
-        }
-        else if (ch == '-' || std::isdigit(ch))
-        {
-            return parse_number(json, index);
-        }
-        else if (ch == '"')
-        {
-            return parse_string(json, index);
-        }
-        else if (ch == '[')
-        {
-            return parse_array(json, index);
-        }
-        else if (ch == '{')
-        {
-            return parse_object(json, index);
-        }
-        else
-        {
-            throw json::Exception("Invalid character in JSON", json::Error::INVALID_JSON);
-        }
-    }
-
-#pragma endregion //  parsing
-
-#pragma region exception
-
-    Exception::Exception()
-    {
-        m_ErrType = json::Error::UNKNOWN;
-        m_Msg = std::string("(") + GetErrName(json::Error::UNKNOWN) + std::string(") -> ") + std::string("UNKNOWN ERROR TYPE");
-    };
-
-    Exception::Exception(json::Error errorType)
-    {
-        m_ErrType = errorType;
-        m_Msg = std::string("(") + GetErrName(errorType) + std::string(") -> ") + std::string("ERROR MESSAGE EMPTY");
-    };
-
-    Exception::Exception(const std::string &message, json::Error errorType)
-    {
-        m_ErrType = errorType;
-        m_Msg = std::string("(") + GetErrName(errorType) + std::string(") -> ") + message;
-    };
-
-    const char *Exception::what() const noexcept
-    {
-        return m_Msg.c_str();
-    };
-
-    json::Error Exception::GetErrType() const noexcept
-    {
-        return m_ErrType;
-    };
-
-    std::string Exception::GetErrName(json::Error error) const noexcept
-    {
-        std::string name;
-
-        switch (error)
-        {
-            CASEFY_ERROR(Error::UNKNOWN);
-
-            CASEFY_ERROR(Error::MISSING_SEPARATOR);
-            CASEFY_ERROR(Error::MISSING_VALUE);
-
-            CASEFY_ERROR(Error::KEY_NOT_FOUND);
-            CASEFY_ERROR(Error::VALUE_NOT_FOUND);
-
-            CASEFY_ERROR(Error::NON_BOOL_TYPE);
-            CASEFY_ERROR(Error::NON_NULL_TYPE);
-            CASEFY_ERROR(Error::NON_NUMBER_TYPE);
-            CASEFY_ERROR(Error::NON_OBJECT_TYPE);
-            CASEFY_ERROR(Error::NON_ARRAY_TYPE);
-            CASEFY_ERROR(Error::NON_STRING_TYPE);
-
-            CASEFY_ERROR(Error::INVALID_BOOL);
-            CASEFY_ERROR(Error::INVALID_NULL);
-            CASEFY_ERROR(Error::INVALID_NUMBER);
-            CASEFY_ERROR(Error::INVALID_OBJECT);
-            CASEFY_ERROR(Error::INVALID_ARRAY);
-            CASEFY_ERROR(Error::INVALID_STRING);
-            CASEFY_ERROR(Error::INVALID_JSON);
-
-            CASEFY_ERROR(Error::KEY_ALREADY_EXISTS);
-            CASEFY_ERROR(Error::VALUE_CANT_BE_NULL);
-
-            CASEFY_ERROR(Error::WRONG_TYPE_CAST);
-        }
-
-        return name;
-    };
-
-#pragma endregion // exception
-
-#pragma region json
-
-    JSON::JSON()
-    {
-        m_Type = json::Type::UNKNOWN;
+JSON::JSON(json::Type type) : m_Type(type)
+{
+    if (type == json::Type::ARRAY)
+        m_Array.clear();
+    else if (type == json::Type::OBJECT)
+        m_Object.clear();
+    else
         m_Value = std::monostate{};
-        m_Array = {};
-        m_Object = {};
-    }
+}
 
-    JSON::JSON(json::Type type)
+JSON::JSON(json::Type type, std::variant<std::monostate, std::string, int, double, bool> value)
+    : m_Type(type), m_Value(value) {}
+
+JSON::JSON(const JSON &other)
+    : m_Type(other.m_Type), m_Value(other.m_Value)
+{
+    for (const auto &kv : other.m_Object)
+        m_Object[kv.first] = std::make_unique<JSON>(*kv.second);
+    for (const auto &kv : other.m_Array)
+        m_Array[kv.first] = std::make_unique<JSON>(*kv.second);
+}
+
+JSON::JSON(JSON &&other) noexcept
+    : m_Type(other.m_Type), m_Value(std::move(other.m_Value)),
+      m_Array(std::move(other.m_Array)), m_Object(std::move(other.m_Object)) {}
+
+JSON::~JSON() { Destroy(); }
+
+void JSON::Destroy()
+{
+    m_Array.clear();
+    m_Object.clear();
+    m_Value = std::monostate{};
+    m_Type = json::Type::UNKNOWN;
+}
+
+bool JSON::IsArray() const { return m_Type == json::Type::ARRAY; }
+bool JSON::IsObject() const { return m_Type == json::Type::OBJECT; }
+bool JSON::IsString() const { return m_Type == json::Type::STRING; }
+bool JSON::IsNumber() const { return m_Type == json::Type::DOUBLE || m_Type == json::Type::INTEGER; }
+bool JSON::IsBool() const { return m_Type == json::Type::BOOLEAN; }
+bool JSON::IsNone() const { return m_Type == json::Type::NONE; }
+bool JSON::Empty() const
+{
+    if (m_Type == json::Type::OBJECT)
+        return m_Object.empty();
+    if (m_Type == json::Type::ARRAY)
+        return m_Array.empty();
+    if (m_Type == json::Type::STRING)
+        return std::get<std::string>(m_Value).empty();
+    return false;
+}
+
+std::string JSON::String() const
+{
+    std::stringstream ss;
+    switch (m_Type)
     {
-        m_Type = type;
-
-        if (type == json::Type::ARRAY)
+    case json::Type::NONE: ss << "null"; break;
+    case json::Type::BOOLEAN: ss << (std::get<bool>(m_Value) ? "true" : "false"); break;
+    case json::Type::INTEGER: ss << std::get<int>(m_Value); break;
+    case json::Type::DOUBLE: ss << std::get<double>(m_Value); break;
+    case json::Type::STRING: ss << "\"" << std::get<std::string>(m_Value) << "\""; break;
+    case json::Type::ARRAY:
+        ss << "[";
+        for (auto it = m_Array.begin(); it != m_Array.end(); ++it)
         {
-            m_Array = {};
+            if (it != m_Array.begin()) ss << ",";
+            ss << it->second->String();
         }
-        else if (type == json::Type::OBJECT)
+        ss << "]";
+        break;
+    case json::Type::OBJECT:
+        ss << "{";
+        for (auto it = m_Object.begin(); it != m_Object.end(); ++it)
         {
-            m_Object = {};
+            if (it != m_Object.begin()) ss << ",";
+            ss << "\"" << it->first << "\":" << it->second->String();
         }
-        else
-        {
-            m_Value = std::monostate{};
-        }
+        ss << "}";
+        break;
+    default:
+        throw json::Exception("Unknown JSON type", json::Error::UNKNOWN);
     }
+    return ss.str();
+}
 
-    JSON::JSON(json::Type type, std::variant<std::monostate, std::string, int, double, bool> value)
+json::Type JSON::Type() const { return m_Type; }
+
+std::vector<std::string> JSON::Keys() const
+{
+    std::vector<std::string> keys;
+    if (m_Type == Type::OBJECT)
+        for (const auto &pair : m_Object) keys.push_back(pair.first);
+    else if (m_Type == Type::ARRAY)
+        for (const auto &pair : m_Array) keys.push_back(std::to_string(pair.first));
+    return keys;
+}
+
+json::Type JSON::ValueType(const std::string &key) const
+{
+    if (m_Type != Type::OBJECT) return json::Type::UNKNOWN;
+    auto iter = m_Object.find(key);
+    if (iter != m_Object.end()) return iter->second->Type();
+    return json::Type::UNKNOWN;
+}
+
+json::Type JSON::ValueType(int key) const
+{
+    if (m_Type != Type::ARRAY) return json::Type::UNKNOWN;
+    auto iter = m_Array.find(key);
+    if (iter != m_Array.end()) return iter->second->Type();
+    return json::Type::UNKNOWN;
+}
+
+bool JSON::HasKey(const std::string &key) const
+{
+    if (m_Type != json::Type::OBJECT) return false;
+    return m_Object.find(key) != m_Object.end();
+}
+
+bool JSON::HasKey(int key) const
+{
+    if (m_Type != json::Type::ARRAY) return false;
+    return m_Array.find(key) != m_Array.end();
+}
+
+void JSON::Add(const std::string &key, const json::JSON &value)
+{
+    if (m_Type != json::Type::OBJECT)
+        throw json::Exception("Add: Not an object", Error::NON_OBJECT_TYPE);
+    m_Object[key] = std::make_unique<json::JSON>(value);
+}
+
+void JSON::Add(int key, const json::JSON &value)
+{
+    if (m_Type != json::Type::ARRAY)
+        throw json::Exception("Add: Not an array", Error::NON_ARRAY_TYPE);
+    m_Array[key] = std::make_unique<json::JSON>(value);
+}
+
+void JSON::Replace(const std::string &key, const json::JSON &value)
+{
+    if (m_Type != json::Type::OBJECT)
+        throw json::Exception("Replace: Not an object", Error::NON_OBJECT_TYPE);
+    auto iter = m_Object.find(key);
+    if (iter != m_Object.end())
+        iter->second = std::make_unique<json::JSON>(value);
+    else
+        throw json::Exception("Replace: Key not found", Error::KEY_NOT_FOUND);
+}
+
+void JSON::Replace(int key, const json::JSON &value)
+{
+    if (m_Type != json::Type::ARRAY)
+        throw json::Exception("Replace: Not an array", Error::NON_ARRAY_TYPE);
+    auto iter = m_Array.find(key);
+    if (iter != m_Array.end())
+        iter->second = std::make_unique<json::JSON>(value);
+    else
+        throw json::Exception("Replace: Index not found", Error::KEY_NOT_FOUND);
+}
+
+json::JSON JSON::Get(const std::string &key) const
+{
+    if (m_Type != json::Type::OBJECT)
+        throw json::Exception("Get: Not an object", Error::NON_OBJECT_TYPE);
+    auto iter = m_Object.find(key);
+    if (iter != m_Object.end())
+        return *(iter->second);
+    throw json::Exception("Get: Key not found", Error::KEY_NOT_FOUND);
+}
+
+json::JSON JSON::Get(int key) const
+{
+    if (m_Type != json::Type::ARRAY)
+        throw json::Exception("Get: Not an array", Error::NON_ARRAY_TYPE);
+    auto iter = m_Array.find(key);
+    if (iter != m_Array.end())
+        return *(iter->second);
+    throw json::Exception("Get: Index not found", Error::KEY_NOT_FOUND);
+}
+
+void JSON::Get(const std::string &key, json::JSON &value) const
+{
+    value = Get(key);
+}
+
+void JSON::Get(int key, json::JSON &value) const
+{
+    value = Get(key);
+}
+
+void JSON::Delete(const std::string &key)
+{
+    if (m_Type != json::Type::OBJECT)
+        throw json::Exception("Delete: Not an object", Error::NON_OBJECT_TYPE);
+    m_Object.erase(key);
+}
+
+void JSON::Delete(int key)
+{
+    if (m_Type != json::Type::ARRAY)
+        throw json::Exception("Delete: Not an array", Error::NON_ARRAY_TYPE);
+    m_Array.erase(key);
+}
+
+json::JSON JSON::Detach(const std::string &key)
+{
+    if (m_Type != json::Type::OBJECT)
+        throw json::Exception("Detach: Not an object", Error::NON_OBJECT_TYPE);
+    auto iter = m_Object.find(key);
+    if (iter != m_Object.end())
     {
-        if (type == json::Type::ARRAY)
-        {
-            m_Type = json::Type::ARRAY;
-            m_Array = {};
-            m_Object = {};
-        }
-        else if (type == json::Type::OBJECT)
-        {
-            m_Type = json::Type::OBJECT;
-            m_Array = {};
-            m_Object = {};
-        }
-        else if (auto _value = std::get_if<std::string>(&value))
-        {
-            const std::string &v = *_value;
-            m_Type = json::Type::STRING;
-            m_Value = v;
-            m_Array = {};
-            m_Object = {};
-        }
-        else if (auto _value = std::get_if<double>(&value))
-        {
-            const double &v = *_value;
-            m_Type = json::Type::DOUBLE;
-            m_Value = v;
-            m_Array = {};
-            m_Object = {};
-        }
-        else if (auto _value = std::get_if<bool>(&value))
-        {
-            const bool &v = *_value;
-            m_Type = json::Type::BOOLEAN;
-            m_Value = v;
-            m_Array = {};
-            m_Object = {};
-        }
-        else if (auto _value = std::get_if<int>(&value))
-        {
-            const int &v = *_value;
-            m_Type = json::Type::INTEGER;
-            m_Value = v;
-            m_Array = {};
-            m_Object = {};
-        }
-        else
-        {
-            m_Type = json::Type::UNKNOWN;
-            m_Value = std::monostate{};
-            m_Array = {};
-            m_Object = {};
-        }
+        json::JSON detached = std::move(*iter->second);
+        m_Object.erase(iter);
+        return detached;
     }
+    throw json::Exception("Detach: Key not found", Error::KEY_NOT_FOUND);
+}
 
-    JSON::JSON(const JSON *other)
+json::JSON JSON::Detach(int key)
+{
+    if (m_Type != json::Type::ARRAY)
+        throw json::Exception("Detach: Not an array", Error::NON_ARRAY_TYPE);
+    auto iter = m_Array.find(key);
+    if (iter != m_Array.end())
     {
-        if (other != nullptr)
-        {
-            m_Type = other->m_Type;
-            m_Value = other->m_Value;
-            m_Array = other->m_Array;
-            m_Object = other->m_Object;
-        }
-        else
-        {
-            m_Type = json::Type::UNKNOWN;
-            m_Value = std::monostate{};
-        }
+        json::JSON detached = std::move(*iter->second);
+        m_Array.erase(iter);
+        return detached;
     }
+    throw json::Exception("Detach: Index not found", Error::KEY_NOT_FOUND);
+}
 
-    JSON::JSON(const JSON &other)
-    {
-        m_Type = other.m_Type;
-        m_Value = other.m_Value;
-        m_Array = other.m_Array;
-        m_Object = other.m_Object;
-    }
+std::string JSON::operator()(const std::string &key) const
+{
+    return Get(key).String();
+}
 
-    JSON::JSON(JSON &&other)
-    {
-        m_Type = std::move(other.m_Type);
-        m_Value = std::move(other.m_Value);
-        m_Array = std::move(other.m_Array);
-        m_Object = std::move(other.m_Object);
-    }
+std::string JSON::operator()(int key) const
+{
+    return Get(key).String();
+}
 
-    JSON::~JSON()
+json::JSON &JSON::operator[](const std::string &key)
+{
+    if (m_Type != json::Type::OBJECT)
+        throw json::Exception("operator[]: Not an object", Error::NON_OBJECT_TYPE);
+    return *(m_Object[key]);
+}
+
+json::JSON &JSON::operator[](int key)
+{
+    if (m_Type != json::Type::ARRAY)
+        throw json::Exception("operator[]: Not an array", Error::NON_ARRAY_TYPE);
+    return *(m_Array[key]);
+}
+
+JSON &JSON::operator=(const JSON &other)
+{
+    if (this != &other)
     {
         Destroy();
+        m_Type = other.m_Type;
+        m_Value = other.m_Value;
+        for (const auto &kv : other.m_Object)
+            m_Object[kv.first] = std::make_unique<JSON>(*kv.second);
+        for (const auto &kv : other.m_Array)
+            m_Array[kv.first] = std::make_unique<JSON>(*kv.second);
     }
+    return *this;
+}
 
-    bool JSON::IsArray() const
+JSON &JSON::operator=(JSON &&other) noexcept
+{
+    if (this != &other)
     {
-        return m_Type == json::Type::ARRAY;
+        Destroy();
+        m_Type = other.m_Type;
+        m_Value = std::move(other.m_Value);
+        m_Object = std::move(other.m_Object);
+        m_Array = std::move(other.m_Array);
     }
+    return *this;
+}
 
-    bool JSON::IsObject() const
-    {
-        return m_Type == json::Type::OBJECT;
+bool JSON::operator==(const JSON &other) const
+{
+    return this->String() == other.String();
+}
+
+bool JSON::operator!=(const JSON &other) const
+{
+    return !(*this == other);
+}
+
+std::ostream &operator<<(std::ostream &os, const json::JSON &json)
+{
+    os << json.String();
+    return os;
+}
+
+std::string dump(const json::JSON &json, bool /*ensure_ascii*/)
+{
+    return json.String();
+}
+
+void print(const json::JSON &json, bool indent)
+{
+    if (indent)
+        std::cout << json.String() << std::endl;
+    else
+        std::cout << json.String();
+}
+
+namespace {
+
+// Helper: skip whitespace
+void skip_ws(const std::string& s, size_t& i) {
+    while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
+}
+
+// Helper: parse literal (true, false, null)
+json::JSON parse_literal(const std::string& s, size_t& i) {
+    if (s.compare(i, 4, "true") == 0) {
+        i += 4;
+        return json::JSON(json::Type::BOOLEAN, true);
     }
-
-    bool JSON::IsString() const
-    {
-        return m_Type == json::Type::STRING;
+    if (s.compare(i, 5, "false") == 0) {
+        i += 5;
+        return json::JSON(json::Type::BOOLEAN, false);
     }
-
-    bool JSON::IsNumber() const
-    {
-        return m_Type == json::Type::DOUBLE || m_Type == json::Type::INTEGER;
+    if (s.compare(i, 4, "null") == 0) {
+        i += 4;
+        return json::JSON(json::Type::NONE, std::monostate{});
     }
+    throw json::Exception("Invalid literal", json::Error::INVALID_JSON);
+}
 
-    bool JSON::IsBool() const
-    {
-        return m_Type == json::Type::BOOLEAN;
+// Helper: parse number
+json::JSON parse_number(const std::string& s, size_t& i) {
+    size_t start = i;
+    bool is_double = false;
+    if (s[i] == '-') ++i;
+    while (i < s.size() && std::isdigit(s[i])) ++i;
+    if (i < s.size() && s[i] == '.') {
+        is_double = true;
+        ++i;
+        while (i < s.size() && std::isdigit(s[i])) ++i;
     }
-
-    bool JSON::IsNone() const
-    {
-        return m_Type == json::Type::NONE;
+    if (i < s.size() && (s[i] == 'e' || s[i] == 'E')) {
+        is_double = true;
+        ++i;
+        if (s[i] == '+' || s[i] == '-') ++i;
+        while (i < s.size() && std::isdigit(s[i])) ++i;
     }
-
-    bool JSON::Empty() const
-    {
-        if (m_Type == json::Type::OBJECT)
-        {
-            return m_Object.empty();
+    std::string num = s.substr(start, i - start);
+    try {
+        if (is_double) {
+            return json::JSON(json::Type::DOUBLE, std::stod(num));
+        } else {
+            return json::JSON(json::Type::INTEGER, std::stoi(num));
         }
-        else if (m_Type == json::Type::ARRAY)
-        {
-            return m_Array.empty();
-        }
-        else if (m_Type == json::Type::STRING)
-        {
-            return std::get<std::string>(m_Value).empty();
-        }
-        else if (m_Type == json::Type::NONE)
-        {
-            return true;
-        }
-        else
-        {
-            // Check if the variant is in an unset state
-            return std::holds_alternative<std::monostate>(m_Value);
-        }
+    } catch (...) {
+        throw json::Exception("Invalid number", json::Error::INVALID_NUMBER);
     }
+}
 
-    std::string JSON::String() const
-    {
-        std::stringstream ss;
-
-        switch (m_Type)
-        {
-        case json::Type::NONE:
-            ss << "null";
-            break;
-        case json::Type::BOOLEAN:
-            ss << (std::get<bool>(m_Value) ? "true" : "false");
-            break;
-        case json::Type::INTEGER:
-            ss << std::get<int>(m_Value);
-            break;
-        case json::Type::DOUBLE:
-            ss << std::get<double>(m_Value);
-            break;
-        case json::Type::STRING:
-            ss << "\"" << std::get<std::string>(m_Value) << "\"";
-            break;
-        case json::Type::ARRAY:
-            ss << "[";
-            for (auto it = m_Array.begin(); it != m_Array.end(); ++it)
-            {
-                if (it != m_Array.begin())
-                {
-                    ss << ",";
+// Helper: parse string (with escapes)
+std::string parse_string(const std::string& s, size_t& i) {
+    if (s[i] != '"') throw json::Exception("Expected '\"'", json::Error::INVALID_STRING);
+    ++i;
+    std::string result;
+    while (i < s.size()) {
+        char c = s[i++];
+        if (c == '"') break;
+        if (c == '\\') {
+            if (i >= s.size()) throw json::Exception("Invalid escape", json::Error::INVALID_STRING);
+            char esc = s[i++];
+            switch (esc) {
+                case '"': result += '"'; break;
+                case '\\': result += '\\'; break;
+                case '/': result += '/'; break;
+                case 'b': result += '\b'; break;
+                case 'f': result += '\f'; break;
+                case 'n': result += '\n'; break;
+                case 'r': result += '\r'; break;
+                case 't': result += '\t'; break;
+                case 'u': {
+                    if (i + 4 > s.size()) throw json::Exception("Invalid unicode escape", json::Error::INVALID_STRING);
+                    unsigned int code = std::stoul(s.substr(i, 4), nullptr, 16);
+                    // Basic Unicode BMP only
+                    if (code <= 0x7F) result += static_cast<char>(code);
+                    // For full unicode, use a library or extend here
+                    i += 4;
+                    break;
                 }
-                ss << it->second->String();
+                default:
+                    throw json::Exception("Unknown escape", json::Error::INVALID_STRING);
             }
-            ss << "]";
-            break;
-        case json::Type::OBJECT:
-            ss << "{";
-            for (auto it = m_Object.begin(); it != m_Object.end(); ++it)
-            {
-                if (it != m_Object.begin())
-                {
-                    ss << ",";
-                }
-                ss << "\"" << it->first << "\"" << ":";
-                ss << it->second->String();
-            }
-            ss << "}";
-            break;
-        default:
-            throw json::Exception("Unknown JSON type", json::Error::UNKNOWN);
-        }
-
-        return ss.str();
-    }
-
-    json::Type JSON::Type() const
-    {
-        return m_Type;
-    };
-
-    std::vector<std::string> JSON::Keys() const
-    {
-        std::vector<std::string> keys;
-
-        if (m_Type == Type::OBJECT)
-        {
-            for (const auto &pair : m_Object)
-            {
-                keys.push_back(pair.first);
-            }
-        }
-        else if (m_Type == Type::ARRAY)
-        {
-            for (const auto &pair : m_Array)
-            {
-                keys.push_back(std::to_string(pair.first));
-            }
-        }
-
-        return keys;
-    };
-
-    json::Type JSON::ValueType(const std::string &key) const
-    {
-        if (m_Type != Type::OBJECT)
-            return json::Type::UNKNOWN;
-
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-            return iter->second->Type();
-        }
-
-        return json::Type::UNKNOWN;
-    }
-
-    json::Type JSON::ValueType(int key) const
-    {
-        if (m_Type != Type::ARRAY)
-            return json::Type::UNKNOWN;
-
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            return iter->second->Type();
-        }
-
-        return json::Type::UNKNOWN;
-    }
-
-    bool JSON::HasKey(const std::string &key) const
-    {
-        if (m_Type != json::Type::OBJECT)
-            return false;
-
-        auto iter = m_Object.find(key);
-        return iter != m_Object.end();
-    };
-
-    bool JSON::HasKey(int key) const
-    {
-        if (m_Type != json::Type::ARRAY)
-            return false;
-
-        auto iter = m_Array.find(key);
-        return iter != m_Array.end();
-    };
-
-    void JSON::Add(std::string key, json::JSON value)
-    {
-        if (m_Type != json::Type::OBJECT)
-            return;
-
-        m_Object[key] = new json::JSON(value);
-    }
-
-    void JSON::Add(int key, json::JSON value)
-    {
-        if (m_Type != json::Type::ARRAY)
-            return;
-
-        m_Array[key] = new json::JSON(value);
-    }
-
-    void JSON::Replace(std::string key, json::JSON value)
-    {
-        if (m_Type != json::Type::OBJECT)
-            return;
-
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-
-            m_Object[key]->Destroy();
-            m_Object[key] = new json::JSON(value);
+        } else {
+            result += c;
         }
     }
+    return result;
+}
 
-    void JSON::Replace(int key, json::JSON value)
-    {
-        if (m_Type != json::Type::ARRAY)
-            return;
+// Forward declaration
+json::JSON parse_value(const std::string& s, size_t& i);
 
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            m_Array[key]->Destroy();
-            m_Array[key] = new json::JSON(value); // reassign
-        }
+// Helper: parse array
+json::JSON parse_array(const std::string& s, size_t& i) {
+    if (s[i] != '[') throw json::Exception("Expected '['", json::Error::INVALID_ARRAY);
+    ++i;
+    skip_ws(s, i);
+    json::JSON arr(json::Type::ARRAY);
+    int idx = 0;
+    if (s[i] == ']') { ++i; return arr; }
+    while (i < s.size()) {
+        skip_ws(s, i);
+        arr.Add(idx++, parse_value(s, i));
+        skip_ws(s, i);
+        if (s[i] == ']') { ++i; break; }
+        if (s[i] != ',') throw json::Exception("Expected ',' in array", json::Error::INVALID_ARRAY);
+        ++i;
     }
+    return arr;
+}
 
-    json::JSON JSON::Get(const std::string &key) const
-    {
-        if (m_Type != json::Type::OBJECT)
-        {
-            throw json::Exception("Can't Retrieve from a Non-OBJECT Type!", Error::NON_OBJECT_TYPE);
-        }
-
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-            return *(iter->second);
-        }
-        else
-        {
-            throw json::Exception("[" + key + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
+// Helper: parse object
+json::JSON parse_object(const std::string& s, size_t& i) {
+    if (s[i] != '{') throw json::Exception("Expected '{'", json::Error::INVALID_OBJECT);
+    ++i;
+    skip_ws(s, i);
+    json::JSON obj(json::Type::OBJECT);
+    if (s[i] == '}') { ++i; return obj; }
+    while (i < s.size()) {
+        skip_ws(s, i);
+        std::string key = parse_string(s, i);
+        skip_ws(s, i);
+        if (s[i] != ':') throw json::Exception("Expected ':'", json::Error::MISSING_SEPARATOR);
+        ++i;
+        skip_ws(s, i);
+        obj.Add(key, parse_value(s, i));
+        skip_ws(s, i);
+        if (s[i] == '}') { ++i; break; }
+        if (s[i] != ',') throw json::Exception("Expected ',' in object", json::Error::INVALID_OBJECT);
+        ++i;
     }
+    return obj;
+}
 
-    json::JSON JSON::Get(int key) const
-    {
-        if (m_Type != json::Type::ARRAY)
-        {
-            throw json::Exception("Can't Retrieve from a Non-ARRAY Type!", Error::NON_ARRAY_TYPE);
-        }
+// Main value parser
+json::JSON parse_value(const std::string& s, size_t& i) {
+    skip_ws(s, i);
+    if (i >= s.size()) throw json::Exception("Unexpected end", json::Error::INVALID_JSON);
+    char c = s[i];
+    if (c == '{') return parse_object(s, i);
+    if (c == '[') return parse_array(s, i);
+    if (c == '"') return json::JSON(json::Type::STRING, parse_string(s, i));
+    if (std::isdigit(c) || c == '-') return parse_number(s, i);
+    if (c == 't' || c == 'f' || c == 'n') return parse_literal(s, i);
+    throw json::Exception("Invalid value", json::Error::INVALID_JSON);
+}
 
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            return *(iter->second);
-        }
-        else
-        {
-            char str[12];
-            sprintf(str, "%i", key);
-            throw json::Exception("Index [" + std::string(str) + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
+} // end anonymous namespace
 
-    void JSON::Get(const std::string &key, json::JSON &value) const
-    {
-        if (m_Type != json::Type::OBJECT)
-        {
-            throw json::Exception("Can't Retrieve from a Non-OBJECT Type!", Error::NON_OBJECT_TYPE);
-        }
-
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-            value = *(iter->second);
-        }
-        else
-        {
-            throw json::Exception("[" + key + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    void JSON::Get(int key, json::JSON &value) const
-    {
-        if (m_Type != json::Type::ARRAY)
-        {
-            throw json::Exception("Can't Retrieve from a Non-ARRAY Type!", Error::NON_ARRAY_TYPE);
-        }
-
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            value = *(iter->second);
-        }
-        else
-        {
-            char str[12];
-            sprintf(str, "%i", key);
-            throw json::Exception("Index [" + std::string(str) + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    // Fixed the bug: Changed the condition to check for OBJECT type instead of ARRAY type
-    void JSON::Delete(std::string key)
-    {
-        if (m_Type != json::Type::OBJECT)
-            return;
-
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-            m_Object[key]->Destroy();
-            m_Object.erase(iter);
-        }
-        else
-        {
-            throw json::Exception("[" + key + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    };
-
-    void JSON::Delete(int key)
-    {
-        if (m_Type != json::Type::ARRAY)
-            return;
-
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            m_Array[key]->Destroy();
-            m_Array.erase(iter);
-        }
-        else
-        {
-            char *str;
-            sprintf(str, "%i", key);
-            throw json::Exception("Index [" + std::string(str) + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    };
-
-    json::JSON JSON::Detach(std::string key)
-    {
-        if (m_Type != json::Type::OBJECT)
-        {
-            throw json::Exception("Can't Detach from a Non-OBJECT Type!", Error::NON_OBJECT_TYPE);
-        }
-
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-            json::JSON detached = new json::JSON(*(iter->second));
-
-            m_Object[key]->Destroy();
-            m_Object.erase(iter);
-
-            return detached;
-        }
-        else
-        {
-            throw json::Exception("[" + key + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    json::JSON JSON::Detach(int key)
-    {
-        if (m_Type != json::Type::ARRAY)
-        {
-            throw json::Exception("Can't Detach from a Non-ARRAY Type!", Error::NON_ARRAY_TYPE);
-        }
-
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            json::JSON detached = new json::JSON(*(iter->second));
-
-            m_Array[key]->Destroy();
-            m_Array.erase(iter);
-
-            return detached;
-        }
-        else
-        {
-            char *str;
-            sprintf(str, "%i", key);
-            throw json::Exception("Index [" + std::string(str) + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    };
-
-    std::string JSON::operator()(const std::string &key) const
-    {
-        auto iter = m_Object.find(key);
-
-        if (iter != m_Object.end())
-        {
-            json::JSON *pJSON = NULL;
-            pJSON = m_Object[key];
-
-            if (pJSON == NULL)
-            {
-                throw json::Exception("[" + key + "] : Is Missing a Value!", Error::VALUE_NOT_FOUND);
-            }
-            else
-            {
-                return pJSON->String();
-            }
-        }
-        else
-        {
-            throw json::Exception("[" + key + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    std::string JSON::operator()(const int &key) const
-    {
-        auto iter = m_Array.find(key);
-
-        if (iter != m_Array.end())
-        {
-
-            json::JSON *pJSON = NULL;
-            pJSON = m_Array[key];
-
-            if (pJSON == NULL)
-            {
-                char *str;
-                sprintf(str, "%i", key);
-                throw json::Exception("Index [" + std::string(str) + "]: Is Missing a Value!", Error::MISSING_VALUE);
-            }
-            else
-            {
-                return pJSON->String();
-            }
-        }
-        else
-        {
-            char *str;
-            sprintf(str, "%i", key);
-            throw json::Exception("Index [" + std::string(str) + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    json::JSON &JSON::operator[](const std::string &key) const
-    {
-        auto iter = m_Object.find(key);
-        if (iter != m_Object.end())
-        {
-            return *(iter->second);
-        }
-        else
-        {
-            throw json::Exception("[" + key + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    json::JSON &JSON::operator[](const int &key) const
-    {
-        auto iter = m_Array.find(key);
-        if (iter != m_Array.end())
-        {
-            return *(iter->second);
-        }
-        else
-        {
-            throw json::Exception("Index [" + std::to_string(key) + "]: Is Not a Valid key!", Error::KEY_NOT_FOUND);
-        }
-    }
-
-    json::JSON &JSON::operator=(const JSON &json)
-    {
-        if (this != &json)
-        {
-            // Free existing resources
-            Destroy();
-
-            // Copy the type, value, array, and object from the source JSON object
-            m_Type = json.m_Type;
-            m_Value = json.m_Value;
-
-            // Deep copy the array elements
-            for (const auto &[key, value] : json.m_Array)
-            {
-                m_Array[key] = new JSON(*value);
-            }
-
-            // Deep copy the object elements
-            for (const auto &[key, value] : json.m_Object)
-            {
-                m_Object[key] = new JSON(*value);
-            }
-        }
-        return *this;
-    }
-
-    JSON &JSON::operator=(JSON &&json)
-    {
-        if (this != &json)
-        {
-            // Free existing resources
-            Destroy();
-
-            // Move the type, value, array, and object from the source JSON object
-            m_Type = std::move(json.m_Type);
-            m_Value = std::move(json.m_Value);
-            m_Array = std::move(json.m_Array);
-            m_Object = std::move(json.m_Object);
-
-            // Reset the source JSON object
-            json.m_Type = json::Type::UNKNOWN;
-            json.m_Value = std::monostate{};
-            json.m_Array.clear();
-            json.m_Object.clear();
-        }
-        return *this;
-    }
-
-    bool JSON::operator==(const JSON &json) const
-    {
-        return this->String() == json.String();
-    }
-
-    bool JSON::operator!=(const JSON &json) const
-    {
-        return !(this->operator==(json));
-        // >
-        // <
-        // <=
-        // >=
-        // <<
-    }
-
-    // JSON::operator double()
-    // {
-    //     if (m_Type != json::Type::DOUBLE)
-    //     {
-    //         throw json::Exception("Can't Cast from a Non-DOUBLE Type!", Error::WRONG_TYPE_CAST);
-    //     }
-
-    //     return std::get<double>(m_Value);
-    // };
-
-    // JSON::operator int()
-    // {
-    //     if (m_Type != json::Type::INTEGER)
-    //     {
-    //         throw json::Exception("Can't Cast from a Non-INTEGER Type!", Error::WRONG_TYPE_CAST);
-    //     }
-
-    //     return std::get<int>(m_Value);
-    // };
-
-    // JSON::operator std::string()
-    // {
-    //     if (m_Type != json::Type::STRING)
-    //     {
-    //         throw json::Exception("Can't Cast from a Non-STRING Type!", Error::WRONG_TYPE_CAST);
-    //     }
-
-    //     return std::get<std::string>(m_Value);
-    // };
-
-    // JSON::operator bool()
-    // {
-    //     if (m_Type != json::Type::BOOLEAN)
-    //     {
-    //         throw json::Exception("Can't Cast from a Non-BOOLEAN Type!", Error::WRONG_TYPE_CAST);
-    //     }
-
-    //     return std::get<bool>(m_Value);
-    // };
-
-    void JSON::Destroy()
-    {
-        if (m_Type == json::Type::ARRAY)
-        {
-            // Iterate through the array elements
-            for (auto &[key, value] : m_Array)
-            {
-                // If the element is not null, delete it
-                if (value != nullptr)
-                {
-                    value->Destroy();
-                    delete value;
-                    value = nullptr;
-                }
-            }
-            // Clear the array
-            m_Array.clear();
-        }
-        else if (m_Type == json::Type::OBJECT)
-        {
-            // Iterate through the object elements
-            for (auto &[key, value] : m_Object)
-            {
-                // If the element is not null, delete it
-                if (value != nullptr)
-                {
-                    value->Destroy();
-                    delete value;
-                    value = nullptr;
-                }
-            }
-            // Clear the object
-            m_Object.clear();
-        }
-        // Reset the variant
-        m_Value = std::variant<std::monostate, std::string, int, double, bool>();
-        m_Type = json::Type::UNKNOWN;
-    }
-
-#pragma endregion // json
-
-#pragma region myjson
-
-    std::string dump(const json::JSON &json, bool ensure_ascii)
-    {
-        return json.String();
-    }
-
-    json::JSON load(const std::string &json, char *encoding)
-    {
-        if (json == "")
-        {
-            throw json::Exception("Can't Read From An Empty String!", Error::INVALID_STRING);
-        }
-
-        size_t index = 0;
-        return parse_value(json, index);
-    }
-
-    void print(json::JSON json, bool indent)
-    {
-        std::string jsonString = dump(json);
-
-        if (indent)
-        {
-            std::stringstream ss(jsonString);
-            std::string line;
-            int indentLevel = 0;
-            while (std::getline(ss, line))
-            {
-                if (line.find('}') != std::string::npos || line.find(']') != std::string::npos)
-                {
-                    indentLevel--;
-                }
-                for (int i = 0; i < indentLevel; ++i)
-                {
-                    std::cout << "    "; // 4 spaces for each indent level
-                }
-                std::cout << line << std::endl;
-                if (line.find('{') != std::string::npos || line.find('[') != std::string::npos)
-                {
-                    indentLevel++;
-                }
-            }
-        }
-        else
-        {
-            std::cout << jsonString << std::endl;
-        }
-    }
-
-    std::ostream &operator<<(std::ostream &cout, const json::JSON &json)
-    {
-        cout << json.String();
-        return cout;
-    }
-
-#pragma endregion // myjson
+json::JSON load(const std::string &json_str, char * /*encoding*/) {
+    size_t i = 0;
+    skip_ws(json_str, i);
+    json::JSON result = parse_value(json_str, i);
+    skip_ws(json_str, i);
+    if (i != json_str.size())
+        throw json::Exception("Extra data after JSON", json::Error::INVALID_JSON);
+    return result;
+}
 
 } // namespace json
