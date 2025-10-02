@@ -1,6 +1,106 @@
+/**
+ * @file myjson.h
+ * @brief JSON parser library header for C/C++.
+ * This is a  C/C++ Yaml Parser Library Header @c myjson.c.
+ * @details This header provides all public API, types, macros, and configuration for JSON and supports both C and C++ usage.
+ * @author Sackey Ezekiel Etrue (djoezeke)
+ * @date Thur 02 12:43:15 Oct GMT 2025
+ * @version 0.1.0
+ * @see https://www.github.com/djoezeke/myjson
+ * @copyright Copyright (c) 2025 Sackey Ezekiel Etrue
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Usage:
+ * @code
+ *  #include <myjson.h>
+ * @endcode
+ *
+ * Index of this file:
+ *  [SECTION] Header mess
+ *  [SECTION] Configurable macros
+ *  [SECTION] Function Macros
+ *  [SECTION] Imports/Exports
+ *  [SECTION] Data Structures
+ *  [SECTION] C Only Functions
+ *  [SECTION] C++ Only Classes
+ *
+ *
+ * Resources:
+ * - Homepage ................... https://github.com/djoezeke/myjson
+ * - Releases & changelog ....... https://github.com/djoezeke/myjson/releases
+ * - Issues & support ........... https://github.com/djoezeke/myjson/issues
+ *
+ */
+
 #ifndef MY_JSON_H
 #define MY_JSON_H
 
+/**
+ * @defgroup version Version Information
+ * @brief Macros for library versioning.
+ * @{
+ */
+
+/**
+ * @def MYJSON_VERSION_MAJOR
+ * @brief Major version number of the library.
+ */
+#define MYJSON_VERSION_MAJOR 0
+
+/**
+ * @def MYJSON_VERSION_MINOR
+ * @brief Minor version number of the library.
+ */
+#define MYJSON_VERSION_MINOR 1
+
+/**
+ * @def MYJSON_VERSION_PATCH
+ * @brief Patch version number of the library.
+ */
+#define MYJSON_VERSION_PATCH 0
+
+/**
+ * @def MYJSON_VERSION
+ * @brief Library version string in the format @c "X.Y.Z",
+ * where @c X is the major version number, @c Y is a minor version
+ * number, and @c Z is the patch version number.
+ */
+#define MYJSON_VERSION "0.1.0"
+
+/** @} */
+
+//-----------------------------------------------------------------------------
+// [SECTION] Header mess
+//-----------------------------------------------------------------------------
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+
+#ifdef __cplusplus
+
+/** C++ Exclusive headers. */
+#include <exception>
 #include <unordered_map>
 #include <vector>
 #include <variant>
@@ -8,10 +108,92 @@
 #include <string>
 #include <ostream>
 
-#define CASEFY_ERROR(value) \
-    case value:             \
-        name = #value;      \
-        break
+#endif //__cplusplus
+
+#define MYJSON_DEBUG
+
+#ifdef MYJSON_DEBUG
+#endif // MYJSON_DEBUG
+
+//-----------------------------------------------------------------------------
+// [SECTION] Configurable Macros
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// [SECTION] Function Macros
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// [SECTION] Import/Export
+//-----------------------------------------------------------------------------
+
+/**
+ * @defgroup export Export Definitions
+ * @{
+ */
+
+#if defined(_WIN32)
+#define MYJSON_NO_EXPORT_ATTR
+#define MYJSON_API_EXPORT __declspec(dllexport)
+#define MYJSON_API_IMPORT __declspec(dllimport)
+#define MYJSON_DEPRECATED_ATTR __declspec(deprecated)
+#else // _WIN32
+#define MYJSON_API_EXPORT __attribute__((visibility("default")))
+#define MYJSON_API_IMPORT __attribute__((visibility("default")))
+#define MYJSON_NO_EXPORT_ATTR __attribute__((visibility("hidden")))
+#define MYJSON_DEPRECATED_ATTR __attribute__((__deprecated__))
+#endif // _WIN32
+
+/**
+ * @def MYJSON_API
+ * @brief Macro for public API symbol export/import.
+ * @details Use this macro to annotate all public API functions for correct symbol visibility on all platforms.
+ */
+
+#if defined(MYJSON_BUILD_STATIC)
+#define MYJSON_API
+#elif defined(MYJSON_BUILD_SHARED)
+/* We are building this library */
+#define MYJSON_API MYJSON_API_EXPORT
+#elif defined(MYJSON_IMPORT)
+/* We are using this library */
+#define MYJSON_API MYJSON_API_IMPORT
+#else // MYJSON_BUILD_STATIC
+#define MYJSON_API
+#endif // MYJSON_BUILD_STATIC
+
+/** @} */
+
+//-----------------------------------------------------------------------------
+// [SECTION] Data Structures
+//-----------------------------------------------------------------------------
+
+/**
+ * @defgroup basic Basic Types
+ * @brief Core types and data structures for JSON.
+ * @{
+ */
+
+/** @} */
+
+//-----------------------------------------------------------------------------
+// [SECTION] C Only Functions
+//-----------------------------------------------------------------------------
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif //__cplusplus
+
+#ifdef __cplusplus
+}
+#endif //__cplusplus
+
+//-----------------------------------------------------------------------------
+// [SECTION] C++ Only Classes
+//-----------------------------------------------------------------------------
+
+#ifdef __cplusplus
 
 namespace json
 {
@@ -61,6 +243,7 @@ namespace json
         const char *what() const noexcept override;
         json::Error GetErrType() const noexcept;
         std::string GetErrName(json::Error error) const noexcept;
+
     private:
         mutable std::string m_Msg;
         json::Error m_ErrType;
@@ -127,5 +310,6 @@ namespace json
     void print(const json::JSON &json, bool indent = true);
 
 } // namespace json
+#endif //__cplusplus
 
 #endif // MY_JSON_H
