@@ -33,8 +33,6 @@
 
 **Jsonfy** is a modern, lightweight JSON parsing and serialization library for C++. It provides an easy-to-use interface for working with JSON data, including parsing JSON strings, creating JSON objects, and serializing JSON objects to strings.It provides a simple, type-safe API for working with JSON data in C++ projects.
 
----
-
 ## ✨ Features
 
 - ⚡ **Fast**: Efficient parsing and serialization
@@ -48,15 +46,15 @@
 
 ## 📦 Supported Types
 
-| Jsonfy Type      | JSON Type   | Example Value      |
-|------------------|-------------|--------------------|
-| `Type::OBJECT`   | object      | `{ "a": 1 }`       |
-| `Type::ARRAY`    | array       | `[1, 2, 3]`        |
-| `Type::STRING`   | string      | `"hello"`          |
-| `Type::INTEGER`  | number      | `42`               |
-| `Type::DOUBLE`   | number      | `3.14`             |
-| `Type::BOOLEAN`  | true/false  | `true` / `false`   |
-| `Type::NONE`     | null        | `null`             |
+| Jsonfy Type     | JSON Type  | Example Value    |
+| --------------- | ---------- | ---------------- |
+| `Type::OBJECT`  | object     | `{ "a": 1 }`     |
+| `Type::ARRAY`   | array      | `[1, 2, 3]`      |
+| `Type::STRING`  | string     | `"hello"`        |
+| `Type::INTEGER` | number     | `42`             |
+| `Type::DOUBLE`  | number     | `3.14`           |
+| `Type::BOOLEAN` | true/false | `true` / `false` |
+| `Type::NONE`    | null       | `null`           |
 
 ---
 
@@ -79,7 +77,6 @@ Jsonfy/
 
 ---
 
-
 ## 🚀 Getting Started
 
 - **Programming Language:** C, Cpp
@@ -95,23 +92,27 @@ Before getting started with jsonfy, ensure your runtime environment meets the fo
 ### Installation 🛠️
 
 1. **Clone the repository:**
-    ```sh
-    git clone https://github.com/djoezeke/jsonfy.git
-    ```
+
+   ```sh
+   git clone https://github.com/djoezeke/jsonfy.git
+   ```
 
 2. **Add to your project:**
-    - Copy `myjson.hpp` and `myjson.cpp` into your project.
-    - Or add as a submodule and include in your build.
+
+   - Copy `myjson.hpp` and `myjson.cpp` into your project.
+   - Or add as a submodule and include in your build.
 
 3. **Include in your code:**
-    ```cpp
-    #include "myjson.hpp"
-    ```
+
+   ```cpp
+   #include "myjson.hpp"
+   ```
 
 4. **Compile:**
-    ```sh
-    g++ my_source.cpp myjson.cpp -std=c++17 -o main
-    ```
+   ```sh
+   g++ my_source.cpp myjson.cpp -std=c++17 -o main
+   ```
+
 ---
 
 ## 🤖 Usage
@@ -176,8 +177,9 @@ int main() {
 ```
 
 Output:
+
 ```json
-{"foo":"bar","baz":123}
+{ "foo": "bar", "baz": 123 }
 ```
 
 ---
@@ -262,7 +264,6 @@ try {
 </p>
 </details>
 
-
-## 📄 License 
+## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
