@@ -72,6 +72,66 @@
 // [SECTION] Defines
 //-----------------------------------------------------------------------------
 
+/**
+ * @def MYJSON_MAX_FILE_SIZE
+ * @brief Maximum JSON file size in bytes.
+ * @note Default is 1073741824 [`2^30`] (1GB).
+ */
+#define MYJSON_MAX_FILE_SIZE 1073741824
+
+/**
+ * @def MYJSON_INPUT_RAW_BUFFER_SIZE
+ * @brief The size of the input raw buffer.
+ * @note Default is 16384 [`2^14`].
+ */
+#define MYJSON_INPUT_RAW_BUFFER_SIZE 16384
+
+/**
+ * @def MYJSON_OUPUT_BUFFER_SIZE
+ * @brief The size of the output buffer.
+ * @note Default is 16384 [`2^14`].
+ */
+#define MYJSON_OUPUT_BUFFER_SIZE 16384
+
+/**
+ * @def MYJSON_OUTPUT_RAW_BUFFER_SIZE
+ * @brief The size of the input buffer.
+ * @note It should be possible to decode the whole raw buffer.
+ * @note Default is 3 times `MYJSON_INPUT_RAW_BUFFER_SIZE` .
+ */
+#define MYJSON_INPUT_BUFFER_SIZE (MYJSON_INPUT_RAW_BUFFER_SIZE * 3)
+
+/**
+ * @def MYJSON_OUTPUT_RAW_BUFFER_SIZE
+ * @brief The size of the output raw buffer.
+ * @note It should be possible to encode the whole output buffer.
+ * @note Default is 2 times `MYJSON_OUPUT_BUFFER_SIZE` .
+ */
+#define MYJSON_OUTPUT_RAW_BUFFER_SIZE (MYJSON_OUPUT_BUFFER_SIZE * 2 + 2)
+
+/**
+ * @def MYJSON_MAX_STRING_LENGTH
+ * @brief Maximum length for JSON string values.
+ * @note Default is 4096 [`2^12`].
+ */
+#define MYJSON_MAX_STRING_LENGTH 4096
+
+/**
+ * @def MYJSON_MAX_NUMBER_LENGTH
+ * @brief Maximum length for JSON number values.
+ * @note Default is 9.
+ */
+#define MYJSON_MAX_NUMBER_LENGTH 9
+
+/**
+ * @def MYJSON_MAX_ARRAY_LENGTH
+ * @brief Maximum length of JSON arrays.
+ * @note Default is 131072 [`2^17`].
+ */
+#define MYJSON_MAX_ARRAY_LENGTH 131072
+
+#define MYJSON_MALLOC(type) (type *)_myyaml_malloc(sizeof(type))
+
 //-----------------------------------------------------------------------------
 // [SECTION] Data Structures
 //-----------------------------------------------------------------------------
