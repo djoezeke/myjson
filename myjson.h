@@ -175,6 +175,9 @@
 #endif
 #endif
 
+#define MYJSON_SUCCESS 1
+#define MYJSON_FAILURE 0
+
 //-----------------------------------------------------------------------------
 // [SECTION] Function Macros
 //-----------------------------------------------------------------------------
@@ -758,6 +761,16 @@ typedef enum JsonEventType {
 typedef struct JsonEvent {
     JsonEventType type; /**< The event type. */
 
+    /** The event data. */
+    union {
+        /** The stream parameters (for @c YAML_STREAM_START_EVENT). */
+        struct {
+            /** The document encoding. */
+            JsonEncoding encoding;
+        } stream_start;
+
+    } data;
+
     JsonPosition start_pos; /** The beginning of the event. */
     JsonPosition end_pos;   /** The end of the event. */
 
@@ -1014,7 +1027,7 @@ typedef struct JsonEmitter {
         struct {
             unsigned char *buffer; /**< The buffer pointer. */
             size_t *size_written;  /**< The number of written bytes. */
-            size_t size;    /**< The buffer size. */
+            size_t size;           /**< The buffer size. */
 
         } string;
 
@@ -1072,6 +1085,20 @@ typedef struct JsonEmitter {
 
     int line;   /**< The current line. */
     int column; /**< The current column. */
+
+    /**
+     * @}
+     */
+
+    /**
+     * @name Dumper stuff
+     * @{
+     */
+
+     JsonDocument *document; /** The currently emitted document. */
+
+    int opened;         /** If the stream was already opened? */
+    int closed;         /** If the stream was already closed? */
 
     /**
      * @}
@@ -1180,6 +1207,7 @@ MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file);
 MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size,
                                               size_t *size_written);
 MYJSON_API int json_emitter_set_output(JsonEmitter *emitter, JsonWriteHandler *handler, void *data);
+MYJSON_API int json_emitter_set_encoding(JsonEmitter *emitter, JsonEncoding encoding);
 
 MYJSON_API int json_emitter_open(JsonEmitter *emitter);
 MYJSON_API int json_emitter_close(JsonEmitter *emitter);

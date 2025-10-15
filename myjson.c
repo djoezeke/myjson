@@ -179,7 +179,7 @@ static int _myjson_string_read_handler(void *data, unsigned char *buffer, size_t
 
     if (parser->input.string.current == parser->input.string.end) {
         *size_read = 0;
-        return 1;
+        return MYJSON_SUCCESS;
     }
 
     if (size > (size_t)(parser->input.string.end - parser->input.string.current)) {
@@ -189,7 +189,8 @@ static int _myjson_string_read_handler(void *data, unsigned char *buffer, size_t
     memcpy(buffer, parser->input.string.current, size);
     parser->input.string.current += size;
     *size_read = size;
-    return 1;
+
+    return MYJSON_SUCCESS;
 };
 
 /*
@@ -224,12 +225,12 @@ static int _myjson_string_write_handler(void *data, unsigned char *buffer, size_
         memcpy(emitter->output.string.buffer + *emitter->output.string.size_written, buffer,
                emitter->output.string.size - *emitter->output.string.size_written);
         *emitter->output.string.size_written = emitter->output.string.size;
-        return 0;
+        return MYJSON_FAILURE;
     }
 
     memcpy(emitter->output.string.buffer + *emitter->output.string.size_written, buffer, size);
     *emitter->output.string.size_written += size;
-    return 1;
+    return MYJSON_SUCCESS;
 };
 
 /*
@@ -306,18 +307,141 @@ extern "C" {
 
 #pragma region Event
 
-MYJSON_API int json_event_initialize_stream_start(JsonEvent *event, JsonEncoding encoding) {};
-MYJSON_API int json_event_initialize_stream_end(JsonEvent *event) {};
-MYJSON_API int json_event_initialize_document_start(JsonEvent *event) {};
-MYJSON_API int json_event_initialize_document_end(JsonEvent *event) {};
+MYJSON_API int json_event_initialize_stream_start(JsonEvent *event, JsonEncoding encoding) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
 
-MYJSON_API int json_event_initialize_scalar(JsonEvent *event, const JsonChar_t *value, int length) {};
-MYJSON_API int json_event_initialize_array_start(JsonEvent *event) {};
-MYJSON_API int json_event_initialize_array_end(JsonEvent *event) {};
-MYJSON_API int json_event_initialize_object_start(JsonEvent *event) {};
-MYJSON_API int json_event_initialize_object_end(JsonEvent *event) {};
+    JsonPosition pos = {0, 0, 0};
 
-MYJSON_API void json_event_delete(JsonEvent *event) {};
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_STREAM_START_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+    event->data.stream_start.encoding = encoding;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_stream_end(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_STREAM_END_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_document_start(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_DOCUMENT_START_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+MYJSON_API int json_event_initialize_document_end(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_DOCUMENT_END_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_scalar(JsonEvent *event, const JsonChar_t *value, int length) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_SCALAR_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_array_start(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_ARRAY_START_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_array_end(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_ARRAY_END_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_object_start(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_OBJECT_START_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_event_initialize_object_end(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
+
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event->type = JSON_OBJECT_END_EVENT;
+    event->start_pos = pos;
+    event->end_pos = pos;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API void json_event_delete(JsonEvent *event) {
+    MYJSON_ASSERT(event); /**< Non-NULL event object expected. */
+    switch (event->type) {
+        case JSON_SCALAR_EVENT:
+            break;
+
+        case JSON_ARRAY_START_EVENT:
+            break;
+
+        case JSON_OBJECT_START_EVENT:
+            break;
+
+        default:
+            break;
+    }
+
+    memset(event, 0, sizeof(JsonEvent));
+};
 
 #pragma endregion  // Event
 
@@ -377,7 +501,7 @@ MYJSON_API int json_parser_set_input_file(JsonParser *parser, FILE *file) {
 
     parser->input.file = file;
 
-    return 0;
+    return MYJSON_SUCCESS;
 };
 
 MYJSON_API int json_parser_set_input_string(JsonParser *parser, const unsigned char *input, size_t size) {
@@ -401,7 +525,7 @@ MYJSON_API int json_parser_set_input(JsonParser *parser, JsonReadHandler *handle
     parser->read_handler = handler;
     parser->read_handler_data = data;
 
-    return 0;
+    return MYJSON_SUCCESS;
 };
 
 #pragma endregion  // Reader
@@ -426,7 +550,7 @@ MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file) {
 
     emitter->output.file = file;
 
-    return 0;
+    return MYJSON_SUCCESS;
 };
 
 MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size,
@@ -443,7 +567,7 @@ MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsign
     emitter->output.string.size_written = size_written;
     *size_written = 0;
 
-    return 0;
+    return MYJSON_SUCCESS;
 };
 
 MYJSON_API int json_emitter_set_output(JsonEmitter *emitter, JsonWriteHandler *handler, void *data) {
@@ -454,11 +578,64 @@ MYJSON_API int json_emitter_set_output(JsonEmitter *emitter, JsonWriteHandler *h
     emitter->write_handler = handler;
     emitter->write_handler_data = data;
 
-    return 0;
+    return MYJSON_SUCCESS;
 };
 
-MYJSON_API int json_emitter_open(JsonEmitter *emitter) {};
-MYJSON_API int json_emitter_close(JsonEmitter *emitter) {};
+MYJSON_API int json_emitter_set_encoding(JsonEmitter *emitter, JsonEncoding encoding) {
+    MYJSON_ASSERT(emitter);            /**< Non-NULL emitter object expected. */
+    MYJSON_ASSERT(!emitter->encoding); /**< You can set encoding only once. */
+
+    emitter->encoding = encoding;
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_emitter_open(JsonEmitter *emitter) {
+    MYJSON_ASSERT(emitter);          /**< Non-NULL emitter object is required. */
+    MYJSON_ASSERT(!emitter->opened); /**< Emitter should not be opened yet. */
+
+    JsonEvent event;
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event.type = JSON_STREAM_START_EVENT;
+    event.start_pos = pos;
+    event.end_pos = pos;
+    event.data.stream_start.encoding = JSON_ANY_ENCODING;
+
+    if (!json_emitter_emit(emitter, &event)) {
+        return MYJSON_FAILURE;
+    }
+
+    emitter->opened = 1;
+
+    return MYJSON_SUCCESS;
+};
+
+MYJSON_API int json_emitter_close(JsonEmitter *emitter) {
+    MYJSON_ASSERT(emitter);         /**< Non-NULL emitter object is required. */
+    MYJSON_ASSERT(emitter->opened); /**< Emitter should be opened. */
+
+    if (emitter->closed) {
+        return MYJSON_SUCCESS;
+    }
+
+    JsonEvent event;
+    JsonPosition pos = {0, 0, 0};
+
+    memset(&(event), 0, sizeof(JsonEvent));
+    event.type = JSON_STREAM_END_EVENT;
+    event.start_pos = pos;
+    event.end_pos = pos;
+
+    if (!json_emitter_emit(emitter, &event)) {
+        return MYJSON_FAILURE;
+    }
+
+    emitter->closed = 1;
+
+    return MYJSON_SUCCESS;
+};
+
 MYJSON_API int json_emitter_flush(JsonEmitter *emitter) {};
 
 #pragma endregion  // Writer
