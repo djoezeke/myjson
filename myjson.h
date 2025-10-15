@@ -750,7 +750,7 @@ typedef enum JsonEventType {
     JSON_OBJECT_START_EVENT,   /** A OBJECT-START event. */
     JSON_OBJECT_END_EVENT      /** A OBJECT-END event. */
 
-} JSONEventType;
+} JsonEventType;
 
 /** @} */
 
@@ -762,6 +762,12 @@ typedef struct JsonEvent {
     JsonPosition end_pos;   /** The end of the event. */
 
 } JsonEvent;
+
+typedef struct JsonDocument {
+} JsonDocument;
+
+typedef struct JsonNode {
+} JsonNode;
 
 #if !defined(MYJSON_DISABLE_ENCODING) || !MYJSON_DISABLE_ENCODING
 
@@ -804,7 +810,7 @@ typedef enum JsonTokenType {
     JSON_EOF_TOKEN,             /**< indicating the end of the input buffer> */
     JSON_TRUE_TOKEN,            /**< the `true` literal. */
     JSON_NULL_TOKEN,            /**< the `null` literal. */
-    JSON_FLOAT_TOKEN,           /**< an floating point number -- use get_number_float() for actual value. */
+    JSON_FLOAT_TOKEN,           /**< a floating point number actual value. */
     JSON_FALSE_TOKEN,           /**< the `false` literal. */
     JSON_STRING_TOKEN,          /**< a string value. */
     JSON_INTEGER_TOKEN,         /**< a integer value. */
@@ -952,7 +958,7 @@ typedef struct JsonParser {
      * @}
      */
 
-} YamlParser;
+} JsonParser;
 
 #endif  // MYJSON_DISABLE_READER
 
@@ -979,7 +985,7 @@ typedef enum JsonEmitterEvent {
 /**
  * The emitter structure.
  *
- * All members are internal.  Manage the structure using the @c yaml_emitter_
+ * All members are internal.  Manage the structure using the @c json_emitter_
  * family of functions.
  */
 typedef struct JsonEmitter {
@@ -1008,7 +1014,7 @@ typedef struct JsonEmitter {
         struct {
             unsigned char *buffer; /**< The buffer pointer. */
             size_t *size_written;  /**< The number of written bytes. */
-            size_t buffer_size;    /**< The buffer size. */
+            size_t size;    /**< The buffer size. */
 
         } string;
 
@@ -1077,7 +1083,7 @@ typedef struct JsonEmitter {
 
 /** @} */
 
-#pragma region  C
+#pragma region C
 
 //-----------------------------------------------------------------------------
 // [SECTION] C Only Functions
@@ -1087,31 +1093,99 @@ typedef struct JsonEmitter {
 extern "C" {
 #endif  //__cplusplus
 
-#pragma region  Json
+#pragma region Event
 
-#pragma endregion // Json
+MYJSON_API int json_event_initialize_stream_start(JsonEvent *event, JsonEncoding encoding);
+MYJSON_API int json_event_initialize_stream_end(JsonEvent *event);
+MYJSON_API int json_event_initialize_document_start(JsonEvent *event);
+MYJSON_API int json_event_initialize_document_end(JsonEvent *event);
+
+MYJSON_API int json_event_initialize_scalar(JsonEvent *event, const JsonChar_t *value, int length);
+MYJSON_API int json_event_initialize_array_start(JsonEvent *event);
+MYJSON_API int json_event_initialize_array_end(JsonEvent *event);
+MYJSON_API int json_event_initialize_object_start(JsonEvent *event);
+MYJSON_API int json_event_initialize_object_end(JsonEvent *event);
+
+/**
+ * Free any memory allocated for an event object.
+ *
+ * @param[in,out]   event   An event object.
+ */
+MYJSON_API void json_event_delete(JsonEvent *event);
+
+#pragma endregion  // Event
+
+#pragma region Json
+
+MYJSON_API int json_document_initialize(JsonDocument *document);
+MYJSON_API void json_document_delete(JsonDocument *document);
+
+MYJSON_API JsonNode *json_document_get_root_node(JsonDocument *document);
+MYJSON_API JsonNode *json_document_get_node(JsonDocument *document, int index);
+
+MYJSON_API int json_document_add_scalar(JsonDocument *document, const JsonChar_t *value, int length);
+MYJSON_API int json_document_add_array(JsonDocument *document);
+MYJSON_API int json_document_add_object(JsonDocument *document);
+
+MYJSON_API int json_document_append_array_item(JsonDocument *document, int array, int item);
+MYJSON_API int json_document_append_object_pair(JsonDocument *document, int object, int key, int value);
+
+MYJSON_API const JsonChar_t *json_document_get_scalar_value(JsonDocument *document, int node_id);
+MYJSON_API int json_document_get_scalar_length(JsonDocument *document, int node_id);
+MYJSON_API int json_document_array_get_item(JsonDocument *document, int array_node_id, int index);
+MYJSON_API int json_document_object_get_value(JsonDocument *document, int object_node_id, const JsonChar_t *key,
+                                              int key_length);
+
+MYJSON_API int json_document_get_node_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count);
+MYJSON_API const JsonChar_t *json_document_get_value_by_path(JsonDocument *document, const JsonChar_t **keys,
+                                                             int key_count);
+MYJSON_API int json_document_get_value_length_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count);
+
+#pragma endregion  // Json
 
 #if !defined(MYJSON_DISABLE_ENCODING) || !MYJSON_DISABLE_ENCODING
 
-#pragma region  Encoding
+#pragma region Encoding
 
-#pragma endregion // Encoding
+#pragma endregion  // Encoding
 
 #endif  // MYJSON_DISABLE_ENCODING
 
 #if !defined(MYJSON_DISABLE_READER) || !MYJSON_DISABLE_READER
 
-#pragma region  Reader
+#pragma region Reader
 
-#pragma endregion // Reader
+MYJSON_API int json_parser_initialize(JsonParser *parser);
+MYJSON_API int json_parser_parse(JsonParser *parser, JsonEvent *event);
+MYJSON_API int json_parser_load(JsonParser *parser, JsonDocument *document);
+MYJSON_API int json_parser_delete(JsonParser *parser);
+
+MYJSON_API int json_parser_set_input_file(JsonParser *parser, FILE *file);
+MYJSON_API int json_parser_set_input_string(JsonParser *parser, const unsigned char *input, size_t size);
+MYJSON_API int json_parser_set_input(JsonParser *parser, JsonReadHandler *handler, void *data);
+
+#pragma endregion  // Reader
 
 #endif  // MYJSON_DISABLE_READER
 
 #if !defined(MYJSON_DISABLE_WRITER) || !MYJSON_DISABLE_WRITER
 
-#pragma region  Writer
+#pragma region Writer
 
-#pragma endregion // Writer
+MYJSON_API int json_emitter_initialize(JsonEmitter *emitter);
+MYJSON_API int json_emitter_emit(JsonEmitter *emitter, JsonEvent *event);
+MYJSON_API int json_emitter_delete(JsonEmitter *emitter);
+
+MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file);
+MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size,
+                                              size_t *size_written);
+MYJSON_API int json_emitter_set_output(JsonEmitter *emitter, JsonWriteHandler *handler, void *data);
+
+MYJSON_API int json_emitter_open(JsonEmitter *emitter);
+MYJSON_API int json_emitter_close(JsonEmitter *emitter);
+MYJSON_API int json_emitter_flush(JsonEmitter *emitter);
+
+#pragma endregion  // Writer
 
 #endif  // MYJSON_DISABLE_WRITER
 
@@ -1119,9 +1193,9 @@ extern "C" {
 }
 #endif  //__cplusplus
 
-#pragma endregion // C
+#pragma endregion  // C
 
-#pragma region  Cpp
+#pragma region Cpp
 
 //-----------------------------------------------------------------------------
 // [SECTION] C++ Only Classes
@@ -1131,31 +1205,35 @@ extern "C" {
 
 namespace json {
 
-#pragma region  Json
+#pragma region Json
 
-#pragma endregion // Json
+#pragma endregion  // Json
+
+#pragma region Conversion
+
+#pragma endregion  // Conversion
 
 #if !defined(MYJSON_DISABLE_ENCODING) || !MYJSON_DISABLE_ENCODING
 
-#pragma region  Encoding
+#pragma region Encoding
 
-#pragma endregion // Encoding
+#pragma endregion  // Encoding
 
 #endif  // MYJSON_DISABLE_ENCODING
 
 #if !defined(MYJSON_DISABLE_READER) || !MYJSON_DISABLE_READER
 
-#pragma region  Reader
+#pragma region Reader
 
-#pragma endregion // Reader
+#pragma endregion  // Reader
 
 #endif  // MYJSON_DISABLE_READER
 
 #if !defined(MYJSON_DISABLE_WRITER) || !MYJSON_DISABLE_WRITER
 
-#pragma region  Writer
+#pragma region Writer
 
-#pragma endregion // Writer
+#pragma endregion  // Writer
 
 #endif  // MYJSON_DISABLE_WRITER
 

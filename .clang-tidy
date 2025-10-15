@@ -3,8 +3,8 @@ FormatStyle: Google
 Checks: "-*,google-*,readability-*"
 WarningsAsErrors: "google-*,readability-*"
 HeaderFilterRegex: ""
-HeaderFileExtensions: ["h", "hpp"]
-ImplementationFileExtensions: ["c", "cpp"]
+HeaderFileExtensions: ["h",]
+ImplementationFileExtensions: ["c",]
 CheckOptions:
   - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
