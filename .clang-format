@@ -5,7 +5,7 @@ Standard: Latest
 Language: Cpp
 DisableFormat: false
 IncludeBlocks: Preserve
-ColumnLimit: 120
+ColumnLimit: 150
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never

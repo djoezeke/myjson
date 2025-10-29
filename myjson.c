@@ -130,7 +130,7 @@
  */
 #define MYJSON_MAX_ARRAY_LENGTH 131072
 
-#define MYJSON_MALLOC(type) (type *)_myyaml_malloc(sizeof(type))
+#define MYJSON_MALLOC(type) (type *)_myjson_malloc(sizeof(type))
 
 //-----------------------------------------------------------------------------
 // [SECTION] Data Structures
@@ -371,7 +371,7 @@ MYJSON_API int json_event_initialize_stream_start(JsonEvent *event, JsonEncoding
     MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
 
     JsonPosition pos = {0, 0, 0};
-
+ 
     memset(&(event), 0, sizeof(JsonEvent));
     event->type = JSON_STREAM_START_EVENT;
     event->start_pos = pos;

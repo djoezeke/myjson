@@ -1187,8 +1187,8 @@ MYJSON_API int json_parser_parse(JsonParser *parser, JsonEvent *event);
 MYJSON_API int json_parser_load(JsonParser *parser, JsonDocument *document);
 MYJSON_API int json_parser_delete(JsonParser *parser);
 
-MYJSON_API int json_parser_set_input_file(JsonParser *parser, FILE *file);
 MYJSON_API int json_parser_set_input_string(JsonParser *parser, const unsigned char *input, size_t size);
+MYJSON_API int json_parser_set_input_file(JsonParser *parser, FILE *file);
 MYJSON_API int json_parser_set_input(JsonParser *parser, JsonReadHandler *handler, void *data);
 
 #pragma endregion  // Reader
@@ -1203,9 +1203,9 @@ MYJSON_API int json_emitter_initialize(JsonEmitter *emitter);
 MYJSON_API int json_emitter_emit(JsonEmitter *emitter, JsonEvent *event);
 MYJSON_API int json_emitter_delete(JsonEmitter *emitter);
 
-MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file);
 MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size,
                                               size_t *size_written);
+MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file);
 MYJSON_API int json_emitter_set_output(JsonEmitter *emitter, JsonWriteHandler *handler, void *data);
 MYJSON_API int json_emitter_set_encoding(JsonEmitter *emitter, JsonEncoding encoding);
 
