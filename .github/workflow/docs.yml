@@ -1,6 +1,6 @@
 name: Publish Documentation
 
-# publish the documentation on every merge to develop branch
+# publish the documentation on every merge to main branch
 on:
   push:
     branches:

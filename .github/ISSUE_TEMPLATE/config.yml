@@ -1,0 +1,22 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Myjson | JSON for Modern C/C++ 📚
+    url: https://github.com/djoezeke/myjson
+    about: Simple and Fast Javascript Object Notation (JSON) Parser for Modern C/C++.
+
+  - name: Myjson Discussions 💖
+    url: https://github.com/djoezeke/myjson/discussions
+    about: The "Discussions" forum is where you want to start.
+
+  - name: Myjson Issues | Bug Bounty 🐞
+    url: https://github.com/djoezeke/myjson/issues
+    about: Please report issues and vulnerabilities here.
+
+  - name: Myjson Releases & Tags 📦
+    url: https://github.com/djoezeke/myjson/releases
+    about: Please latest Myjson release here.
+
+  - name: Myjson Documentation 📚
+    url: https://djoezeke.github.io/myjson/
+    about: Please refer to the Myjson documentation here.
