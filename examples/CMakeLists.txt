@@ -12,7 +12,7 @@ set(MYJSON_EXAMPLE_LIB_NAME ${MYJSON_LIB_NAME}-e)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 add_library(${MYJSON_EXAMPLE_LIB_NAME} ../${MYJSON_SOURCES})
-
+examples/CMakeLists.txt
 target_include_directories(${MYJSON_EXAMPLE_LIB_NAME} 
     PUBLIC 
         $<BUILD_INTERFACE:${MYJSON_INCLUDE_BUILD_DIR}>

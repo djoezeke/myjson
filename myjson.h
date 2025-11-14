@@ -365,8 +365,7 @@
     (MYJSON_COMPILER_IS(name) &&                 \
      ((MYJSON_COMPILER_VERSION_MAJOR > (x)) ||   \
       ((MYJSON_COMPILER_VERSION_MAJOR == (x)) && \
-       ((MYJSON_COMPILER_VERSION_MINOR > (y)) || \
-        ((MYJSON_COMPILER_VERSION_MINOR == (y)) && (MYJSON_COMPILER_VERSION_PATCH >= (z)))))))
+       ((MYJSON_COMPILER_VERSION_MINOR > (y)) || ((MYJSON_COMPILER_VERSION_MINOR == (y)) && (MYJSON_COMPILER_VERSION_PATCH >= (z)))))))
 
 /**
  * @brief   Checks if  the compiler  is of  given brand and  is older  than the
@@ -382,8 +381,7 @@
     (MYJSON_COMPILER_IS(name) &&                 \
      ((MYJSON_COMPILER_VERSION_MAJOR < (x)) ||   \
       ((MYJSON_COMPILER_VERSION_MAJOR == (x)) && \
-       ((MYJSON_COMPILER_VERSION_MINOR < (y)) || \
-        ((MYJSON_COMPILER_VERSION_MINOR == (y)) && (MYJSON_COMPILER_VERSION_PATCH < (z)))))))
+       ((MYJSON_COMPILER_VERSION_MINOR < (y)) || ((MYJSON_COMPILER_VERSION_MINOR == (y)) && (MYJSON_COMPILER_VERSION_PATCH < (z)))))))
 
 /** @} */
 
@@ -581,14 +579,12 @@
 #if MYJSON_COMPILER_SINCE(MSVC, 14, 0, 0)
 #define MYJSON_DEPRECATED(msg) __declspec(deprecated(msg))
 #elif MYJSON_HAS_FEATURE(attribute_deprecated_with_message) || \
-    (MYJSON_COMPILER_SINCE(GCC, 4, 0, 0) ||                    \
-     (MYJSON_COMPILER_VERSION_MAJOR == 5 && MYJSON_COMPILER_VERSION_MINOR >= 5))
+    (MYJSON_COMPILER_SINCE(GCC, 4, 0, 0) || (MYJSON_COMPILER_VERSION_MAJOR == 5 && MYJSON_COMPILER_VERSION_MINOR >= 5))
 #define MYJSON_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#if MYJSON_COMPILER_SINCE(MSVC, 3, 0, 0)
+#elif MYJSON_COMPILER_SINCE(MSVC, 3, 0, 0)
 #define MYJSON_DEPRECATED(msg) __attribute__((deprecated))
 #else
 #define MYJSON_DEPRECATED(msg)
-#endif
 #endif
 #endif
 
@@ -757,6 +753,22 @@ typedef enum JsonEventType {
 
 /** @} */
 
+#if !defined(MYJSON_DISABLE_ENCODING) || !MYJSON_DISABLE_ENCODING
+
+/**
+ * @brief Definition of Unicode encoding types
+ */
+typedef enum JsonEncoding {
+    JSON_ANY_ENCODING,     /** Let the parser choose the encoding. */
+    JSON_UTF8_ENCODING,    /** The default UTF-8 encoding. */
+    JSON_UTF16LE_ENCODING, /** The UTF-16-LE encoding with BOM. */
+    JSON_UTF16BE_ENCODING, /** The UTF-16-BE encoding with BOM. */
+    JSON_UTF32LE_ENCODING, /** The UTF-32-LE encoding with BOM. */
+    JSON_UTF32BE_ENCODING  /** The UTF-32-BE encoding with BOM. */
+} JsonEncoding;
+
+#endif  // MYJSON_DISABLE_ENCODING
+
 /**< The event structure. */
 typedef struct JsonEvent {
     JsonEventType type; /**< The event type. */
@@ -766,7 +778,7 @@ typedef struct JsonEvent {
         /** The stream parameters (for @c YAML_STREAM_START_EVENT). */
         struct {
             /** The document encoding. */
-            JsonEncoding encoding;
+            enum JsonEncoding encoding;
         } stream_start;
 
     } data;
@@ -781,22 +793,6 @@ typedef struct JsonDocument {
 
 typedef struct JsonNode {
 } JsonNode;
-
-#if !defined(MYJSON_DISABLE_ENCODING) || !MYJSON_DISABLE_ENCODING
-
-/**
- * @brief Definition of Unicode encoding types
- */
-typedef enum JsonEncoding {
-    JSON_ANY_ENCODING,     /** Let the parser choose the encoding. */
-    JSON_UTF8_ENCODING,    /** The default UTF-8 encoding. */
-    JSON_UTF16LE_ENCODING, /** The UTF-16-LE encoding with BOM. */
-    JSON_UTF16BE_ENCODING, /** The UTF-16-BE encoding with BOM. */
-    JSON_UTF32LE_ENCODING, /** The UTF-32-LE encoding with BOM. */
-    JSON_UTF32BE_ENCODING, /** The UTF-32-BE encoding with BOM. */
-} JsonEncoding;
-
-#endif  // MYJSON_DISABLE_ENCODING
 
 #if !defined(MYJSON_DISABLE_READER) || !MYJSON_DISABLE_READER
 
@@ -1095,10 +1091,10 @@ typedef struct JsonEmitter {
      * @{
      */
 
-     JsonDocument *document; /** The currently emitted document. */
+    JsonDocument *document; /** The currently emitted document. */
 
-    int opened;         /** If the stream was already opened? */
-    int closed;         /** If the stream was already closed? */
+    int opened; /** If the stream was already opened? */
+    int closed; /** If the stream was already closed? */
 
     /**
      * @}
@@ -1160,12 +1156,10 @@ MYJSON_API int json_document_append_object_pair(JsonDocument *document, int obje
 MYJSON_API const JsonChar_t *json_document_get_scalar_value(JsonDocument *document, int node_id);
 MYJSON_API int json_document_get_scalar_length(JsonDocument *document, int node_id);
 MYJSON_API int json_document_array_get_item(JsonDocument *document, int array_node_id, int index);
-MYJSON_API int json_document_object_get_value(JsonDocument *document, int object_node_id, const JsonChar_t *key,
-                                              int key_length);
+MYJSON_API int json_document_object_get_value(JsonDocument *document, int object_node_id, const JsonChar_t *key, int key_length);
 
 MYJSON_API int json_document_get_node_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count);
-MYJSON_API const JsonChar_t *json_document_get_value_by_path(JsonDocument *document, const JsonChar_t **keys,
-                                                             int key_count);
+MYJSON_API const JsonChar_t *json_document_get_value_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count);
 MYJSON_API int json_document_get_value_length_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count);
 
 #pragma endregion  // Json
@@ -1203,8 +1197,7 @@ MYJSON_API int json_emitter_initialize(JsonEmitter *emitter);
 MYJSON_API int json_emitter_emit(JsonEmitter *emitter, JsonEvent *event);
 MYJSON_API int json_emitter_delete(JsonEmitter *emitter);
 
-MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size,
-                                              size_t *size_written);
+MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size, size_t *size_written);
 MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file);
 MYJSON_API int json_emitter_set_output(JsonEmitter *emitter, JsonWriteHandler *handler, void *data);
 MYJSON_API int json_emitter_set_encoding(JsonEmitter *emitter, JsonEncoding encoding);

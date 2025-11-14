@@ -9,7 +9,7 @@ strict: true
 # Repository
 repo_url: https://github.com/djoezeke/myjson
 repo_name: djoezeke/myjson
-edit_uri: edit/develop/docs/mkdocs/docs
+edit_uri: edit/main/docs/mkdocs/docs
 
 # Copyright
 copyright: Copyright &copy; 2025 Sackey Ezekiel Etrue

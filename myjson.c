@@ -371,7 +371,7 @@ MYJSON_API int json_event_initialize_stream_start(JsonEvent *event, JsonEncoding
     MYJSON_ASSERT(event); /**< Non-NULL event object is expected. */
 
     JsonPosition pos = {0, 0, 0};
- 
+
     memset(&(event), 0, sizeof(JsonEvent));
     event->type = JSON_STREAM_START_EVENT;
     event->start_pos = pos;
@@ -523,14 +523,11 @@ MYJSON_API int json_document_append_object_pair(JsonDocument *document, int obje
 MYJSON_API const JsonChar_t *json_document_get_scalar_value(JsonDocument *document, int node_id) {};
 MYJSON_API int json_document_get_scalar_length(JsonDocument *document, int node_id) {};
 MYJSON_API int json_document_array_get_item(JsonDocument *document, int array_node_id, int index) {};
-MYJSON_API int json_document_object_get_value(JsonDocument *document, int object_node_id, const JsonChar_t *key,
-                                              int key_length) {};
+MYJSON_API int json_document_object_get_value(JsonDocument *document, int object_node_id, const JsonChar_t *key, int key_length) {};
 
 MYJSON_API int json_document_get_node_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count) {};
-MYJSON_API const JsonChar_t *json_document_get_value_by_path(JsonDocument *document, const JsonChar_t **keys,
-                                                             int key_count) {};
-MYJSON_API int json_document_get_value_length_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count) {
-};
+MYJSON_API const JsonChar_t *json_document_get_value_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count) {};
+MYJSON_API int json_document_get_value_length_by_path(JsonDocument *document, const JsonChar_t **keys, int key_count) {};
 
 #pragma endregion  // Json
 
@@ -613,8 +610,7 @@ MYJSON_API int json_emitter_set_output_file(JsonEmitter *emitter, FILE *file) {
     return MYJSON_SUCCESS;
 };
 
-MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size,
-                                              size_t *size_written) {
+MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsigned char *output, size_t size, size_t *size_written) {
     MYJSON_ASSERT(output);                  /**< Non-NULL output string expected. */
     MYJSON_ASSERT(emitter);                 /**< Non-NULL emitter object expected. */
     MYJSON_ASSERT(!emitter->write_handler); /**< You can set the output only once. */
@@ -622,7 +618,7 @@ MYJSON_API int json_emitter_set_output_string(JsonEmitter *emitter, const unsign
     emitter->write_handler = _myjson_string_write_handler;
     emitter->write_handler_data = emitter;
 
-    emitter->output.string.buffer = output;
+    emitter->output.string.buffer = (unsigned char *)output;
     emitter->output.string.size = size;
     emitter->output.string.size_written = size_written;
     *size_written = 0;
