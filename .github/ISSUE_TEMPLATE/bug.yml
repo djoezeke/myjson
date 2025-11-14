@@ -76,9 +76,10 @@ body:
         the bug in.
       multiple: true
       options:
-        - Windows
-        - MacOs
         - Linux
+        - MacOs
+        - Windows
+      default: 0
   - type: input
     id: compiler
     attributes:
