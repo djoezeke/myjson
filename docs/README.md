@@ -30,3 +30,8 @@ cd myjson
 ### Doxygen
 
 Generating documentation with doxygen:
+
+```bash
+git clone https://github.com/djoezeke/myjson.git
+cd myjson
+```
