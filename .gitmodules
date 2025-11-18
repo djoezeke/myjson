@@ -1,7 +1,4 @@
-[submodule "tests/vendor/catch2"]
-	path = tests/vendor/catch2
-	url = https://github.com/catchorg/Catch2.git
-    shallow = true
 [submodule "tests/vendor/Catch2"]
 	path = tests/vendor/Catch2
 	url = https://github.com/catchorg/Catch2.git
+    shallow = true

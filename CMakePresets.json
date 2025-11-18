@@ -5,6 +5,16 @@
     "minor": 16,
     "patch": 0
   },
-  "configurePresets": [],
+  "configurePresets": [
+    {
+      "name": "dev",
+      "binaryDir": "build",
+      "installDir": "${sourceDir}/build/install",
+      "cacheVariables": {
+        "MYJSON_BUILD_TESTS": "ON",
+        "MYJSON_BUILD_EXAMPLES": "ON"
+      }
+    }
+  ],
   "testPresets": []
 }

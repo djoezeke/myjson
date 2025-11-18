@@ -9,12 +9,12 @@ set (MYJSON_VERSION_MINOR 1)
 set (MYJSON_VERSION_PATCH 1)
 set (MYJSON_VERSION_STRING ${MYJSON_VERSION_MAJOR}.${MYJSON_VERSION_MINOR}.${MYJSON_VERSION_PATCH})
 
-project(Myyaml
-        VERSION ${MYJSON_VERSION_STRING} 
-        DESCRIPTION "Json parser for C/C++"
-        HOMEPAGE_URL "https://github.com/djoezeke/myjson"
-        LANGUAGES  C
-)
+# project(Myjson
+#     VERSION ${MYJSON_VERSION_STRING} 
+#     DESCRIPTION "Json parser for C/C++"
+#     HOMEPAGE_URL "https://github.com/djoezeke/myjson"
+#     LANGUAGES  CXX
+# )
 
 #--------------------------------------------------------------------
 # Preparations depending on the specified build options  
@@ -34,8 +34,8 @@ include(GNUInstallDirs)
 
 set(MYJSON_LIB_NAME "myjson" CACHE STRING "Base name of library output name")
 
-set(MYJSON_SOURCES myjson.c)
-set(MYJSON_INCLUDES myjson.h)
+set(MYJSON_SOURCES src/myjson.c)
+set(MYJSON_INCLUDES include/myjson.h)
 set(MYJSON_TARGET_NAME  ${MYJSON_LIB_NAME})
 
 # Set required C/C++ standard
