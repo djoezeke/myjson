@@ -136,6 +136,32 @@
 // [SECTION] Data Structures
 //-----------------------------------------------------------------------------
 
+typedef struct FileInputStream_t {
+    size_t unread; /**< The number of read characters in the buffer. */
+    size_t size;
+    FILE *file;
+    int eof; /** EOF flag */
+} FileInputStream_t;
+
+typedef struct FileOutputStream_t {
+    size_t written; /**< The number of written characters in the buffer. */
+    size_t size;
+    FILE *file;
+    int eof; /** EOF flag */
+} FileOutputStream_t;
+
+typedef struct MemoryInputStream_t {
+    size_t unread; /**< The number of unread characters in the buffer. */
+    char *buffer;
+    int eof; /** EOF flag */
+} MemoryInputStream_t;
+
+typedef struct MemoryOutputStream_t {
+    size_t written; /**< The number of written characters in the buffer. */
+    size_t size;    /** The buffer size. */
+    int eof;        /** EOF flag */
+} MemoryOutputStream_t;
+
 //-----------------------------------------------------------------------------
 // [SECTION] C Only Functions
 //-----------------------------------------------------------------------------
@@ -174,6 +200,20 @@ void _myjson_free(void *ptr);
 //-----------------------------------------------------------------------------
 // [SECTION] Parser
 //-----------------------------------------------------------------------------
+
+void FileInputStreamInit(FileInputStream_t stream, FILE *file);
+size_t FileInputStreamRead(FileInputStream_t stream, void *data, size_t size_in_byte);
+size_t FileInputStreamSeek(FileInputStream_t stream, size_t position);
+size_t FileInputStreamTell(FileInputStream_t stream);
+size_t FileInputStreamSize(FileInputStream_t stream);
+void FileInputStreamFree(FileInputStream_t stream);
+
+void MemoryInputStreamInit(MemoryInputStream_t stream, void *data, size_t size_in_byte);
+size_t MemoryInputStreamRead(MemoryInputStream_t stream, void *data, size_t size_in_byte);
+size_t MemoryInputStreamSeek(MemoryInputStream_t stream, size_t position);
+size_t MemoryInputStreamTell(MemoryInputStream_t stream);
+size_t MemoryInputStreamSize(MemoryInputStream_t stream);
+void MemoryInputStreamFree(MemoryInputStream_t stream);
 
 /*
  * String read handler.
@@ -323,6 +363,220 @@ static int _myjson_file_write_handler(void *data, unsigned char *buffer, size_t 
 // [SECTION] Declarations
 //-----------------------------------------------------------------------------
 
+#if !defined(MYJSON_DISABLE_READER) || !MYJSON_DISABLE_READER
+
+#pragma region Reader
+
+/**
+ * @brief Abstract class for input streams
+ */
+class InputStream {
+   public:
+    /**
+     * @brief Virtual destructor
+     */
+    virtual ~InputStream() = default;
+
+    /**
+     * @brief Read data from the stream
+     *
+     * After reading, the stream's reading position must be
+     * advanced by the amount of bytes read.
+     *
+     * @param data Buffer where to copy the read data
+     * @param size Desired number of bytes to read
+     *
+     * @return The number of bytes actually read, or `std::nullopt` on error.
+     */
+    [[nodiscard]] virtual std::optional<std::size_t> read(void *data, std::size_t size) = 0;
+
+    /**
+     * @brief Change the current reading position
+     *
+     * @param position The position to seek to, from the beginning
+     *
+     * @return The position actually sought to, or `std::nullopt` on error.
+     */
+    [[nodiscard]] virtual std::optional<std::size_t> seek(std::size_t position) = 0;
+
+    /**
+     * @brief Get the current reading position in the stream
+     *
+     * @return return The current position, or `std::nullopt` on error.
+     */
+    [[nodiscard]] virtual std::optional<std::size_t> tell() = 0;
+
+    /**
+     * @brief Return the size of the stream
+     *
+     * @return The total number of bytes available in the stream, or `std::nullopt` on error
+     */
+    virtual std::optional<std::size_t> size() = 0;
+};
+
+class MemoryInputStream : public InputStream {
+   public:
+    using Char_t = char;
+
+    MemoryInputStream();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Construct the stream from its data
+    ///
+    /// \param data        Pointer to the data in memory
+    /// \param sizeInBytes Size of the data, in bytes
+    ///
+    ////////////////////////////////////////////////////////////
+    MemoryInputStream(const void *data, std::size_t sizeInBytes);
+
+    /**
+     * @brief Deleted copy constructor
+     */
+    MemoryInputStream(const MemoryInputStream &) = delete;
+
+    /**
+     * @brief Deleted move constructor
+     */
+    MemoryInputStream(MemoryInputStream &&) noexcept = default;
+
+    /**
+     * @brief Read data from the stream
+     *
+     * After reading, the stream's reading position must be
+     * advanced by the amount of bytes read.
+     *
+     * @param data Buffer where to copy the read data
+     * @param size Desired number of bytes to read
+     *
+     * @return The number of bytes actually read, or `std::nullopt` on error.
+     */
+    [[nodiscard]] std::optional<std::size_t> read(void *data, std::size_t size) override;
+
+    /**
+     * @brief Change the current reading position
+     *
+     * @param position The position to seek to, from the beginning
+     *
+     * @return The position actually sought to, or `std::nullopt` on error.
+     */
+    [[nodiscard]] std::optional<std::size_t> seek(std::size_t position) override;
+
+    /**
+     * @brief Get the current reading position in the stream
+     *
+     * @return return The current position, or `std::nullopt` on error.
+     */
+    [[nodiscard]] std::optional<std::size_t> tell() override;
+
+    /**
+     * @brief Return the size of the stream
+     *
+     * @return The total number of bytes available in the stream, or `std::nullopt` on error
+     */
+    std::optional<std::size_t> size() override;
+
+    /**
+     * @brief Deleted copy assignment operator
+     */
+    MemoryInputStream &operator=(const MemoryInputStream &) = delete;
+
+    /**
+     * @brief Deleted move assignment operator
+     */
+    MemoryInputStream &operator=(MemoryInputStream &&) = delete;
+
+    ~MemoryInputStream() = default;
+
+   private:
+    MemoryInputStream_t m_MemoryInputStream;
+};
+
+class FileInputStream : public InputStream {
+   public:
+    using Char_t = char;
+
+    /**
+     * @brief Default constructor
+     */
+    FileInputStream() = default;
+
+    FileInputStream(std::FILE *f);
+    FileInputStream(FileInputStream_t *f);
+
+    /**
+     * @brief Deleted copy constructor
+     */
+    FileInputStream(const FileInputStream &) = delete;
+
+    /**
+     * @brief Deleted move constructor
+     */
+    FileInputStream(FileInputStream &&) noexcept = default;
+
+    /**
+     * @brief Read data from the stream
+     *
+     * After reading, the stream's reading position must be
+     * advanced by the amount of bytes read.
+     *
+     * @param data Buffer where to copy the read data
+     * @param size Desired number of bytes to read
+     *
+     * @return The number of bytes actually read, or `std::nullopt` on error.
+     */
+    [[nodiscard]] std::optional<std::size_t> read(void *data, std::size_t size) override;
+
+    /**
+     * @brief Change the current reading position
+     *
+     * @param position The position to seek to, from the beginning
+     *
+     * @return The position actually sought to, or `std::nullopt` on error.
+     */
+    [[nodiscard]] std::optional<std::size_t> seek(std::size_t position) override;
+
+    /**
+     * @brief Get the current reading position in the stream
+     *
+     * @return return The current position, or `std::nullopt` on error.
+     */
+    [[nodiscard]] std::optional<std::size_t> tell() override;
+
+    /**
+     * @brief Return the size of the stream
+     *
+     * @return The total number of bytes available in the stream, or `std::nullopt` on error
+     */
+    std::optional<std::size_t> size() override;
+
+    /**
+     * @brief Deleted copy assignment operator
+     */
+    FileInputStream &operator=(const FileInputStream &) = delete;
+
+    /**
+     * @brief Deleted move assignment operator
+     */
+    FileInputStream &operator=(FileInputStream &&) = delete;
+
+    ~FileInputStream() = default;
+
+   private:
+    FileInputStream_t m_FileInputStream;
+};
+
+#pragma endregion  // Reader
+
+#endif  // MYJSON_DISABLE_READER
+
+#if !defined(MYJSON_DISABLE_WRITER) || !MYJSON_DISABLE_WRITER
+
+#pragma region Writer
+
+#pragma endregion  // Writer
+
+#endif  // MYJSON_DISABLE_WRITER
+
 #pragma endregion  // Cpp Declarations
 
 #pragma region Cpp Def
@@ -334,6 +588,32 @@ static int _myjson_file_write_handler(void *data, unsigned char *buffer, size_t 
 #if !defined(MYJSON_DISABLE_READER) || !MYJSON_DISABLE_READER
 
 #pragma region Reader
+
+MemoryInputStream::MemoryInputStream(const void *data, std::size_t sizeInBytes) {
+    MemoryInputStreamInit(m_MemoryInputStream, const_cast<void *>(data), sizeInBytes);
+};
+
+std::optional<std::size_t> MemoryInputStream::read(void *data, std::size_t size) {
+    const auto count = MemoryInputStreamRead(m_MemoryInputStream, data, size);
+    return count < 0 ? std::nullopt : std::optional<std::size_t>(count);
+};
+
+std::optional<std::size_t> MemoryInputStream::seek(std::size_t position) {
+    const auto offset = MemoryInputStreamSeek(m_MemoryInputStream, position);
+    return offset < 0 ? std::nullopt : std::optional<std::size_t>(offset);
+};
+
+std::optional<std::size_t> MemoryInputStream::tell() {
+    const auto position = MemoryInputStreamTell(m_MemoryInputStream);
+    return position < 0 ? std::nullopt : std::optional<std::size_t>(position);
+};
+
+std::optional<std::size_t> MemoryInputStream::size() {
+    const auto size = MemoryInputStreamSize(m_MemoryInputStream);
+    return size < 0 ? std::nullopt : std::optional<std::size_t>(size);
+};
+
+MemoryInputStream::~MemoryInputStream() { MemoryInputStreamFree(m_MemoryInputStream); };
 
 #pragma endregion  // Reader
 
