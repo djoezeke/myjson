@@ -7,9 +7,17 @@
   },
   "configurePresets": [
     {
-      "name": "dev",
+      "name": "default",
       "binaryDir": "build",
-      "installDir": "${sourceDir}/build/install",
+      "cacheVariables": {
+        "MYJSON_BUILD_TESTS": "OFF",
+        "MYJSON_BUILD_EXAMPLES": "OFF"
+      }
+    },
+    {
+      "name": "develop",
+      "binaryDir": "build",
+      "generator": "MinGW Makefiles",
       "cacheVariables": {
         "MYJSON_BUILD_TESTS": "ON",
         "MYJSON_BUILD_EXAMPLES": "ON"
