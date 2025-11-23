@@ -1,4 +1,4 @@
-<p align="center"><h1 align="center">🚀 Myjson: Modern C++ JSON Library</h1></p>
+<p align="center"><h1 align="center">🚀 MYJSON : Modern C/C++ JSON Library</h1></p>
 
 <p align="center">
     <em><code>Lightweight, modern, and easy-to-use C++ JSON serializer & deserializer.</code></em>
@@ -21,12 +21,18 @@
 - [🚀 Getting Started](#-getting-started)
   - [☑️ Prerequisites](#-prerequisites)
   - [🛠️ Integration](#-integration)
-  - [🤖 Usage](#🤖-usage)
-  - [🧪 Testing](#🧪-testing)
+    <!-- - [git](#git-submodule) -->
+    <!-- - [CMake](#cmake-fetchcontent) -->
+  - [🤖 Usage](#-usage)
+  <!-- - [🤖 Example](#-example) -->
+  - [🧪 Testing](#-testing)
+  <!-- - [🧪 Benchmarking](#-benchmarking) -->
 - [📌 Project Roadmap](#-project-roadmap)
 - [ Support](#-support)
 - [🔰 Contributing](#-contributing)
+  <!-- - [Contributors](#contributors) -->
 - [🙌 Acknowledgments](#-acknowledgments)
+  <!-- - [Used third party tools](#used-third-party-tools) -->
 - [📄 License](#-license)
 
 </details>
@@ -41,7 +47,7 @@
 
 JSON(JavaScript Object Notation) is a light-weight data exchange format. More information about JSON can be obtained at [here](http://json.org/)
 
-## Design Goals
+<!-- ## Design Goals
 
 Myjson has been developed with these design goals:
 
@@ -53,16 +59,16 @@ Those characteristics allow existing C or C++ project using CMake for builds to 
 
 ### 🪰 **Heavily Tested**
 
-Myjson has been [unit-tested](https://github.com/djoezeke/myjson/tree/main/tests/) and its test suite covers 100% of lines and conditions of the codebase. (You can see the actual coverage [here](#).)  
-We check with [Valgrind](https://valgrind.org) and the [Clang Sanitizers](https://clang.llvm.org/docs/index.html) that there are no runtime issues such as memory leak.  
-Furthermore, the quality of our codebase has been checked with [Clang-Tidy](https://releases.llvm.org/14.0.0/tools/clang/tools/extra/docs/clang-tidy/index.html), [CodeQL](https://codeql.github.com/docs/) and [Codacy](https://www.codacy.com/).  
-[GitHub Actions](https://docs.github.com/en/actions) workflows run against every commit pushed on the main & develop branches to ensure that the fkYAML library can be successfully built/tested with a variety of compilers, operating systems and C/C++ standards.  
+Myjson has been [unit-tested](https://github.com/djoezeke/myjson/tree/main/tests/) and its test suite covers 100% of lines and conditions of the codebase. (You can see the actual coverage [here](#).)
+We check with [Valgrind](https://valgrind.org) and the [Clang Sanitizers](https://clang.llvm.org/docs/index.html) that there are no runtime issues such as memory leak.
+Furthermore, the quality of our codebase has been checked with [Clang-Tidy](https://releases.llvm.org/14.0.0/tools/clang/tools/extra/docs/clang-tidy/index.html), [CodeQL](https://codeql.github.com/docs/) and [Codacy](https://www.codacy.com/).
+[GitHub Actions](https://docs.github.com/en/actions) workflows run against every commit pushed on the main & develop branches to ensure that the fkYAML library can be successfully built/tested with a variety of compilers, operating systems and C/C++ standards.
 See the [prerequisites](#-prerequisites) section for more details.
 
 ### 📝 **Well Documented**
 
-[The documentation](https://djoezeke.github.io/myjson/) provides plenty of information so that users can understand what Myjson is and what they can achieve with Myjson.  
-For instance, [the tutorial pages](https://djoezeke.github.io/myjson/tutorials/) show how you can read/write/customize using Myjson to handle JSON documents while creating a simple C/C++ project using CMake.  
+[The documentation](https://djoezeke.github.io/myjson/) provides plenty of information so that users can understand what Myjson is and what they can achieve with Myjson.
+For instance, [the tutorial pages](https://djoezeke.github.io/myjson/tutorials/) show how you can read/write/customize using Myjson to handle JSON documents while creating a simple C/C++ project using CMake.
 Also, [API reference pages](https://djoezeke.github.io/myjson/api/) provide more detailed, exclusive descriptions with example usages for each Myjson API.
 
 ## ✨ Features
@@ -80,7 +86,7 @@ Here is the list you might want to know:
 - [Tutorial](https://djoezeke.github.io/myjson/tutorials) - getting started
 - [API references](https://djoezeke.github.io/myjson/api/) - all the details with examples
 
-### 📓 Note
+### 📓 Note -->
 
 <!-- #### 📦 Supported Types
 
@@ -121,7 +127,7 @@ Myjson/
 
 Please ensure your runtime environment meets the following requirements:
 
-- **C++17** or newer compiler
+- **C++11** or newer compiler
 - **CMake** (for building examples/tests)
 
 Myjson uses following software, tools and services:
