@@ -26,42 +26,39 @@ target_include_directories(${MYJSON_TEST_LIB_NAME}
 
 set_target_properties(${MYJSON_TEST_LIB_NAME} 
     PROPERTIES DEFINE_SYMBOL MYJSON_BUILD_SHARED
-    )
+)
 
-#--------------------------------------------------------------------
-# Test Functions
-#--------------------------------------------------------------------
+# include(CTest)
 
-function(add_c_test NAME)
-  add_executable(${NAME} ${NAME}.c)
-  target_link_libraries(${NAME} PRIVATE ${MYJSON_LIB_NAME})
-  set_property(TARGET ${NAME} PROPERTY C_STANDARD 17)
-  set_target_properties(${NAME} PROPERTIES DEFINE_SYMBOL MYJSON_IMPORT)
-  add_test(NAME ${NAME} COMMAND ${NAME})
-endfunction()
+# include(FetchContent)
 
-function(add_cpp_test NAME)
-  add_executable(${NAME} ${NAME}.cpp)
-  target_link_libraries(${NAME} PRIVATE ${MYJSON_LIB_NAME})
-  set_property(TARGET ${NAME} PROPERTY CXX_STANDARD 17)
-  set_target_properties(${NAME} PROPERTIES DEFINE_SYMBOL MYJSON_IMPORT)
-  add_test(NAME ${NAME} COMMAND ${NAME})
-endfunction()
+# FetchContent_Declare(
+#     Catch2
+#     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+#     GIT_TAG        v3.11.0 # or a later release
+#     )
 
-#--------------------------------------------------------------------
-# Recursively add Tests
-#--------------------------------------------------------------------
+# FetchContent_MakeAvailable(Catch2)
 
-# Automatically add all .c tests in this folder
-file(GLOB C_TEST_SOURCES "*.c")
-foreach(TEST_FILE ${C_TEST_SOURCES})
-  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-  add_c_test(${TEST_NAME})
-endforeach()
+include(CTest)
 
-# Automatically add all .cpp tests in this folder
-file(GLOB CPP_TEST_SOURCES "*.cpp")
-foreach(TEST_FILE ${CPP_TEST_SOURCES})
-  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-  add_cpp_test(${TEST_NAME})
-endforeach()
+set (C_TEST_SOURCES CMAKE_CURRENT_SOURCE_DIR/c/)
+set (CXX_TEST_SOURCES CMAKE_CURRENT_SOURCE_DIR/cxx/)
+
+# define the sources of the self test
+# Please keep these ordered alphabetically
+set(TEST_CXX_SOURCES
+  ${CXX_TEST_SOURCES}/test.cpp
+)
+
+add_executable(CxxTest ${TEST_CXX_SOURCES} ${TEST_HEADERS})
+target_include_directories(CxxTest PRIVATE ${CXX_TEST_DIR})
+target_link_libraries(CxxTest PRIVATE Catch2WithMain)
+
+if(BUILD_SHARED_LIBS AND WIN32)
+  add_custom_command(TARGET CxxTest PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Catch2>
+    $<TARGET_FILE:Catch2WithMain> $<TARGET_FILE_DIR:CxxTest>
+  )
+endif()
+

@@ -5,6 +5,24 @@
     "minor": 16,
     "patch": 0
   },
-  "configurePresets": [],
+  "configurePresets": [
+    {
+      "name": "default",
+      "binaryDir": "build",
+      "cacheVariables": {
+        "MYJSON_BUILD_TESTS": "OFF",
+        "MYJSON_BUILD_EXAMPLES": "OFF"
+      }
+    },
+    {
+      "name": "develop",
+      "binaryDir": "build",
+      "generator": "MinGW Makefiles",
+      "cacheVariables": {
+        "MYJSON_BUILD_TESTS": "ON",
+        "MYJSON_BUILD_EXAMPLES": "ON"
+      }
+    }
+  ],
   "testPresets": []
 }
