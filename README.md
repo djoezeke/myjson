@@ -43,9 +43,54 @@
 
 **Myjson** is a modern, lightweight JSON parsing and serialization library for C++. It provides an easy-to-use interface for working with JSON data, including parsing JSON strings, creating JSON objects, and serializing JSON objects to strings.It provides a simple, type-safe API for working with JSON data in C++ projects.
 
-<!-- ## About json -->
+<img align="right" src=".github/readme/JSON_logo.svg" width="200" alt="JSON Logo">
 
-JSON(JavaScript Object Notation) is a light-weight data exchange format. More information about JSON can be obtained at [here](http://json.org/)
+### [Json](https://json.org) [JavaScript Object Notation]
+
+#### A lightweight data-interchange format.
+
+More information about JSON can be obtained at [here](http://json.org/)
+
+<!-- #### Json Example.
+
+```json
+{
+  "name": "Myjson : Json for Modern C/C++",
+  "branches": ["main", "dev"],
+  "author": "djoezeke",
+  "published": true,
+  "tutorial": [
+    {
+      "yaml": {
+        "name": "YAML Ain't Markup Language",
+        "type": "awesome",
+        "born": 2001
+      }
+    },
+    {
+      "json": {
+        "name": "JavaScript Object Notation",
+        "type": "great",
+        "born": 2001
+      }
+    },
+    {
+      "toml": {
+        "name": "Tom's Obvious Minimal Language",
+        "type": "great",
+        "born": 2013
+      }
+    },
+    {
+      "xml": {
+        "name": "Extensible Markup Language",
+        "type": "good",
+        "born": 1996
+      }
+    }
+  ]
+}
+``` -->
 
 <!-- ## Design Goals
 
