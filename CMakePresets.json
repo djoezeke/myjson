@@ -8,21 +8,56 @@
   "configurePresets": [
     {
       "name": "default",
-      "binaryDir": "build",
+      "hidden": false,
+      "binaryDir": "${sourceDir}/build/default",
+      "installDir": "${sourceDir}/build/install",
+      "description": "Default (Release) build.",
       "cacheVariables": {
-        "MYJSON_BUILD_TESTS": "OFF",
-        "MYJSON_BUILD_EXAMPLES": "OFF"
+        "MYJSON_BUILD_DEBUG": "OFF",
+        "CMAKE_C_EXTENSIONS": "OFF",
+        "CMAKE_CXX_EXTENSIONS": "OFF",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
       "name": "develop",
-      "binaryDir": "build",
-      "generator": "MinGW Makefiles",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/develop",
+      "installDir": "${sourceDir}/build/install",
+      "description": "Develop (Debug) build, examples and tests enabled",
       "cacheVariables": {
-        "MYJSON_BUILD_TESTS": "ON",
-        "MYJSON_BUILD_EXAMPLES": "ON"
+        "MYJSON_BUILD_DEBUG": "ON",
+        "CMAKE_C_EXTENSIONS": "OFF",
+        "CMAKE_CXX_EXTENSIONS": "OFF",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     }
   ],
-  "testPresets": []
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "develop",
+      "configurePreset": "develop"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "develop",
+      "configurePreset": "develop",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
 }

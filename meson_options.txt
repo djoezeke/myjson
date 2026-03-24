@@ -1,0 +1,3 @@
+option('myjson_install', type: 'boolean', value: true, description: 'Install the library')
+option('myjson_build_tests', type: 'boolean', value: false, description: 'Build Tests (default: false)')
+option('myjson_build_examples', type: 'boolean', value: false, description: 'Build Examples (default: false)')

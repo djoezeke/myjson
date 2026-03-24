@@ -436,7 +436,7 @@ The open-source community for their invaluable libraries, tutorials, and support
 
 ## 📄 License
 
-This project is protected under the [MIT](LICENSE) License.
+Myjson is licensed under the MIT License, see [LICENSE](./LICENSE) for more information.
 
 <!-- <picture>
   <source

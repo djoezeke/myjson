@@ -1,4 +1,10 @@
-# Documentation
+# [MYJSON](https://djoezeke.github.io/myjson) [ DOCUMENTATION ]
+
+This folder contains code for documentations.
+
+> [!NOTE]
+> Myjson is still in development, **current version is incomplete and nonfunctional**.
+> There is more room for improvements.
 
 Note on documentation: The source files contain links to the online documentation at https://djoezeke.github.io/myjson.
 
@@ -35,3 +41,9 @@ Generating documentation with doxygen:
 git clone https://github.com/djoezeke/myjson.git
 cd myjson
 ```
+
+Some documentation missing? As always, contributions are welcome, feel free to send new documentation!
+
+## License
+
+Myjson is licensed under the MIT License, see [LICENSE](../LICENSE) for more information.
