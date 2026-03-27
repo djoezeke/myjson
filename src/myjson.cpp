@@ -60,7 +60,7 @@
 // [SECTION] INCLUDES
 //-------------------------------------------------------------------------
 
-#include <myjson/myjson.hpp>
+#include "../include/myjson/myjson.hpp"
 
 #ifdef MYJSON_IMPLEMENTATION
 
@@ -69,6 +69,10 @@
 // #include <limits.h>
 #include <stdarg.h>
 // #include <stdbool.h>
+#include <cmath>
+#include <functional>
+#include <optional>
+#include <sstream>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>  //
@@ -1652,6 +1656,1037 @@ namespace myjson
 
 #endif // MYJSON_NO_EXCEPTIONS
 
+    //-----------------------------------------------------------------------------
+    // [SECTION] Myjson : JSON Value Implementation
+    //-----------------------------------------------------------------------------
+
+    //========== Constructors ==========
+
+    json::json() noexcept
+        : m_value(nullptr)
+    {
+    }
+
+    json::json(std::nullptr_t) noexcept
+        : m_value(nullptr)
+    {
+    }
+
+    json::json(bool value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(int value) noexcept
+        : m_value(static_cast<integer_t>(value))
+    {
+    }
+
+    json::json(integer_t value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(number_t value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(const string_t &value)
+        : m_value(value)
+    {
+    }
+
+    json::json(const char *value)
+        : m_value(string_t(value != nullptr ? value : ""))
+    {
+    }
+
+    json::json(const array_t &value)
+        : m_value(value)
+    {
+    }
+
+    json::json(const object_t &value)
+        : m_value(value)
+    {
+    }
+
+    json json::object()
+    {
+        json j;
+        j.m_value = object_t();
+        return j;
+    }
+
+    json json::array()
+    {
+        json j;
+        j.m_value = array_t();
+        return j;
+    }
+
+    //========== Destructor and Assignment ==========
+
+    json::~json() noexcept = default;
+    json::json(const json &other) = default;
+    json::json(json &&other) noexcept = default;
+    json &json::operator=(const json &other) = default;
+    json &json::operator=(json &&other) noexcept = default;
+
+    //========== Type Information ==========
+
+    value_type json::type() const noexcept
+    {
+        switch (m_value.index())
+        {
+        case 0:
+            return value_type::null;
+        case 1:
+            return value_type::boolean;
+        case 2:
+            return value_type::integer;
+        case 3:
+            return value_type::number;
+        case 4:
+            return value_type::string;
+        case 5:
+            return value_type::array;
+        case 6:
+            return value_type::object;
+        default:
+            return value_type::null;
+        }
+    }
+
+    bool json::is_null() const noexcept { return std::holds_alternative<null_t>(m_value); }
+    bool json::is_object() const noexcept { return std::holds_alternative<object_t>(m_value); }
+    bool json::is_array() const noexcept { return std::holds_alternative<array_t>(m_value); }
+    bool json::is_string() const noexcept { return std::holds_alternative<string_t>(m_value); }
+    bool json::is_number() const noexcept
+    {
+        return std::holds_alternative<number_t>(m_value) || std::holds_alternative<integer_t>(m_value);
+    }
+    bool json::is_integer() const noexcept { return std::holds_alternative<integer_t>(m_value); }
+    bool json::is_boolean() const noexcept { return std::holds_alternative<boolean_t>(m_value); }
+    bool json::is_primitive() const noexcept { return !is_array() && !is_object(); }
+    bool json::is_structured() const noexcept { return is_array() || is_object(); }
+
+    //========== Type Conversions ==========
+
+    template <>
+    bool json::get<bool>(const bool &default_value) const noexcept
+    {
+        if (is_boolean())
+            return std::get<boolean_t>(m_value);
+        if (is_integer())
+            return std::get<integer_t>(m_value) != 0;
+        if (is_number())
+            return std::get<number_t>(m_value) != 0.0;
+        return default_value;
+    }
+
+    template <>
+    json::integer_t json::get<json::integer_t>(const integer_t &default_value) const noexcept
+    {
+        if (is_integer())
+            return std::get<integer_t>(m_value);
+        if (is_boolean())
+            return std::get<boolean_t>(m_value) ? 1 : 0;
+        if (is_number())
+            return static_cast<integer_t>(std::get<number_t>(m_value));
+        return default_value;
+    }
+
+    template <>
+    int json::get<int>(const int &default_value) const noexcept
+    {
+        return static_cast<int>(get<integer_t>(static_cast<integer_t>(default_value)));
+    }
+
+    template <>
+    json::number_t json::get<json::number_t>(const number_t &default_value) const noexcept
+    {
+        if (is_number())
+            return std::get<number_t>(m_value);
+        if (is_integer())
+            return static_cast<number_t>(std::get<integer_t>(m_value));
+        if (is_boolean())
+            return std::get<boolean_t>(m_value) ? 1.0 : 0.0;
+        return default_value;
+    }
+
+    template <>
+    std::string json::get<std::string>(const std::string &default_value) const noexcept
+    {
+        if (is_string())
+            return std::get<string_t>(m_value);
+        if (is_null())
+            return "null";
+        if (is_boolean())
+            return std::get<boolean_t>(m_value) ? "true" : "false";
+        if (is_integer())
+            return std::to_string(std::get<integer_t>(m_value));
+        if (is_number())
+        {
+            auto num = std::get<number_t>(m_value);
+            if (std::isnan(num))
+                return "NaN";
+            if (std::isinf(num))
+                return num > 0 ? "Infinity" : "-Infinity";
+            return std::to_string(num);
+        }
+        return default_value;
+    }
+
+    template <typename T>
+    T json::get(const T &default_value) const noexcept
+    {
+        return default_value;
+    }
+
+    template <typename T>
+    T json::get_safe() const
+    {
+        return get<T>();
+    }
+
+    template <>
+    int json::get_safe<int>() const
+    {
+        return get<int>();
+    }
+
+    bool json::as_bool() const noexcept { return get<bool>(); }
+    json::integer_t json::as_integer() const noexcept { return get<integer_t>(); }
+    json::number_t json::as_number() const noexcept { return get<number_t>(); }
+    json::string_t json::as_string() const noexcept { return get<std::string>(); }
+
+    //========== Helper Methods ==========
+
+    void json::_ensure_object()
+    {
+        if (!is_object())
+            m_value = object_t();
+    }
+
+    void json::_ensure_array()
+    {
+        if (!is_array())
+            m_value = array_t();
+    }
+
+    const json::object_t &json::_get_object() const
+    {
+        if (!is_object())
+            MYJSON_THROW(std::runtime_error("Cannot access as object"));
+        return std::get<object_t>(m_value);
+    }
+
+    const json::array_t &json::_get_array() const
+    {
+        if (!is_array())
+            MYJSON_THROW(std::runtime_error("Cannot access as array"));
+        return std::get<array_t>(m_value);
+    }
+
+    json::object_t &json::_get_object()
+    {
+        if (!is_object())
+            MYJSON_THROW(std::runtime_error("Cannot access as object"));
+        return std::get<object_t>(m_value);
+    }
+
+    json::array_t &json::_get_array()
+    {
+        if (!is_array())
+            MYJSON_THROW(std::runtime_error("Cannot access as array"));
+        return std::get<array_t>(m_value);
+    }
+
+    //========== Container Access (Objects) ==========
+
+    json &json::at(const std::string &key) { return _get_object().at(key); }
+    const json &json::at(const std::string &key) const { return _get_object().at(key); }
+
+    json &json::operator[](const std::string &key)
+    {
+        _ensure_object();
+        return _get_object()[key];
+    }
+
+    json json::operator[](const std::string &key) const
+    {
+        if (!is_object())
+            return json();
+        auto &obj = _get_object();
+        auto it = obj.find(key);
+        return it != obj.end() ? it->second : json();
+    }
+
+    json &json::operator[](const char *key) { return operator[](std::string(key)); }
+    json json::operator[](const char *key) const { return operator[](std::string(key)); }
+
+    bool json::contains(const std::string &key) const noexcept
+    {
+        if (!is_object())
+            return false;
+        return _get_object().find(key) != _get_object().end();
+    }
+
+    size_t json::count(const std::string &key) const noexcept
+    {
+        if (!is_object())
+            return 0;
+        return _get_object().count(key);
+    }
+
+    size_t json::erase(const std::string &key) noexcept
+    {
+        if (!is_object())
+            return 0;
+        return _get_object().erase(key);
+    }
+
+    //========== Container Access (Arrays) ==========
+
+    json &json::at(size_t index) { return _get_array().at(index); }
+    const json &json::at(size_t index) const { return _get_array().at(index); }
+
+    json &json::operator[](size_t index)
+    {
+        _ensure_array();
+        auto &arr = _get_array();
+        if (index >= arr.size())
+            arr.resize(index + 1);
+        return arr[index];
+    }
+
+    const json &json::operator[](size_t index) const { return _get_array().at(index); }
+
+    json &json::front() { return _get_array().front(); }
+    const json &json::front() const { return _get_array().front(); }
+    json &json::back() { return _get_array().back(); }
+    const json &json::back() const { return _get_array().back(); }
+
+    void json::push_back(const json &value)
+    {
+        _ensure_array();
+        _get_array().push_back(value);
+    }
+
+    void json::push_back(json &&value)
+    {
+        _ensure_array();
+        _get_array().push_back(std::move(value));
+    }
+
+    void json::push_front(const json &value)
+    {
+        _ensure_array();
+        _get_array().insert(_get_array().begin(), value);
+    }
+
+    json::array_iterator json::insert(const array_const_iterator &pos, const json &value)
+    {
+        _ensure_array();
+        return _get_array().insert(pos, value);
+    }
+
+    json::array_iterator json::insert(const array_const_iterator &pos, json &&value)
+    {
+        _ensure_array();
+        return _get_array().insert(pos, std::move(value));
+    }
+
+    json::array_iterator json::erase(array_const_iterator pos) { return _get_array().erase(pos); }
+    json::array_iterator json::erase(array_const_iterator first, array_const_iterator last)
+    {
+        return _get_array().erase(first, last);
+    }
+
+    //========== Size and Capacity ==========
+
+    size_t json::size() const noexcept
+    {
+        if (is_object())
+            return _get_object().size();
+        if (is_array())
+            return _get_array().size();
+        return 0;
+    }
+
+    bool json::empty() const noexcept { return size() == 0; }
+
+    void json::clear() noexcept
+    {
+        if (is_object())
+            _get_object().clear();
+        else if (is_array())
+            _get_array().clear();
+    }
+
+    //========== Iteration ==========
+
+    json::iterator json::begin() { return _get_object().begin(); }
+    json::const_iterator json::begin() const { return _get_object().begin(); }
+    json::const_iterator json::cbegin() const { return _get_object().cbegin(); }
+    json::iterator json::end() { return _get_object().end(); }
+    json::const_iterator json::end() const { return _get_object().end(); }
+    json::const_iterator json::cend() const { return _get_object().cend(); }
+    json::reverse_iterator json::rbegin() { return _get_object().rbegin(); }
+    json::const_reverse_iterator json::rbegin() const { return _get_object().rbegin(); }
+    json::reverse_iterator json::rend() { return _get_object().rend(); }
+    json::const_reverse_iterator json::rend() const { return _get_object().rend(); }
+    json::array_iterator json::array_begin() { return _get_array().begin(); }
+    json::array_const_iterator json::array_begin() const { return _get_array().begin(); }
+    json::array_iterator json::array_end() { return _get_array().end(); }
+    json::array_const_iterator json::array_end() const { return _get_array().end(); }
+
+    //========== Comparison ==========
+
+    bool json::operator==(const json &other) const noexcept { return m_value == other.m_value; }
+    bool json::operator!=(const json &other) const noexcept { return !(*this == other); }
+    bool json::operator<(const json &other) const noexcept
+    {
+        if (type() != other.type())
+            return static_cast<uint8_t>(type()) < static_cast<uint8_t>(other.type());
+
+        switch (type())
+        {
+        case value_type::null:
+            return false;
+        case value_type::boolean:
+            return as_bool() < other.as_bool();
+        case value_type::integer:
+            return as_integer() < other.as_integer();
+        case value_type::number:
+            return as_number() < other.as_number();
+        case value_type::string:
+            return as_string() < other.as_string();
+        case value_type::array:
+            return _get_array() < other._get_array();
+        case value_type::object:
+            return _get_object() < other._get_object();
+        }
+
+        return false;
+    }
+    bool json::operator<=(const json &other) const noexcept { return (*this < other) || (*this == other); }
+    bool json::operator>(const json &other) const noexcept { return other < *this; }
+    bool json::operator>=(const json &other) const noexcept { return !(*this < other); }
+
+    //========== Serialization ==========
+
+    std::string json::dump(int indent) const
+    {
+        std::ostringstream oss;
+        std::function<void(const json &, int)> dump_impl =
+            [&](const json &j, int current_indent)
+        {
+            switch (j.type())
+            {
+            case value_type::null:
+                oss << "null";
+                break;
+            case value_type::boolean:
+                oss << (j.as_bool() ? "true" : "false");
+                break;
+            case value_type::integer:
+                oss << j.as_integer();
+                break;
+            case value_type::number:
+            {
+                auto num = j.as_number();
+                if (std::isnan(num) || std::isinf(num))
+                    oss << "null";
+                else
+                    oss << num;
+                break;
+            }
+            case value_type::string:
+                oss << '"' << j.as_string() << '"';
+                break;
+            case value_type::array:
+            {
+                oss << "[";
+                auto &arr = j._get_array();
+                for (size_t i = 0; i < arr.size(); ++i)
+                {
+                    if (indent > 0)
+                        oss << "\n"
+                            << std::string(current_indent + indent, ' ');
+                    dump_impl(arr[i], current_indent + indent);
+                    if (i < arr.size() - 1)
+                        oss << ",";
+                }
+                if (indent > 0 && !arr.empty())
+                    oss << "\n"
+                        << std::string(current_indent, ' ');
+                oss << "]";
+                break;
+            }
+            case value_type::object:
+            {
+                oss << "{";
+                auto &obj = j._get_object();
+                size_t i = 0;
+                for (const auto &[key, value] : obj)
+                {
+                    if (indent > 0)
+                        oss << "\n"
+                            << std::string(current_indent + indent, ' ');
+                    oss << '"' << key << "\":";
+                    if (indent > 0)
+                        oss << " ";
+                    dump_impl(value, current_indent + indent);
+                    if (i < obj.size() - 1)
+                        oss << ",";
+                    ++i;
+                }
+                if (indent > 0 && !obj.empty())
+                    oss << "\n"
+                        << std::string(current_indent, ' ');
+                oss << "}";
+                break;
+            }
+            }
+        };
+        dump_impl(*this, 0);
+        return oss.str();
+    }
+
+    std::string json::dump_pretty() const { return dump(2); }
+    std::string json::dump_compact() const { return dump(-1); }
+
+    //========== Parsing ==========
+
+    json json::parse(const std::string &str) { return parse(str.c_str()); }
+    json json::parse(const char *str)
+    {
+        if (str == nullptr)
+            MYJSON_THROW(parse_error("Null pointer passed to parse"));
+        json result;
+        return result;
+    }
+
+    std::optional<json> json::try_parse(const std::string &str) noexcept
+    {
+        MYJSON_TRY { return parse(str); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    //========== JSON Pointer (RFC 6901) ==========
+
+    json &json::at_pointer(const std::string &pointer)
+    {
+        if (pointer.empty() || pointer[0] != '/')
+            MYJSON_THROW(std::invalid_argument("JSON Pointer must be empty or start with /"));
+
+        return json_pointer(pointer).ref(*this);
+    }
+
+    const json &json::at_pointer(const std::string &pointer) const
+    {
+        return const_cast<json *>(this)->at_pointer(pointer);
+    }
+
+    std::optional<json *> json::find_pointer(const std::string &pointer) noexcept
+    {
+        MYJSON_TRY { return std::optional<json *>(&at_pointer(pointer)); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    std::optional<const json *> json::find_pointer(const std::string &pointer) const noexcept
+    {
+        MYJSON_TRY { return std::optional<const json *>(&at_pointer(pointer)); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    std::string json::pointer_to(const json &value) const { return ""; }
+
+    //========== JSON Patch (RFC 6902) ==========
+
+    json json::apply_patch(const json &patch) const
+    {
+        return json_patch(patch).apply(*this);
+    }
+
+    json json::generate_patch(const json &source, const json &target)
+    {
+        return diff(source, target);
+    }
+
+    //========== JSON Merge Patch (RFC 7386) ==========
+
+    json json::apply_merge_patch(const json &patch) const
+    {
+        return json_merge_patch(patch).apply(*this);
+    }
+
+    //========== Utility ==========
+
+    json json::clone() const { return json(*this); }
+
+    void json::merge(const json &other)
+    {
+        if (!other.is_object())
+            return;
+        _ensure_object();
+        auto &self_obj = _get_object();
+        const auto &other_obj = other._get_object();
+        for (const auto &[key, value] : other_obj)
+        {
+            if (self_obj.find(key) == self_obj.end())
+                self_obj[key] = value;
+        }
+    }
+
+    std::vector<std::string> json::keys() const
+    {
+        std::vector<std::string> result;
+        if (is_object())
+        {
+            for (const auto &[key, _] : _get_object())
+                result.push_back(key);
+        }
+        return result;
+    }
+
+    std::vector<json> json::values() const
+    {
+        std::vector<json> result;
+        if (is_array())
+            result = _get_array();
+        else if (is_object())
+        {
+            for (const auto &[_, value] : _get_object())
+                result.push_back(value);
+        }
+        return result;
+    }
+
+    template <typename Visitor>
+    auto json::apply_visitor(Visitor &&vis)
+    {
+        return std::visit(std::forward<Visitor>(vis), m_value);
+    }
+
+    //========== JSON Pointer Implementation (RFC 6901) ==========
+
+    json_pointer::json_pointer(const std::string &pointer_str)
+        : m_original(pointer_str)
+    {
+        if (!pointer_str.empty() && pointer_str != "/")
+            parse(pointer_str);
+    }
+
+    void json_pointer::parse(const std::string &pointer_str)
+    {
+        if (pointer_str.empty() || pointer_str == "/")
+            return;
+        if (pointer_str[0] != '/')
+            MYJSON_THROW(std::invalid_argument("JSON Pointer must start with '/'"));
+
+        std::istringstream iss(pointer_str.substr(1));
+        std::string token;
+        while (std::getline(iss, token, '/'))
+            m_tokens.push_back(unescape(token));
+    }
+
+    std::string json_pointer::unescape(const std::string &token)
+    {
+        std::string result = token;
+        size_t pos = 0;
+        while ((pos = result.find("~1", pos)) != std::string::npos)
+        {
+            result.replace(pos, 2, "/");
+            ++pos;
+        }
+        pos = 0;
+        while ((pos = result.find("~0", pos)) != std::string::npos)
+        {
+            result.replace(pos, 2, "~");
+            ++pos;
+        }
+        return result;
+    }
+
+    std::string json_pointer::escape(const std::string &token)
+    {
+        std::string result = token;
+        size_t pos = 0;
+        while ((pos = result.find('~', pos)) != std::string::npos)
+        {
+            result.replace(pos, 1, "~0");
+            pos += 2;
+        }
+        pos = 0;
+        while ((pos = result.find('/', pos)) != std::string::npos)
+        {
+            result.replace(pos, 1, "~1");
+            pos += 2;
+        }
+        return result;
+    }
+
+    std::string json_pointer::to_string() const { return m_original; }
+    const std::vector<std::string> &json_pointer::tokens() const { return m_tokens; }
+    size_t json_pointer::depth() const { return m_tokens.size(); }
+    bool json_pointer::is_root() const { return m_tokens.empty(); }
+
+    std::string json_pointer::back() const
+    {
+        return m_tokens.empty() ? "" : m_tokens.back();
+    }
+
+    json_pointer json_pointer::parent() const
+    {
+        if (m_tokens.empty())
+            return json_pointer("");
+        json_pointer p("");
+        p.m_tokens.assign(m_tokens.begin(), m_tokens.end() - 1);
+        std::string parent_str = "";
+        for (size_t i = 0; i < p.m_tokens.size(); ++i)
+        {
+            parent_str += "/" + escape(p.m_tokens[i]);
+        }
+        p.m_original = parent_str.empty() ? "/" : parent_str;
+        return p;
+    }
+
+    json_pointer json_pointer::push(const std::string &token) const
+    {
+        json_pointer p = *this;
+        p.m_tokens.push_back(token);
+        p.m_original += "/" + escape(token);
+        return p;
+    }
+
+    json &json_pointer::ref(json &document)
+    {
+        json *current = &document;
+        for (const auto &token : m_tokens)
+        {
+            if (current->is_array())
+            {
+                try
+                {
+                    size_t index = std::stoul(token);
+                    current = &current->at(index);
+                }
+                catch (...)
+                {
+                    MYJSON_THROW(std::out_of_range("Invalid array index"));
+                }
+            }
+            else if (current->is_object())
+                current = &current->at(token);
+            else
+                MYJSON_THROW(std::invalid_argument("Cannot traverse non-container"));
+        }
+        return *current;
+    }
+
+    const json &json_pointer::ref(const json &document) const
+    {
+        return const_cast<json_pointer *>(this)->ref(const_cast<json &>(document));
+    }
+
+    std::optional<json *> json_pointer::try_ref(json &document) noexcept
+    {
+        MYJSON_TRY { return std::optional<json *>(&ref(document)); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    std::optional<const json *> json_pointer::try_ref(const json &document) const noexcept
+    {
+        MYJSON_TRY { return std::optional<const json *>(&ref(document)); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    //========== JSON Patch Implementation (RFC 6902) ==========
+
+    json_patch::json_patch(const json &patch_json)
+        : m_operations(patch_json)
+    {
+        if (!m_operations.is_array())
+            MYJSON_THROW(std::invalid_argument("JSON Patch must be an array"));
+    }
+
+    const json &json_patch::operations() const { return m_operations; }
+    size_t json_patch::size() const { return m_operations.size(); }
+    bool json_patch::empty() const { return m_operations.empty(); }
+
+    json json_patch::apply(const json &document) const
+    {
+        json result = document.clone();
+        apply_inplace(result);
+        return result;
+    }
+
+    void json_patch::apply_inplace(json &document) const
+    {
+        MYJSON_TRY
+        {
+            for (size_t i = 0; i < m_operations.size(); ++i)
+                apply_operation(m_operations[i], document);
+        }
+        MYJSON_CATCH(const std::exception &e)
+        {
+            MYJSON_THROW(std::runtime_error(std::string("Patch application failed: ") + e.what()));
+        }
+    }
+
+    patch_operation_type json_patch::get_operation_type(const json &op)
+    {
+        std::string op_str = op["op"].as_string();
+        if (op_str == "add")
+            return patch_operation_type::add;
+        if (op_str == "remove")
+            return patch_operation_type::remove;
+        if (op_str == "replace")
+            return patch_operation_type::replace;
+        if (op_str == "move")
+            return patch_operation_type::move;
+        if (op_str == "copy")
+            return patch_operation_type::copy;
+        if (op_str == "test")
+            return patch_operation_type::test;
+        MYJSON_THROW(std::invalid_argument("Unknown patch operation: " + op_str));
+    }
+
+    void json_patch::apply_operation(const json &op, json &document) const
+    {
+        if (!op.is_object() || !op.contains("op"))
+            MYJSON_THROW(std::invalid_argument("Invalid patch operation"));
+
+        auto op_type = get_operation_type(op);
+
+        switch (op_type)
+        {
+        case patch_operation_type::add:
+        case patch_operation_type::replace:
+            if (!op.contains("value"))
+                MYJSON_THROW(std::invalid_argument("Missing value in operation"));
+            document.at_pointer(op["path"].as_string()) = op["value"];
+            break;
+
+        case patch_operation_type::remove:
+        {
+            std::string path = op["path"].as_string();
+            json_pointer ptr(path);
+            if (!ptr.is_root())
+            {
+                auto parent = ptr.parent();
+                std::string key = ptr.back();
+                auto &p = parent.ref(document);
+                if (p.is_object())
+                    p.erase(key);
+                else if (p.is_array())
+                {
+                    try
+                    {
+                        p.erase(p.array_begin() + std::stoul(key));
+                    }
+                    catch (...)
+                    {
+                        MYJSON_THROW(std::runtime_error("Invalid array index"));
+                    }
+                }
+            }
+            break;
+        }
+
+        case patch_operation_type::move:
+        case patch_operation_type::copy:
+        {
+            if (!op.contains("from"))
+                MYJSON_THROW(std::invalid_argument("Missing from in operation"));
+            json value = document.at_pointer(op["from"].as_string());
+            document.at_pointer(op["path"].as_string()) = value;
+            if (op_type == patch_operation_type::move)
+            {
+                std::string from = op["from"].as_string();
+                json_pointer ptr(from);
+                if (!ptr.is_root())
+                {
+                    auto parent = ptr.parent();
+                    std::string key = ptr.back();
+                    auto &p = parent.ref(document);
+                    if (p.is_object())
+                        p.erase(key);
+                    else if (p.is_array())
+                    {
+                        try
+                        {
+                            p.erase(p.array_begin() + std::stoul(key));
+                        }
+                        catch (...)
+                        {
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
+        case patch_operation_type::test:
+            if (!op.contains("value"))
+                MYJSON_THROW(std::invalid_argument("Missing value in test"));
+            if (!(document.at_pointer(op["path"].as_string()) == op["value"]))
+                MYJSON_THROW(std::runtime_error("Test operation failed"));
+            break;
+        }
+    }
+
+    json json_patch::add_operation(const std::string &path, const json &value)
+    {
+        json op = json::object();
+        op["op"] = "add";
+        op["path"] = path;
+        op["value"] = value;
+        return op;
+    }
+
+    json json_patch::remove_operation(const std::string &path)
+    {
+        json op = json::object();
+        op["op"] = "remove";
+        op["path"] = path;
+        return op;
+    }
+
+    json json_patch::replace_operation(const std::string &path, const json &value)
+    {
+        json op = json::object();
+        op["op"] = "replace";
+        op["path"] = path;
+        op["value"] = value;
+        return op;
+    }
+
+    json json_patch::move_operation(const std::string &from_path, const std::string &to_path)
+    {
+        json op = json::object();
+        op["op"] = "move";
+        op["from"] = from_path;
+        op["path"] = to_path;
+        return op;
+    }
+
+    json json_patch::copy_operation(const std::string &from_path, const std::string &to_path)
+    {
+        json op = json::object();
+        op["op"] = "copy";
+        op["from"] = from_path;
+        op["path"] = to_path;
+        return op;
+    }
+
+    json json_patch::test_operation(const std::string &path, const json &value)
+    {
+        json op = json::object();
+        op["op"] = "test";
+        op["path"] = path;
+        op["value"] = value;
+        return op;
+    }
+
+    //========== JSON Merge Patch Implementation (RFC 7386) ==========
+
+    json_merge_patch::json_merge_patch(const json &patch_json)
+        : m_patch(patch_json)
+    {
+    }
+
+    json json_merge_patch::apply(const json &document) const
+    {
+        return apply_recursive(document, m_patch);
+    }
+
+    void json_merge_patch::apply_inplace(json &document) const
+    {
+        document = apply_recursive(document, m_patch);
+    }
+
+    json json_merge_patch::apply_recursive(const json &target, const json &patch)
+    {
+        if (patch.is_null())
+            return json();
+        if (!patch.is_object() || !target.is_object())
+            return patch;
+
+        json result = target.clone();
+        for (const auto &key : patch.keys())
+        {
+            json value = patch[key];
+            if (value.is_null())
+                result.erase(key);
+            else
+                result[key] = apply_recursive(
+                    result.contains(key) ? result[key] : json::object(),
+                    value);
+        }
+        return result;
+    }
+
+    json json_merge_patch::generate(const json &source, const json &target)
+    {
+        if (source == target)
+            return json::object();
+        if (!source.is_object() || !target.is_object())
+            return target;
+
+        json patch = json::object();
+        for (const auto &key : target.keys())
+        {
+            json value = target[key];
+            if (!source.contains(key) || source[key] != value)
+                patch[key] = value;
+        }
+        for (const auto &key : source.keys())
+        {
+            if (!target.contains(key))
+                patch[key] = nullptr;
+        }
+        return patch;
+    }
+
+    //========== Diff Function ==========
+
+    json diff(const json &source, const json &target)
+    {
+        json patch = json::array();
+
+        if (source == target)
+            return patch;
+
+        if (!source.is_object() || !target.is_object())
+        {
+            patch.push_back(json_patch::replace_operation("", target));
+            return patch;
+        }
+
+        for (const auto &key : target.keys())
+        {
+            json value = target[key];
+            std::string path = "/" + key;
+            if (!source.contains(key))
+                patch.push_back(json_patch::add_operation(path, value));
+            else if (source[key] != value)
+                patch.push_back(json_patch::replace_operation(path, value));
+        }
+
+        for (const auto &key : source.keys())
+        {
+            if (!target.contains(key))
+                patch.push_back(json_patch::remove_operation("/" + key));
+        }
+
+        return patch;
+    }
+
     MYJSON_VERSION_NAMESPACE_END
 
 }; // namespace myjson
@@ -1674,26 +2709,34 @@ namespace myjson
 
         MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char *string, size_t size)
         {
-            return json{};
+            return json::parse(std::string(string, size));
         };
 
 #if MYJSON_HAS_CHAR8_T
 
         MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char8_t *string, size_t size)
         {
-            return json{};
+            return json::parse(std::string(reinterpret_cast<const char *>(string), size));
         };
 
 #endif // MYJSON_HAS_CHAR8_T
 
         MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char16_t *string, size_t size)
         {
-            return json{};
+            auto utf8_str = detail::utf16::to_utf8(
+                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                           reinterpret_cast<const unsigned char *>(string) + size * 2),
+                detail::endian::native);
+            return json::parse(utf8_str);
         };
 
         MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size)
         {
-            return json{};
+            auto utf8_str = detail::utf32::to_utf8(
+                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                           reinterpret_cast<const unsigned char *>(string) + size * 4),
+                detail::endian::native);
+            return json::parse(utf8_str);
         };
 
     }; // namespace literals

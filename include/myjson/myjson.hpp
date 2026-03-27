@@ -287,7 +287,10 @@
         #include <istream>
         #include <ostream>
     #endif  // MYJSON_NO_IO
+    #include <map>
+    #include <optional>
     #include <string>
+    #include <variant>
     #include <vector>
 #endif // MYJSON_NO_STL
 
@@ -884,6 +887,11 @@ namespace myjson
     class json;
     class version;
     class formatter;
+
+    class json;
+    class json_patch;
+    class json_pointer;
+    class json_merge_patch;
 
 #ifndef MYJSON_NO_EXCEPTIONS
     class exception;
@@ -2197,17 +2205,315 @@ namespace myjson
 #endif // MYJSON_NO_EXCEPTIONS
 
     /**
-     * @class myjson::json
-     * @brief Lightweight JSON value holder.
+     * @enum value_type
+     * @brief Defines all possible JSON value types.
+     */
+    enum class value_type : uint8_t
+    {
+        null,    ///< null value
+        object,  ///< object (map of string to json)
+        array,   ///< array (vector of json values)
+        string,  ///< string value
+        number,  ///< numeric value (floating point)
+        integer, ///< integer value
+        boolean  ///< boolean value
+    };
+
+    /**
+     * @enum patch_operation_type
+     * @brief Types of JSON Patch operations (RFC 6902).
+     */
+    enum class patch_operation_type : uint8_t
+    {
+        add,     ///< Add a value at path
+        remove,  ///< Remove the value at path
+        replace, ///< Replace the value at path
+        move,    ///< Move value from one path to another
+        copy,    ///< Copy value from one path to another
+        test     ///< Test that a value at path equals specified value
+    };
+
+    /**
+     * @class json
+     * @brief A JSON value that can hold any JSON type.
      *
-     * This is a placeholder for the public JSON value type. Public API and
-     * value accessors will be provided in the implementation file. The
-     * internal representation is intentionally minimal in this header stub.
+     * Supports:
+     * - All standard JSON types (null, object, array, string, number, boolean)
+     * - Type conversions via get<T>()
+     * - Container-like access (operator[], at())
+     * - Iteration over objects and arrays
+     * - JSON Pointer (RFC 6901)
+     * - JSON Patch (RFC 6902)
+     * - Encoding conversions (UTF-8, UTF-16, UTF-32)
      */
     class json
     {
-        int m_int;
+    public:
+        // Type aliases for convenience
+        using object_t = std::map<std::string, json>;
+        using array_t = std::vector<json>;
+        using string_t = std::string;
+        using number_t = double;
+        using integer_t = int64_t;
+        using boolean_t = bool;
+        using null_t = std::nullptr_t;
+
+        // Iterator types
+        using iterator = object_t::iterator;
+        using const_iterator = object_t::const_iterator;
+        using reverse_iterator = object_t::reverse_iterator;
+        using const_reverse_iterator = object_t::const_reverse_iterator;
+
+        // Array iterator support
+        using array_iterator = array_t::iterator;
+        using array_const_iterator = array_t::const_iterator;
+
+    public:
+        //========== Constructors ==========
+        json() noexcept;
+        json(std::nullptr_t) noexcept;
+        json(bool value) noexcept;
+        json(int value) noexcept;
+        json(integer_t value) noexcept;
+        json(number_t value) noexcept;
+        json(const string_t &value);
+        json(const char *value);
+        json(const array_t &value);
+        json(const object_t &value);
+        static json object();
+        static json array();
+
+        //========== Destructor and Assignment ==========
+        ~json() noexcept;
+        json(const json &other);
+        json(json &&other) noexcept;
+        json &operator=(const json &other);
+        json &operator=(json &&other) noexcept;
+
+        //========== Type Information ==========
+        value_type type() const noexcept;
+        bool is_null() const noexcept;
+        bool is_object() const noexcept;
+        bool is_array() const noexcept;
+        bool is_string() const noexcept;
+        bool is_number() const noexcept;
+        bool is_integer() const noexcept;
+        bool is_boolean() const noexcept;
+        bool is_primitive() const noexcept;
+        bool is_structured() const noexcept;
+
+        //========== Type Conversions ==========
+        template <typename T>
+        T get(const T &default_value = T()) const noexcept;
+        template <typename T>
+        T get_safe() const;
+        bool as_bool() const noexcept;
+        integer_t as_integer() const noexcept;
+        number_t as_number() const noexcept;
+        string_t as_string() const noexcept;
+
+        //========== Container Access (Objects) ==========
+        json &at(const std::string &key);
+        const json &at(const std::string &key) const;
+        json &operator[](const std::string &key);
+        json operator[](const std::string &key) const;
+        json &operator[](const char *key);
+        json operator[](const char *key) const;
+        bool contains(const std::string &key) const noexcept;
+        size_t count(const std::string &key) const noexcept;
+        size_t erase(const std::string &key) noexcept;
+
+        //========== Container Access (Arrays) ==========
+        json &at(size_t index);
+        const json &at(size_t index) const;
+        json &operator[](size_t index);
+        const json &operator[](size_t index) const;
+        json &front();
+        const json &front() const;
+        json &back();
+        const json &back() const;
+        void push_back(const json &value);
+        void push_back(json &&value);
+        void push_front(const json &value);
+        array_iterator insert(const array_const_iterator &pos, const json &value);
+        array_iterator insert(const array_const_iterator &pos, json &&value);
+        array_iterator erase(array_const_iterator pos);
+        array_iterator erase(array_const_iterator first, array_const_iterator last);
+
+        //========== Size and Capacity ==========
+        size_t size() const noexcept;
+        bool empty() const noexcept;
+        void clear() noexcept;
+
+        //========== Iteration ==========
+        iterator begin();
+        const_iterator begin() const;
+        const_iterator cbegin() const;
+        iterator end();
+        const_iterator end() const;
+        const_iterator cend() const;
+        reverse_iterator rbegin();
+        const_reverse_iterator rbegin() const;
+        reverse_iterator rend();
+        const_reverse_iterator rend() const;
+        array_iterator array_begin();
+        array_const_iterator array_begin() const;
+        array_iterator array_end();
+        array_const_iterator array_end() const;
+
+        //========== Comparison ==========
+        bool operator==(const json &other) const noexcept;
+        bool operator!=(const json &other) const noexcept;
+        bool operator<(const json &other) const noexcept;
+        bool operator<=(const json &other) const noexcept;
+        bool operator>(const json &other) const noexcept;
+        bool operator>=(const json &other) const noexcept;
+
+        //========== Serialization ==========
+        string_t dump(int indent = -1) const;
+        string_t dump_pretty() const;
+        string_t dump_compact() const;
+
+        //========== Parsing ==========
+        static json parse(const string_t &str);
+        static json parse(const char *str);
+        static std::optional<json> try_parse(const string_t &str) noexcept;
+
+        //========== JSON Pointer (RFC 6901) ==========
+        json &at_pointer(const std::string &pointer);
+        const json &at_pointer(const std::string &pointer) const;
+        std::optional<json *> find_pointer(const std::string &pointer) noexcept;
+        std::optional<const json *> find_pointer(const std::string &pointer) const noexcept;
+        std::string pointer_to(const json &value) const;
+
+        //========== JSON Patch (RFC 6902) ==========
+        json apply_patch(const json &patch) const;
+        static json generate_patch(const json &source, const json &target);
+
+        //========== JSON Merge Patch (RFC 7386) ==========
+        json apply_merge_patch(const json &patch) const;
+
+        //========== Utility ==========
+        json clone() const;
+        void merge(const json &other);
+        std::vector<std::string> keys() const;
+        std::vector<json> values() const;
+
+        template <typename Visitor>
+        auto apply_visitor(Visitor &&vis);
+
+    private:
+        std::variant<
+            null_t,
+            boolean_t,
+            integer_t,
+            number_t,
+            string_t,
+            array_t,
+            object_t>
+            m_value;
+
+        void _ensure_object();
+        void _ensure_array();
+        const object_t &_get_object() const;
+        const array_t &_get_array() const;
+        object_t &_get_object();
+        array_t &_get_array();
+
+        friend class json_pointer;
+        friend class json_patch;
+        friend class json_merge_patch;
     };
+
+    /**
+     * @class json_pointer
+     * @brief Utility class for working with JSON Pointers (RFC 6901).
+     *
+     * Example: "/users/0/email" points to the email field of the first user.
+     */
+    class json_pointer
+    {
+    public:
+        explicit json_pointer(const std::string &pointer_str);
+        std::string to_string() const;
+        const std::vector<std::string> &tokens() const;
+        size_t depth() const;
+        bool is_root() const;
+        json_pointer parent() const;
+        std::string back() const;
+        json_pointer push(const std::string &token) const;
+        json &ref(json &document);
+        const json &ref(const json &document) const;
+        std::optional<json *> try_ref(json &document) noexcept;
+        std::optional<const json *> try_ref(const json &document) const noexcept;
+
+    private:
+        std::vector<std::string> m_tokens;
+        std::string m_original;
+        static std::string unescape(const std::string &token);
+        static std::string escape(const std::string &token);
+        void parse(const std::string &pointer_str);
+    };
+
+    /**
+     * @class json_patch
+     * @brief Utility class for applying JSON Patch operations (RFC 6902).
+     */
+    class json_patch
+    {
+    public:
+        explicit json_patch(const json &patch_json);
+        json apply(const json &document) const;
+        void apply_inplace(json &document) const;
+        const json &operations() const;
+        size_t size() const;
+        bool empty() const;
+        static json add_operation(const std::string &path, const json &value);
+        static json remove_operation(const std::string &path);
+        static json replace_operation(const std::string &path, const json &value);
+        static json move_operation(const std::string &from_path, const std::string &to_path);
+        static json copy_operation(const std::string &from_path, const std::string &to_path);
+        static json test_operation(const std::string &path, const json &value);
+
+    private:
+        json m_operations;
+        void apply_operation(const json &op, json &document) const;
+        static patch_operation_type get_operation_type(const json &op);
+    };
+
+    /**
+     * @class json_merge_patch
+     * @brief Utility class for JSON Merge Patch (RFC 7386).
+     */
+    class json_merge_patch
+    {
+    public:
+        explicit json_merge_patch(const json &patch_json);
+        json apply(const json &document) const;
+        void apply_inplace(json &document) const;
+        static json generate(const json &source, const json &target);
+
+    private:
+        json m_patch;
+        static json apply_recursive(const json &target, const json &patch);
+    };
+
+    /**
+     * @brief Generate minimal JSON Patch between two documents.
+     */
+    json diff(const json &source, const json &target);
+
+    /**
+     * @brief Convenience function to create object JSON.
+     */
+#ifndef __INTELLISENSE__
+    inline json object() { return json::object(); }
+
+    /**
+     * @brief Convenience function to create array JSON.
+     */
+    inline json array() { return json::array(); }
+#endif // __INTELLISENSE__
 
     /** @} */
 
@@ -2287,6 +2593,8 @@ namespace myjson
             // Whitespace before the literal operator is deprecated in C++23 or later but required in C++11.
             MYJSON_CLANG_SUPPRESS_WARNING_WITH_PUSH("-Wdeprecated")
 
+#ifndef __INTELLISENSE__
+
             /**
              * @brief Deserializes a `char` array into a `json` object.
              *
@@ -2331,6 +2639,8 @@ namespace myjson
              */
             MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size);
 
+#endif // __INTELLISENSE__
+
             MYJSON_CLANG_SUPPRESS_WARNING_POP
 
         } // namespace json_literals
@@ -2345,25 +2655,6 @@ namespace myjson
 //-----------------------------------------------------------------------------
 
 #endif // DJOEZEKE_MYJSON_HPP
-
-// clang-format off
-
-#ifdef MYJSON_HEADER_ONLY
-
-    #ifndef MYJSON_IMPLEMENTATION
-        #define MYJSON_IMPLEMENTATION 1
-    #endif // MYJSON_IMPLEMENTATION
-
-    /**
-     * @brief include implementation in header-only mode.
-     */
-    #ifdef MYJSON_SOURCE
-        #include MYJSON_SOURCE
-    #endif // MYJSON_SOURCE
-
-#endif // MYJSON_HEADER_ONLY
-
-// clang-format on
 
 /**
  * LICENSE: MIT License

@@ -9,6 +9,8 @@
     {
       "name": "default",
       "hidden": false,
+      "generator": "Ninja",
+
       "binaryDir": "${sourceDir}/build/default",
       "installDir": "${sourceDir}/build/install",
       "description": "Default (Release) build.",

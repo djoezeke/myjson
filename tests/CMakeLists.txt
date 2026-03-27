@@ -99,8 +99,8 @@ function(myjson_add_test target SOURCES DEPENDS)
         target_compile_options(${target} PRIVATE /utf-8)
     endif()
 
-    # Add the test
-    catch_discover_tests(${target} WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+    # Add the test (direct registration is more robust than discovery in this workspace)
+    add_test(NAME ${target} COMMAND ${target})
 endfunction()
 
 #--------------------------------------------------------------------
