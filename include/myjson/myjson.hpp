@@ -22,7 +22,7 @@
  *          configurable applications where the distance between a user’s intent and the program’s state is zero
  *
  *          To provide a robust, industry-standard foundation for data exchange in modern C++ applications.
- *          Our mission is to eliminate the friction between complex C++ memory management and flexible JSON data structures,
+ *          Our mission is to eliminate the friction between complex C++ memory management and flexible JSON Structures,
  *          ensuring that developers can prioritize application logic over serialization boilerplate.
  *          We strive to deliver a library that is as invisible as it is indispensable,
  *          maintaining a perfect balance between human-centric API design and machine-level execution speed.
@@ -130,21 +130,20 @@
  *
  *  Forward: Forward Declarations
  *
- *      [SECTION] Details Declarations
- *      [SECTION] Myjson Declarations
- *      [SECTION] Literals Declarations
+ *      [SECTION] Details Forward
+ *      [SECTION] Myjson Forward
+ *      [SECTION] Literals Forward
  *
  *  Details: Details Namespace
  *
- *      [SECTION] Details : Flags & Enumerations
- *      [SECTION] Details : Data Structures
- *      [SECTION] Details : Encoding
+ *      [SECTION] Details : Enums
+ *      [SECTION] Details : Structures
  *      [SECTION] Details : Functions
  *
  *  Myjson: Myjson Namespace
  *
- *      [SECTION] Myjson : Flags & Enumerations
- *      [SECTION] Myjson : Data Structures
+ *      [SECTION] Myjson : Enums
+ *      [SECTION] Myjson : Structures
  *      [SECTION] Myjson : Functions
  *
  *  Literals: Literals Namespace
@@ -812,7 +811,7 @@ namespace myjson
     namespace detail
     {
         //-----------------------------------------------------------------------------
-        // [SECTION] Details Declarations
+        // [SECTION] Details Forward
         //-----------------------------------------------------------------------------
 
         /** Enumerations */
@@ -874,7 +873,7 @@ namespace myjson
     MYJSON_VERSION_NAMESPACE_BEGIN
 
     //-----------------------------------------------------------------------------
-    // [SECTION] Myjson Declarations
+    // [SECTION] Myjson Forward
     //-----------------------------------------------------------------------------
 
     /** Enumerations */
@@ -915,7 +914,7 @@ namespace myjson
     namespace literals
     {
         //-----------------------------------------------------------------------------
-        // [SECTION] Literals Declarations
+        // [SECTION] Literals Forward
         //-----------------------------------------------------------------------------
 
     } // namespace literals
@@ -943,11 +942,11 @@ namespace myjson
     namespace detail
     {
         //-----------------------------------------------------------------------------
-        // [SECTION] Details : Flags & Enumerations
+        // [SECTION] Details : Enums
         //-----------------------------------------------------------------------------
 
         /**
-         * @defgroup enum Flags & Enumerations
+         * @defgroup enum Enums
          * @brief Detail enum types and flags.
          * @{
          */
@@ -1005,12 +1004,12 @@ namespace myjson
         /** @} group enum */
 
         //-----------------------------------------------------------------------------
-        // [SECTION] Details : Data Structures
+        // [SECTION] Details : Structures
         //-----------------------------------------------------------------------------
 
         /**
-         * @defgroup structs Data Structures
-         * @brief Detail types and data structures.
+         * @defgroup structs Structures
+         * @brief Detail types and Structures.
          * @{
          */
 
@@ -1893,12 +1892,6 @@ namespace myjson
         // [SECTION] Details : Functions
         //-----------------------------------------------------------------------------
 
-        const char *string(token_t type);
-        const char *string(error_t type);
-        const char *string(event_t type);
-        const char *string(value_t type);
-        const char *string(break_t type);
-
         const char *string(mark type);
         const char *string(event type);
         const char *string(token type);
@@ -1990,11 +1983,11 @@ namespace myjson
     MYJSON_VERSION_NAMESPACE_BEGIN
 
     //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : Flags & Enumerations
+    // [SECTION] Myjson : Enums
     //-----------------------------------------------------------------------------
 
     /**
-     * @defgroup enum Flags & Enumerations
+     * @defgroup enum Enums
      * @brief Core enum types and flags.
      * @{
      */
@@ -2019,12 +2012,12 @@ namespace myjson
     /** @} */
 
     //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : Data Structures
+    // [SECTION] Myjson : Structures
     //-----------------------------------------------------------------------------
 
     /**
-     * @defgroup struct Data Structures
-     * @brief Core types and data structures.
+     * @defgroup struct Structures
+     * @brief Core types and Structures.
      * @{
      */
 
@@ -2248,6 +2241,10 @@ namespace myjson
      */
     class json
     {
+        friend class json_patch;
+        friend class json_pointer;
+        friend class json_merge_patch;
+
     public:
         // Type aliases for convenience
         using object_t = std::map<std::string, json>;
@@ -2403,6 +2400,14 @@ namespace myjson
         auto apply_visitor(Visitor &&vis);
 
     private:
+        void _ensure_object();
+        void _ensure_array();
+        const object_t &_get_object() const;
+        const array_t &_get_array() const;
+        object_t &_get_object();
+        array_t &_get_array();
+
+    private:
         std::variant<
             null_t,
             boolean_t,
@@ -2412,17 +2417,6 @@ namespace myjson
             array_t,
             object_t>
             m_value;
-
-        void _ensure_object();
-        void _ensure_array();
-        const object_t &_get_object() const;
-        const array_t &_get_array() const;
-        object_t &_get_object();
-        array_t &_get_array();
-
-        friend class json_pointer;
-        friend class json_patch;
-        friend class json_merge_patch;
     };
 
     /**
@@ -2448,11 +2442,13 @@ namespace myjson
         std::optional<const json *> try_ref(const json &document) const noexcept;
 
     private:
-        std::vector<std::string> m_tokens;
-        std::string m_original;
         static std::string unescape(const std::string &token);
         static std::string escape(const std::string &token);
         void parse(const std::string &pointer_str);
+
+    private:
+        std::vector<std::string> m_tokens;
+        std::string m_original;
     };
 
     /**
@@ -2476,9 +2472,11 @@ namespace myjson
         static json test_operation(const std::string &path, const json &value);
 
     private:
-        json m_operations;
         void apply_operation(const json &op, json &document) const;
         static patch_operation_type get_operation_type(const json &op);
+
+    private:
+        json m_operations;
     };
 
     /**
@@ -2494,9 +2492,17 @@ namespace myjson
         static json generate(const json &source, const json &target);
 
     private:
-        json m_patch;
         static json apply_recursive(const json &target, const json &patch);
+
+    private:
+        json m_patch;
     };
+
+    /** @} */
+
+    //-----------------------------------------------------------------------------
+    // [SECTION] Myjson : Functions
+    //-----------------------------------------------------------------------------
 
     /**
      * @brief Generate minimal JSON Patch between two documents.
@@ -2514,12 +2520,6 @@ namespace myjson
      */
     inline json array() { return json::array(); }
 #endif // __INTELLISENSE__
-
-    /** @} */
-
-    //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : Functions
-    //-----------------------------------------------------------------------------
 
     const char *string(encoding type);
 

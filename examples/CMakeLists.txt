@@ -31,6 +31,8 @@ function(myjson_add_example target)
     # set the Visual Studio startup path for debugging
     set_target_properties(${target} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+    target_include_directories(${target} PRIVATE ${MYJSON_INCLUDE_DIR}>)
+
     # link the target to its dependencies
     target_link_libraries(${target} PRIVATE ${THIS_DEPENDS})
 

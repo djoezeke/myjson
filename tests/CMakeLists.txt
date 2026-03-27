@@ -78,6 +78,8 @@ function(myjson_add_test target SOURCES DEPENDS)
         XCODE_SCHEME_ARGUMENTS "-b" # Break into debugger
     )
 
+    target_include_directories(${target} SYSTEM INTERFACE ${MYJSON_INCLUDE_DIR}>)
+
     # link the target to its dependencies
     target_link_libraries(${target} PRIVATE ${DEPENDS} Catch2::Catch2WithMain)
 

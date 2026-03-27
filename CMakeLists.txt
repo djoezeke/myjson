@@ -78,6 +78,7 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 #--------------------------------------------------------------------
 
 set(MYJSON_SOURECS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(MYJSON_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 myjson_set_option(MYJSON_ENABLE_WARNING ${MYJSON_IS_TOP_LEVEL} BOOL "ON to enable warning messages.")
 

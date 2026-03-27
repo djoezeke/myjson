@@ -17,6 +17,9 @@
  *          [SECTION] Details : Encoding
  *          [SECTION] Details : Input
  *          [SECTION] Details : Output
+ *          [SECTION] Details : Iterators
+ *          [SECTION] Details : Conversions
+ *          [SECTION] Details : Functions
  *
  *      Myjson: Myjson Namespace
  *
@@ -1282,62 +1285,17 @@ namespace myjson
             return to_copy;
         };
 
-        /** @} group output */
+        //-------------------------------------------------------------------------
+        // [SECTION] Details : Iterators
+        //-------------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------
+        // [SECTION] Details : Conversions
+        //-------------------------------------------------------------------------
 
         //-----------------------------------------------------------------------------
-        // [SECTION] Functions Definitions : Detail
+        // [SECTION] Details : Functions
         //-----------------------------------------------------------------------------
-
-        const char *string(token_t type)
-        {
-            switch (type)
-            {
-            default:
-                return "unknown";
-            }
-        };
-
-        const char *string(error_t type)
-        {
-            switch (type)
-            {
-            default:
-                return "unknown";
-            }
-        };
-
-        const char *string(event_t type)
-        {
-            switch (type)
-            {
-            default:
-                return "unknown";
-            }
-        };
-
-        const char *string(value_t type)
-        {
-            switch (type)
-            {
-            default:
-                return "unknown";
-            }
-        };
-
-        const char *string(break_t type)
-        {
-            switch (type)
-            {
-            case break_t::cr:
-                return "cr";
-            case break_t::ln:
-                return "ln";
-            case break_t::crln:
-                return "crln";
-            default:
-                return "any";
-            }
-        };
 
         const char *string(mark type) { return ""; };
 
@@ -1349,31 +1307,57 @@ namespace myjson
 
         std::ostream &operator<<(std::ostream &ostream, const token_t &type)
         {
-            ostream << string(type);
+            switch (type)
+            {
+            default:
+                ostream << "unknown";
+            }
             return ostream;
         };
 
         std::ostream &operator<<(std::ostream &ostream, const error_t &type)
         {
-            ostream << string(type);
+            switch (type)
+            {
+            default:
+                ostream << "unknown";
+            }
             return ostream;
         };
 
         std::ostream &operator<<(std::ostream &ostream, const event_t &type)
         {
-            ostream << string(type);
+            switch (type)
+            {
+            default:
+                ostream << "unknown";
+            }
             return ostream;
         };
 
         std::ostream &operator<<(std::ostream &ostream, const value_t &type)
         {
-            ostream << string(type);
+            switch (type)
+            {
+            default:
+                ostream << "unknown";
+            }
             return ostream;
         };
 
         std::ostream &operator<<(std::ostream &ostream, const break_t &type)
         {
-            ostream << string(type);
+            switch (type)
+            {
+            case break_t::cr:
+                ostream << "cr";
+            case break_t::ln:
+                ostream << "ln";
+            case break_t::crln:
+                ostream << "crln";
+            default:
+                ostream << "any";
+            }
             return ostream;
         };
 
@@ -1415,249 +1399,7 @@ namespace myjson
     //-----------------------------------------------------------------------------
 
     //-----------------------------------------------------------------------------
-    // [Class] version
-    //-----------------------------------------------------------------------------
-    // Semver versioning
-    //-----------------------------------------------------------------------------
-    // - version()
-    // - operator<()
-    // - operator>()
-    // - operator==()
-    // - operator!=()
-    // - operator<=()
-    // - operator>=()
-    // - operator<<()
-    //-----------------------------------------------------------------------------
-
-    version::version(int major, int minor, int patch)
-        : major(major), minor(minor), patch(patch)
-    {
-    }
-
-    bool operator<(const version &lhs, const version &rhs) noexcept
-    {
-        return lhs.major < rhs.major || (lhs.major == rhs.major && lhs.minor < rhs.minor) ||
-               (lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.patch < rhs.patch);
-    };
-
-    bool operator>(const version &lhs, const version &rhs) noexcept { return rhs < lhs; };
-
-    bool operator==(const version &lhs, const version &rhs) noexcept
-    {
-        return lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.patch == rhs.patch;
-    };
-
-    bool operator!=(const version &lhs, const version &rhs) noexcept { return !(lhs == rhs); };
-
-    bool operator<=(const version &lhs, const version &rhs) noexcept { return !(rhs < lhs); };
-
-    bool operator>=(const version &lhs, const version &rhs) noexcept { return !(lhs < rhs); };
-
-#ifndef MYJSON_NO_STL
-
-    std::ostream &operator<<(std::ostream &ostream, const version &version)
-    {
-        ostream << version.major << '.' << version.minor << '.' << version.patch;
-        return ostream;
-    };
-
-#endif // MYJSON_NO_STL
-
-    //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : Functions
-    //-----------------------------------------------------------------------------
-    // - operator<<()
-    // - operator>>()
-    //-----------------------------------------------------------------------------
-
-    const char *string(encoding type)
-    {
-        switch (type)
-        {
-        case encoding::utf8:
-            return "utf8";
-        case encoding::utf16:
-            return "utf16";
-        case encoding::utf16le:
-            return "utf16le";
-        case encoding::utf16be:
-            return "utf16be";
-        case encoding::utf32:
-            return "utf32";
-        case encoding::utf32le:
-            return "utf32le";
-        case encoding::utf32be:
-            return "utf32be";
-        default:
-            return "unspecified";
-        }
-    };
-
-    const char *string(node_t type)
-    {
-        switch (type)
-        {
-        default:
-            return "unknown";
-        }
-    };
-
-#ifndef MYJSON_NO_STL
-
-    std::ostream &operator<<(std::ostream &ostream, const encoding &type)
-    {
-        ostream << string(type);
-        return ostream;
-    };
-
-    std::ostream &operator<<(std::ostream &ostream, const node_t &type)
-    {
-        ostream << string(type);
-        return ostream;
-    };
-
-    std::ostream &operator<<(std::ostream &ostream, const json &node)
-    {
-        return ostream;
-    };
-
-    std::istream &operator>>(std::istream &ostream, const json &node)
-    {
-        return ostream;
-    };
-
-#endif // MYJSON_NO_STL
-
-#ifndef MYJSON_NO_EXCEPTIONS
-
-    //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : Exceptions
-    //-----------------------------------------------------------------------------
-    // - exception()
-    // - what()
-    // - parse_error()
-    // - generate()
-    // - encoding_error()
-    // - generate()
-    //-----------------------------------------------------------------------------
-
-    exception::exception(const char *message) noexcept
-    {
-        if (message != nullptr)
-        {
-            m_Message.append(message);
-        }
-    };
-
-    const char *exception::what() const noexcept { return m_Message.c_str(); };
-
-    parse_error::parse_error(const char *message) noexcept
-        : exception(generate(message, {})) {};
-
-    parse_error::parse_error(const char *message, detail::mark mark) noexcept
-        : exception(generate(message, mark)) {};
-
-    const char *parse_error::generate(const char *message, detail::mark mark) noexcept
-    {
-        // Use a thread_local buffer so the returned pointer remains valid
-        // until the next call on the same thread. Callers should copy the
-        // string if they need to keep it longer.
-        thread_local std::string buffer;
-        buffer.clear();
-
-        if (message != nullptr)
-        {
-            buffer.append(message);
-        }
-
-        // Append positional information if available
-        char tmp[128];
-        int n = snprintf(tmp, sizeof(tmp), " (line: %zu, column: %zu, index: %zu)", mark.line, mark.column, mark.index);
-        if (n > 0)
-        {
-            buffer.append(tmp, static_cast<size_t>(n));
-        }
-
-        // Ensure null-termination and return pointer
-        return buffer.c_str();
-    };
-
-    encoding_error::encoding_error(const char *message) noexcept
-        : exception(generate(encoding::unspecified, message, nullptr, 0)) {};
-
-    encoding_error::encoding_error(encoding encoding, const char *message, void *data, size_t size) noexcept
-        : exception(generate(encoding, message, data, size)) {};
-
-    const char *encoding_error::generate(encoding enc, const char *message, void *data, size_t size) noexcept
-    {
-        thread_local std::string buffer;
-        buffer.clear();
-
-        if (message != nullptr)
-        {
-            buffer.append(message);
-        }
-
-        // Append encoding name
-        const char *enc_name = "unspecified";
-        switch (enc)
-        {
-        case encoding::utf8:
-            enc_name = "utf-8";
-            break;
-        case encoding::utf16:
-        case encoding::utf16le:
-            enc_name = "utf-16-le";
-            break;
-        case encoding::utf16be:
-            enc_name = "utf-16-be";
-            break;
-        case encoding::utf32:
-        case encoding::utf32le:
-            enc_name = "utf-32-le";
-            break;
-        case encoding::utf32be:
-            enc_name = "utf-32-be";
-            break;
-        default:
-            break;
-        }
-
-        char tmp[128];
-        int n = snprintf(tmp, sizeof(tmp), " [encoding: %s]", enc_name);
-        if (n > 0)
-        {
-            buffer.append(tmp, static_cast<size_t>(n));
-        }
-
-        // If data is provided, append a short hex preview (up to 8 bytes)
-        if (data != nullptr && size > 0)
-        {
-            const unsigned char *b = reinterpret_cast<const unsigned char *>(data);
-            size_t preview = (size < 8) ? size : 8; // limit
-            buffer.append(" [data: 0x");
-            for (size_t i = 0; i < preview; ++i)
-            {
-                int written = snprintf(tmp, sizeof(tmp), "%02x", b[i]);
-                if (written > 0)
-                {
-                    buffer.append(tmp, static_cast<size_t>(written));
-                }
-            }
-            if (size > preview)
-            {
-                buffer.append("...");
-            }
-            buffer.append("]");
-        }
-
-        return buffer.c_str();
-    };
-
-#endif // MYJSON_NO_EXCEPTIONS
-
-    //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : JSON Value Implementation
+    // [Class] json
     //-----------------------------------------------------------------------------
 
     //========== Constructors ==========
@@ -2272,138 +2014,9 @@ namespace myjson
         return std::visit(std::forward<Visitor>(vis), m_value);
     }
 
-    //========== JSON Pointer Implementation (RFC 6901) ==========
-
-    json_pointer::json_pointer(const std::string &pointer_str)
-        : m_original(pointer_str)
-    {
-        if (!pointer_str.empty() && pointer_str != "/")
-            parse(pointer_str);
-    }
-
-    void json_pointer::parse(const std::string &pointer_str)
-    {
-        if (pointer_str.empty() || pointer_str == "/")
-            return;
-        if (pointer_str[0] != '/')
-            MYJSON_THROW(std::invalid_argument("JSON Pointer must start with '/'"));
-
-        std::istringstream iss(pointer_str.substr(1));
-        std::string token;
-        while (std::getline(iss, token, '/'))
-            m_tokens.push_back(unescape(token));
-    }
-
-    std::string json_pointer::unescape(const std::string &token)
-    {
-        std::string result = token;
-        size_t pos = 0;
-        while ((pos = result.find("~1", pos)) != std::string::npos)
-        {
-            result.replace(pos, 2, "/");
-            ++pos;
-        }
-        pos = 0;
-        while ((pos = result.find("~0", pos)) != std::string::npos)
-        {
-            result.replace(pos, 2, "~");
-            ++pos;
-        }
-        return result;
-    }
-
-    std::string json_pointer::escape(const std::string &token)
-    {
-        std::string result = token;
-        size_t pos = 0;
-        while ((pos = result.find('~', pos)) != std::string::npos)
-        {
-            result.replace(pos, 1, "~0");
-            pos += 2;
-        }
-        pos = 0;
-        while ((pos = result.find('/', pos)) != std::string::npos)
-        {
-            result.replace(pos, 1, "~1");
-            pos += 2;
-        }
-        return result;
-    }
-
-    std::string json_pointer::to_string() const { return m_original; }
-    const std::vector<std::string> &json_pointer::tokens() const { return m_tokens; }
-    size_t json_pointer::depth() const { return m_tokens.size(); }
-    bool json_pointer::is_root() const { return m_tokens.empty(); }
-
-    std::string json_pointer::back() const
-    {
-        return m_tokens.empty() ? "" : m_tokens.back();
-    }
-
-    json_pointer json_pointer::parent() const
-    {
-        if (m_tokens.empty())
-            return json_pointer("");
-        json_pointer p("");
-        p.m_tokens.assign(m_tokens.begin(), m_tokens.end() - 1);
-        std::string parent_str = "";
-        for (size_t i = 0; i < p.m_tokens.size(); ++i)
-        {
-            parent_str += "/" + escape(p.m_tokens[i]);
-        }
-        p.m_original = parent_str.empty() ? "/" : parent_str;
-        return p;
-    }
-
-    json_pointer json_pointer::push(const std::string &token) const
-    {
-        json_pointer p = *this;
-        p.m_tokens.push_back(token);
-        p.m_original += "/" + escape(token);
-        return p;
-    }
-
-    json &json_pointer::ref(json &document)
-    {
-        json *current = &document;
-        for (const auto &token : m_tokens)
-        {
-            if (current->is_array())
-            {
-                try
-                {
-                    size_t index = std::stoul(token);
-                    current = &current->at(index);
-                }
-                catch (...)
-                {
-                    MYJSON_THROW(std::out_of_range("Invalid array index"));
-                }
-            }
-            else if (current->is_object())
-                current = &current->at(token);
-            else
-                MYJSON_THROW(std::invalid_argument("Cannot traverse non-container"));
-        }
-        return *current;
-    }
-
-    const json &json_pointer::ref(const json &document) const
-    {
-        return const_cast<json_pointer *>(this)->ref(const_cast<json &>(document));
-    }
-
-    std::optional<json *> json_pointer::try_ref(json &document) noexcept
-    {
-        MYJSON_TRY { return std::optional<json *>(&ref(document)); }
-        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
-    }
-
-    std::optional<const json *> json_pointer::try_ref(const json &document) const noexcept
-    {
-        MYJSON_TRY { return std::optional<const json *>(&ref(document)); }
-        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
-    }
+    //-----------------------------------------------------------------------------
+    // [Class] json_patch
+    //-----------------------------------------------------------------------------
 
     //========== JSON Patch Implementation (RFC 6902) ==========
 
@@ -2593,6 +2206,147 @@ namespace myjson
         return op;
     }
 
+    //-----------------------------------------------------------------------------
+    // [Class] json_pointer
+    //-----------------------------------------------------------------------------
+
+    //========== JSON Pointer Implementation (RFC 6901) ==========
+
+    json_pointer::json_pointer(const std::string &pointer_str)
+        : m_original(pointer_str)
+    {
+        if (!pointer_str.empty() && pointer_str != "/")
+            parse(pointer_str);
+    }
+
+    void json_pointer::parse(const std::string &pointer_str)
+    {
+        if (pointer_str.empty() || pointer_str == "/")
+            return;
+        if (pointer_str[0] != '/')
+            MYJSON_THROW(std::invalid_argument("JSON Pointer must start with '/'"));
+
+        std::istringstream iss(pointer_str.substr(1));
+        std::string token;
+        while (std::getline(iss, token, '/'))
+            m_tokens.push_back(unescape(token));
+    }
+
+    std::string json_pointer::unescape(const std::string &token)
+    {
+        std::string result = token;
+        size_t pos = 0;
+        while ((pos = result.find("~1", pos)) != std::string::npos)
+        {
+            result.replace(pos, 2, "/");
+            ++pos;
+        }
+        pos = 0;
+        while ((pos = result.find("~0", pos)) != std::string::npos)
+        {
+            result.replace(pos, 2, "~");
+            ++pos;
+        }
+        return result;
+    }
+
+    std::string json_pointer::escape(const std::string &token)
+    {
+        std::string result = token;
+        size_t pos = 0;
+        while ((pos = result.find('~', pos)) != std::string::npos)
+        {
+            result.replace(pos, 1, "~0");
+            pos += 2;
+        }
+        pos = 0;
+        while ((pos = result.find('/', pos)) != std::string::npos)
+        {
+            result.replace(pos, 1, "~1");
+            pos += 2;
+        }
+        return result;
+    }
+
+    std::string json_pointer::to_string() const { return m_original; }
+    const std::vector<std::string> &json_pointer::tokens() const { return m_tokens; }
+    size_t json_pointer::depth() const { return m_tokens.size(); }
+    bool json_pointer::is_root() const { return m_tokens.empty(); }
+
+    std::string json_pointer::back() const
+    {
+        return m_tokens.empty() ? "" : m_tokens.back();
+    }
+
+    json_pointer json_pointer::parent() const
+    {
+        if (m_tokens.empty())
+            return json_pointer("");
+        json_pointer p("");
+        p.m_tokens.assign(m_tokens.begin(), m_tokens.end() - 1);
+        std::string parent_str = "";
+        for (size_t i = 0; i < p.m_tokens.size(); ++i)
+        {
+            parent_str += "/" + escape(p.m_tokens[i]);
+        }
+        p.m_original = parent_str.empty() ? "/" : parent_str;
+        return p;
+    }
+
+    json_pointer json_pointer::push(const std::string &token) const
+    {
+        json_pointer p = *this;
+        p.m_tokens.push_back(token);
+        p.m_original += "/" + escape(token);
+        return p;
+    }
+
+    json &json_pointer::ref(json &document)
+    {
+        json *current = &document;
+        for (const auto &token : m_tokens)
+        {
+            if (current->is_array())
+            {
+                try
+                {
+                    size_t index = std::stoul(token);
+                    current = &current->at(index);
+                }
+                catch (...)
+                {
+                    MYJSON_THROW(std::out_of_range("Invalid array index"));
+                }
+            }
+            else if (current->is_object())
+                current = &current->at(token);
+            else
+                MYJSON_THROW(std::invalid_argument("Cannot traverse non-container"));
+        }
+        return *current;
+    }
+
+    const json &json_pointer::ref(const json &document) const
+    {
+        return const_cast<json_pointer *>(this)->ref(const_cast<json &>(document));
+    }
+
+    std::optional<json *> json_pointer::try_ref(json &document) noexcept
+    {
+        MYJSON_TRY { return std::optional<json *>(&ref(document)); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    std::optional<const json *> json_pointer::try_ref(const json &document) const noexcept
+    {
+        MYJSON_TRY { return std::optional<const json *>(&ref(document)); }
+        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
+    }
+
+    //-----------------------------------------------------------------------------
+    // [Class] json_merge_patch
+    //-----------------------------------------------------------------------------
+
     //========== JSON Merge Patch Implementation (RFC 7386) ==========
 
     json_merge_patch::json_merge_patch(const json &patch_json)
@@ -2653,6 +2407,62 @@ namespace myjson
         return patch;
     }
 
+    //-----------------------------------------------------------------------------
+    // [Class] version
+    //-----------------------------------------------------------------------------
+    // Semver versioning
+    //-----------------------------------------------------------------------------
+    // - version()
+    // - operator<()
+    // - operator>()
+    // - operator==()
+    // - operator!=()
+    // - operator<=()
+    // - operator>=()
+    // - operator<<()
+    //-----------------------------------------------------------------------------
+
+    version::version(int major, int minor, int patch)
+        : major(major), minor(minor), patch(patch)
+    {
+    }
+
+    bool operator<(const version &lhs, const version &rhs) noexcept
+    {
+        return lhs.major < rhs.major || (lhs.major == rhs.major && lhs.minor < rhs.minor) ||
+               (lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.patch < rhs.patch);
+    };
+
+    bool operator>(const version &lhs, const version &rhs) noexcept { return rhs < lhs; };
+
+    bool operator==(const version &lhs, const version &rhs) noexcept
+    {
+        return lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.patch == rhs.patch;
+    };
+
+    bool operator!=(const version &lhs, const version &rhs) noexcept { return !(lhs == rhs); };
+
+    bool operator<=(const version &lhs, const version &rhs) noexcept { return !(rhs < lhs); };
+
+    bool operator>=(const version &lhs, const version &rhs) noexcept { return !(lhs < rhs); };
+
+#ifndef MYJSON_NO_STL
+
+    std::ostream &operator<<(std::ostream &ostream, const version &version)
+    {
+        ostream << version.major << '.' << version.minor << '.' << version.patch;
+        return ostream;
+    };
+
+#endif // MYJSON_NO_STL
+
+    //-----------------------------------------------------------------------------
+    // [SECTION] Myjson : Functions
+    //-----------------------------------------------------------------------------
+    // - operator<<()
+    // - operator>>()
+    //-----------------------------------------------------------------------------
+
     //========== Diff Function ==========
 
     json diff(const json &source, const json &target)
@@ -2686,6 +2496,192 @@ namespace myjson
 
         return patch;
     }
+
+    const char *string(encoding type)
+    {
+        switch (type)
+        {
+        case encoding::utf8:
+            return "utf8";
+        case encoding::utf16:
+            return "utf16";
+        case encoding::utf16le:
+            return "utf16le";
+        case encoding::utf16be:
+            return "utf16be";
+        case encoding::utf32:
+            return "utf32";
+        case encoding::utf32le:
+            return "utf32le";
+        case encoding::utf32be:
+            return "utf32be";
+        default:
+            return "unspecified";
+        }
+    };
+
+    const char *string(node_t type)
+    {
+        switch (type)
+        {
+        default:
+            return "unknown";
+        }
+    };
+
+#ifndef MYJSON_NO_STL
+
+    std::ostream &operator<<(std::ostream &ostream, const encoding &type)
+    {
+        ostream << string(type);
+        return ostream;
+    };
+
+    std::ostream &operator<<(std::ostream &ostream, const node_t &type)
+    {
+        ostream << string(type);
+        return ostream;
+    };
+
+    std::ostream &operator<<(std::ostream &ostream, const json &node)
+    {
+        return ostream;
+    };
+
+    std::istream &operator>>(std::istream &ostream, const json &node)
+    {
+        return ostream;
+    };
+
+#endif // MYJSON_NO_STL
+
+#ifndef MYJSON_NO_EXCEPTIONS
+
+    //-----------------------------------------------------------------------------
+    // [SECTION] Myjson : Exceptions
+    //-----------------------------------------------------------------------------
+    // - exception()
+    // - what()
+    // - parse_error()
+    // - generate()
+    // - encoding_error()
+    // - generate()
+    //-----------------------------------------------------------------------------
+
+    exception::exception(const char *message) noexcept
+    {
+        if (message != nullptr)
+        {
+            m_Message.append(message);
+        }
+    };
+
+    const char *exception::what() const noexcept { return m_Message.c_str(); };
+
+    parse_error::parse_error(const char *message) noexcept
+        : exception(generate(message, {})) {};
+
+    parse_error::parse_error(const char *message, detail::mark mark) noexcept
+        : exception(generate(message, mark)) {};
+
+    const char *parse_error::generate(const char *message, detail::mark mark) noexcept
+    {
+        // Use a thread_local buffer so the returned pointer remains valid
+        // until the next call on the same thread. Callers should copy the
+        // string if they need to keep it longer.
+        thread_local std::string buffer;
+        buffer.clear();
+
+        if (message != nullptr)
+        {
+            buffer.append(message);
+        }
+
+        // Append positional information if available
+        char tmp[128];
+        int n = snprintf(tmp, sizeof(tmp), " (line: %zu, column: %zu, index: %zu)", mark.line, mark.column, mark.index);
+        if (n > 0)
+        {
+            buffer.append(tmp, static_cast<size_t>(n));
+        }
+
+        // Ensure null-termination and return pointer
+        return buffer.c_str();
+    };
+
+    encoding_error::encoding_error(const char *message) noexcept
+        : exception(generate(encoding::unspecified, message, nullptr, 0)) {};
+
+    encoding_error::encoding_error(encoding encoding, const char *message, void *data, size_t size) noexcept
+        : exception(generate(encoding, message, data, size)) {};
+
+    const char *encoding_error::generate(encoding enc, const char *message, void *data, size_t size) noexcept
+    {
+        thread_local std::string buffer;
+        buffer.clear();
+
+        if (message != nullptr)
+        {
+            buffer.append(message);
+        }
+
+        // Append encoding name
+        const char *enc_name = "unspecified";
+        switch (enc)
+        {
+        case encoding::utf8:
+            enc_name = "utf-8";
+            break;
+        case encoding::utf16:
+        case encoding::utf16le:
+            enc_name = "utf-16-le";
+            break;
+        case encoding::utf16be:
+            enc_name = "utf-16-be";
+            break;
+        case encoding::utf32:
+        case encoding::utf32le:
+            enc_name = "utf-32-le";
+            break;
+        case encoding::utf32be:
+            enc_name = "utf-32-be";
+            break;
+        default:
+            break;
+        }
+
+        char tmp[128];
+        int n = snprintf(tmp, sizeof(tmp), " [encoding: %s]", enc_name);
+        if (n > 0)
+        {
+            buffer.append(tmp, static_cast<size_t>(n));
+        }
+
+        // If data is provided, append a short hex preview (up to 8 bytes)
+        if (data != nullptr && size > 0)
+        {
+            const unsigned char *b = reinterpret_cast<const unsigned char *>(data);
+            size_t preview = (size < 8) ? size : 8; // limit
+            buffer.append(" [data: 0x");
+            for (size_t i = 0; i < preview; ++i)
+            {
+                int written = snprintf(tmp, sizeof(tmp), "%02x", b[i]);
+                if (written > 0)
+                {
+                    buffer.append(tmp, static_cast<size_t>(written));
+                }
+            }
+            if (size > preview)
+            {
+                buffer.append("...");
+            }
+            buffer.append("]");
+        }
+
+        return buffer.c_str();
+    };
+
+#endif // MYJSON_NO_EXCEPTIONS
 
     MYJSON_VERSION_NAMESPACE_END
 
