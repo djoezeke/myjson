@@ -765,8 +765,10 @@
 
 #if MYJSON_COMPILER_SINCE(GCC, 6, 0, 0)
     #define MYJSON_QUOTE_OPERATOR operator""_json
+    #define MYJSON_POINTER_QUOTE_OPERATOR operator""_json_pointer
 #else
     #define MYJSON_QUOTE_OPERATOR operator"" _json
+    #define MYJSON_POINTER_QUOTE_OPERATOR operator""_json_pointer
 #endif
 
 /** 
@@ -1629,6 +1631,61 @@ namespace myjson
             int m_char;
         };
 
+        /**
+         * @class parser
+         * @brief Recursive-descent JSON parser over a token stream.
+         *
+         * The parser consumes tokens from @ref lexer and materializes
+         * a @ref myjson::json value.
+         */
+        class parser
+        {
+        public:
+            /**
+             * @brief Construct a parser from a lexer instance.
+             * @param lexer Lexer producing JSON tokens.
+             */
+            explicit parser(class lexer *lexer);
+
+            /**
+             * @brief Deleted copy constructor.
+             */
+            parser(const parser &) = delete;
+
+            /**
+             * @brief Deleted move constructor.
+             */
+            parser(parser &&) = delete;
+
+            /**
+             * @brief Deleted copy assignment operator.
+             */
+            parser &operator=(const parser &) = delete;
+
+            /**
+             * @brief Deleted move assignment operator.
+             */
+            parser &operator=(parser &&) = delete;
+
+            /**
+             * @brief Parse one complete JSON value.
+             * @return Parsed JSON value.
+             */
+            [[nodiscard]] myjson::json parse();
+
+        private:
+            [[nodiscard]] myjson::json parse_value();
+            [[nodiscard]] myjson::json parse_object();
+            [[nodiscard]] myjson::json parse_array();
+            [[nodiscard]] myjson::json parse_number(const std::string &text);
+            [[nodiscard]] std::string parse_string(const std::string &text);
+            void advance();
+
+        private:
+            class lexer *m_lexer{nullptr};
+            token m_current{};
+        };
+
         class deserializer
         {
         public:
@@ -1866,6 +1923,12 @@ namespace myjson
         {
         public:
             /**
+             * @brief Construct a serializer from an output adapter.
+             * @param adapter Adapter receiving serialized bytes.
+             */
+            explicit serializer(oadapter *adapter);
+
+            /**
              * @brief Deleted copy constructor
              */
             serializer(const serializer &) = delete;
@@ -1884,6 +1947,23 @@ namespace myjson
              * @brief Delete move assignment operator
              */
             serializer &operator=(serializer &&) = delete;
+
+            /**
+             * @brief Serialize a JSON value into the bound output adapter.
+             * @param value Value to serialize.
+             * @param indent Pretty-print indentation. Use a negative value for compact output.
+             */
+            void serialize(const myjson::json &value, int indent = -1);
+
+        private:
+            void write_raw(const char *text, size_t size);
+            void write_raw(const std::string &text);
+            void write_escaped(const std::string &text);
+            void write_indent(int level, int indent);
+            void write_value(const myjson::json &value, int indent, int level);
+
+        private:
+            oadapter *m_adapter{nullptr};
         };
 
         /** @} group output */
@@ -2277,6 +2357,7 @@ namespace myjson
         json(const char *value);
         json(const array_t &value);
         json(const object_t &value);
+
         static json object();
         static json array();
 
@@ -2374,6 +2455,11 @@ namespace myjson
         //========== Parsing ==========
         static json parse(const string_t &str);
         static json parse(const char *str);
+        static json parse(FILE *file);
+#ifndef MYJSON_NO_STL
+        static json parse(std::istream &stream);
+#endif // MYJSON_NO_STL
+        static json parse(detail::iadapter &adapter);
         static std::optional<json> try_parse(const string_t &str) noexcept;
 
         //========== JSON Pointer (RFC 6901) ==========
@@ -2427,6 +2513,8 @@ namespace myjson
      */
     class json_pointer
     {
+        friend class json;
+
     public:
         explicit json_pointer(const std::string &pointer_str);
         std::string to_string() const;
@@ -2440,6 +2528,10 @@ namespace myjson
         const json &ref(const json &document) const;
         std::optional<json *> try_ref(json &document) noexcept;
         std::optional<const json *> try_ref(const json &document) const noexcept;
+
+        json_pointer &operator/=(const json_pointer &ptr);
+        json_pointer &operator/=(std::string token);
+        json_pointer &operator/=(std::size_t index);
 
     private:
         static std::string unescape(const std::string &token);
@@ -2638,6 +2730,50 @@ namespace myjson
              * @return The resulting `json` object deserialized from `string`.
              */
             MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size);
+
+            /**
+             * @brief Identify a specific value (`char`) with in a `json` object.
+             *
+             * @param string An input `char` array.
+             * @param size The size of `string`.
+             *
+             * @return The `json_pointer` object identified from `string`.
+             */
+            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char *string, size_t size);
+
+#if MYJSON_HAS_CHAR8_T
+
+            /**
+             * @brief Identify a specific value (`char8_t`) with in a `json` object.
+             *
+             * @param string An input `char8_t` array.
+             * @param size The size of `string`.
+             *
+             * @return The `json_pointer` object identified from `string`.
+             */
+            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char8_t *string, size_t size);
+
+#endif // MYJSON_HAS_CHAR8_T
+
+            /**
+             * @brief Identify a specific value (`char16_t`) with in a `json` object.
+             *
+             * @param string An input `char16_t` array.
+             * @param size The size of `string`.
+             *
+             * @return The `json_pointer` object identified from `string`.
+             */
+            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char16_t *string, size_t size);
+
+            /**
+             * @brief Identify a specific value (`char32_t`) with in a `json` object.
+             *
+             * @param string An input `char32_t` array.
+             * @param size The size of `string`.
+             *
+             * @return The `json_pointer` object identified from `string`.
+             */
+            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char32_t *string, size_t size);
 
 #endif // __INTELLISENSE__
 

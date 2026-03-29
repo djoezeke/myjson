@@ -256,13 +256,19 @@ int main() {
 #include <iostream>
 
 int main() {
-    std::string jsonStr = R"({"name": "Bob", "age": 30, "isStudent": false})";
-    json::JSON obj = json::load(jsonStr);
-    std::cout << "Name: " << obj.Get("name").String() << std::endl;
-    std::cout << "Age: " << obj.Get("age").String() << std::endl;
-    std::cout << "Is Student: " << obj.Get("isStudent").String() << std::endl;
+  const std::string jsonStr = R"({"name":"Bob","age":30,"isStudent":false})";
+  myjson::json obj = myjson::json::parse(jsonStr);
+  std::cout << "Name: " << obj["name"].as_string() << std::endl;
+  std::cout << "Age: " << obj["age"].as_integer() << std::endl;
+  std::cout << "Is Student: " << obj["isStudent"].as_bool() << std::endl;
 }
 ```
+
+You can also parse directly from adapters:
+
+- `myjson::json::parse(FILE*)`
+- `myjson::json::parse(std::istream&)`
+- `myjson::json::parse(myjson::detail::iadapter&)`
 
 ### Serialize (Dump) JSON
 
@@ -271,10 +277,10 @@ int main() {
 #include <iostream>
 
 int main() {
-    json::JSON obj(json::Type::OBJECT);
-    obj.Add("project", json::JSON(json::Type::STRING, "Myjson"));
-    obj.Add("stars", json::JSON(json::Type::INTEGER, 100));
-    std::string jsonStr = json::dump(obj);
+  myjson::json obj = myjson::json::object();
+  obj["project"] = "Myjson";
+  obj["stars"] = 100;
+  std::string jsonStr = obj.dump();
     std::cout << jsonStr << std::endl;
 }
 ```
@@ -286,10 +292,10 @@ int main() {
 #include <iostream>
 
 int main() {
-    json::JSON obj(json::Type::OBJECT);
-    obj.Add("foo", json::JSON(json::Type::STRING, "bar"));
-    obj.Add("baz", json::JSON(json::Type::INTEGER, 123));
-    json::print(obj, true); // pretty print
+  myjson::json obj = myjson::json::object();
+  obj["foo"] = "bar";
+  obj["baz"] = 123;
+  std::cout << obj.dump_pretty() << std::endl;
 }
 ```
 
@@ -306,8 +312,8 @@ You can catch and inspect errors as follows:
 
 ```cpp
 try {
-    auto obj = json::load("invalid json");
-} catch (const json::Exception& ex) {
+  auto obj = myjson::json::parse("invalid json");
+} catch (const myjson::parse_error& ex) {
     std::cerr << "Myjson error: " << ex.what() << std::endl;
 }
 ```

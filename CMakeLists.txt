@@ -96,6 +96,8 @@ cmake_dependent_option(MYJSON_INSTALL_CPACK "Create binary Myjson archive using 
 # option(MYJSON_BUILD_DEBUG "Build debug version of library" ${MYJSON_IS_TOP_LEVEL})
 # option(MYJSON_ENABLE_DOXYGEN "Build documentation with Doxygen." ${MYJSON_IS_TOP_LEVEL})
 
+include_directories(SYSTEM ${MYJSON_INCLUDE_DIR})
+
 if(DEFINED BUILD_SHARED_LIBS)
     # When defined, use BUILD_SHARED_LIBS as default
     if(BUILD_SHARED_LIBS)

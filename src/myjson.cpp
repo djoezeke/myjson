@@ -74,6 +74,7 @@
 // #include <stdbool.h>
 #include <cmath>
 #include <functional>
+#include <iomanip>
 #include <optional>
 #include <sstream>
 #include <stddef.h>
@@ -1204,6 +1205,304 @@ namespace myjson
             return m_token;
         }
 
+        //-----------------------------------------------------------------------------
+        // [Class] parser
+        //-----------------------------------------------------------------------------
+
+        namespace
+        {
+            static bool is_hex_digit(char ch)
+            {
+                return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+            }
+
+            static unsigned int hex_value(char ch)
+            {
+                if (ch >= '0' && ch <= '9')
+                {
+                    return static_cast<unsigned int>(ch - '0');
+                }
+                if (ch >= 'a' && ch <= 'f')
+                {
+                    return static_cast<unsigned int>(10 + (ch - 'a'));
+                }
+                return static_cast<unsigned int>(10 + (ch - 'A'));
+            }
+
+            static unsigned int parse_u16_hex(const std::string &text, size_t index)
+            {
+                if (index + 4 > text.size())
+                {
+                    MYJSON_THROW(parse_error("Invalid unicode escape sequence"));
+                }
+
+                unsigned int value = 0;
+                for (size_t i = 0; i < 4; ++i)
+                {
+                    const char ch = text[index + i];
+                    if (!is_hex_digit(ch))
+                    {
+                        MYJSON_THROW(parse_error("Invalid unicode escape sequence"));
+                    }
+                    value = (value << 4U) | hex_value(ch);
+                }
+                return value;
+            }
+
+            static void append_utf8_codepoint(std::string &out, unsigned int cp)
+            {
+                char tmp[4] = {0, 0, 0, 0};
+                const int encoded = utf8::encode(cp, reinterpret_cast<utf8::char_t *>(tmp), sizeof(tmp));
+                if (encoded <= 0)
+                {
+                    MYJSON_THROW(parse_error("Invalid unicode codepoint"));
+                }
+                out.append(tmp, tmp + encoded);
+            }
+        } // namespace
+
+        parser::parser(class lexer *lexer)
+            : m_lexer(lexer), m_current{}
+        {
+            if (m_lexer == nullptr)
+            {
+                MYJSON_THROW(parse_error("Invalid parser state"));
+            }
+            advance();
+        }
+
+        void parser::advance()
+        {
+            m_current = m_lexer->next_token();
+        }
+
+        std::string parser::parse_string(const std::string &text)
+        {
+            std::string result;
+            result.reserve(text.size());
+
+            for (size_t i = 0; i < text.size(); ++i)
+            {
+                const char ch = text[i];
+                if (ch != '\\')
+                {
+                    result.push_back(ch);
+                    continue;
+                }
+
+                if (i + 1 >= text.size())
+                {
+                    MYJSON_THROW(parse_error("Invalid escape sequence"));
+                }
+
+                const char esc = text[++i];
+                switch (esc)
+                {
+                case '"':
+                    result.push_back('"');
+                    break;
+                case '\\':
+                    result.push_back('\\');
+                    break;
+                case '/':
+                    result.push_back('/');
+                    break;
+                case 'b':
+                    result.push_back('\b');
+                    break;
+                case 'f':
+                    result.push_back('\f');
+                    break;
+                case 'n':
+                    result.push_back('\n');
+                    break;
+                case 'r':
+                    result.push_back('\r');
+                    break;
+                case 't':
+                    result.push_back('\t');
+                    break;
+                case 'u':
+                {
+                    unsigned int codepoint = parse_u16_hex(text, i + 1);
+                    i += 4;
+
+                    // Handle surrogate pair.
+                    if (codepoint >= 0xD800 && codepoint <= 0xDBFF)
+                    {
+                        if (i + 2 >= text.size() || text[i + 1] != '\\' || text[i + 2] != 'u')
+                        {
+                            MYJSON_THROW(parse_error("Invalid unicode surrogate pair"));
+                        }
+
+                        unsigned int low = parse_u16_hex(text, i + 3);
+                        if (low < 0xDC00 || low > 0xDFFF)
+                        {
+                            MYJSON_THROW(parse_error("Invalid unicode surrogate pair"));
+                        }
+
+                        codepoint = 0x10000 + (((codepoint - 0xD800) << 10U) | (low - 0xDC00));
+                        i += 6;
+                    }
+
+                    append_utf8_codepoint(result, codepoint);
+                    break;
+                }
+                default:
+                    MYJSON_THROW(parse_error("Invalid escape sequence"));
+                }
+            }
+
+            return result;
+        }
+
+        myjson::json parser::parse_number(const std::string &text)
+        {
+            try
+            {
+                const bool is_integer = (text.find('.') == std::string::npos) &&
+                                        (text.find('e') == std::string::npos) &&
+                                        (text.find('E') == std::string::npos);
+
+                if (is_integer)
+                {
+                    return myjson::json(static_cast<myjson::json::integer_t>(std::stoll(text)));
+                }
+                return myjson::json(static_cast<myjson::json::number_t>(std::stod(text)));
+            }
+            catch (const std::exception &)
+            {
+                MYJSON_THROW(parse_error("Invalid number literal"));
+            }
+        }
+
+        myjson::json parser::parse_array()
+        {
+            myjson::json array = myjson::json::array();
+
+            // consume '['
+            advance();
+            if (m_current.type == token_t::array_end)
+            {
+                advance();
+                return array;
+            }
+
+            while (true)
+            {
+                array.push_back(parse_value());
+
+                if (m_current.type == token_t::value_separator)
+                {
+                    advance();
+                    continue;
+                }
+
+                if (m_current.type == token_t::array_end)
+                {
+                    advance();
+                    break;
+                }
+
+                MYJSON_THROW(parse_error("Expected ',' or ']' in array"));
+            }
+
+            return array;
+        }
+
+        myjson::json parser::parse_object()
+        {
+            myjson::json object = myjson::json::object();
+
+            // consume '{'
+            advance();
+            if (m_current.type == token_t::object_end)
+            {
+                advance();
+                return object;
+            }
+
+            while (true)
+            {
+                if (m_current.type != token_t::string_value)
+                {
+                    MYJSON_THROW(parse_error("Expected object key string"));
+                }
+                const std::string key = parse_string(m_current.text);
+
+                // consume key
+                advance();
+                if (m_current.type != token_t::name_separator)
+                {
+                    MYJSON_THROW(parse_error("Expected ':' after object key"));
+                }
+
+                // consume ':'
+                advance();
+                object[key] = parse_value();
+
+                if (m_current.type == token_t::value_separator)
+                {
+                    advance();
+                    continue;
+                }
+
+                if (m_current.type == token_t::object_end)
+                {
+                    advance();
+                    break;
+                }
+
+                MYJSON_THROW(parse_error("Expected ',' or '}' in object"));
+            }
+
+            return object;
+        }
+
+        myjson::json parser::parse_value()
+        {
+            switch (m_current.type)
+            {
+            case token_t::null_literal:
+                advance();
+                return myjson::json(nullptr);
+            case token_t::true_literal:
+                advance();
+                return myjson::json(true);
+            case token_t::false_literal:
+                advance();
+                return myjson::json(false);
+            case token_t::number_value:
+            {
+                const std::string value = m_current.text;
+                advance();
+                return parse_number(value);
+            }
+            case token_t::string_value:
+            {
+                const std::string value = parse_string(m_current.text);
+                advance();
+                return myjson::json(value);
+            }
+            case token_t::array_start:
+                return parse_array();
+            case token_t::object_start:
+                return parse_object();
+            default:
+                MYJSON_THROW(parse_error("Unexpected token while parsing value"));
+            }
+        }
+
+        myjson::json parser::parse()
+        {
+            myjson::json value = parse_value();
+            if (m_current.type != token_t::end_of_input)
+            {
+                MYJSON_THROW(parse_error("Unexpected trailing tokens"));
+            }
+            return value;
+        }
+
         //-------------------------------------------------------------------------
         // [SECTION] Details : Output
         //-------------------------------------------------------------------------
@@ -1284,6 +1583,184 @@ namespace myjson
             m_pos += to_copy;
             return to_copy;
         };
+
+        //-----------------------------------------------------------------------------
+        // [Class] serializer
+        //-----------------------------------------------------------------------------
+
+        serializer::serializer(oadapter *adapter)
+            : m_adapter(adapter)
+        {
+        }
+
+        void serializer::write_raw(const char *text, size_t size)
+        {
+            if (size == 0)
+            {
+                return;
+            }
+            if (m_adapter == nullptr)
+            {
+                MYJSON_THROW(std::runtime_error("Invalid output adapter"));
+            }
+            const size_t written = m_adapter->write(text, size);
+            if (written != size)
+            {
+                MYJSON_THROW(std::runtime_error("Failed to write serialized output"));
+            }
+        }
+
+        void serializer::write_raw(const std::string &text)
+        {
+            write_raw(text.data(), text.size());
+        }
+
+        void serializer::write_indent(int level, int indent)
+        {
+            if (indent <= 0)
+            {
+                return;
+            }
+            write_raw("\n", 1);
+            const std::string spaces(static_cast<size_t>(level * indent), ' ');
+            write_raw(spaces);
+        }
+
+        void serializer::write_escaped(const std::string &text)
+        {
+            write_raw("\"", 1);
+            for (unsigned char ch : text)
+            {
+                switch (ch)
+                {
+                case '"':
+                    write_raw("\\\"", 2);
+                    break;
+                case '\\':
+                    write_raw("\\\\", 2);
+                    break;
+                case '\b':
+                    write_raw("\\b", 2);
+                    break;
+                case '\f':
+                    write_raw("\\f", 2);
+                    break;
+                case '\n':
+                    write_raw("\\n", 2);
+                    break;
+                case '\r':
+                    write_raw("\\r", 2);
+                    break;
+                case '\t':
+                    write_raw("\\t", 2);
+                    break;
+                default:
+                {
+                    if (ch < 0x20)
+                    {
+                        char escaped[7];
+                        snprintf(escaped, sizeof(escaped), "\\u%04x", static_cast<unsigned int>(ch));
+                        write_raw(escaped, 6);
+                    }
+                    else
+                    {
+                        write_raw(reinterpret_cast<const char *>(&ch), 1);
+                    }
+                    break;
+                }
+                }
+            }
+            write_raw("\"", 1);
+        }
+
+        void serializer::write_value(const myjson::json &value, int indent, int level)
+        {
+            switch (value.type())
+            {
+            case value_type::null:
+                write_raw("null", 4);
+                return;
+            case value_type::boolean:
+                write_raw(value.as_bool() ? "true" : "false", value.as_bool() ? 4 : 5);
+                return;
+            case value_type::integer:
+                write_raw(std::to_string(value.as_integer()));
+                return;
+            case value_type::number:
+            {
+                const auto number = value.as_number();
+                if (std::isnan(number) || std::isinf(number))
+                {
+                    write_raw("null", 4);
+                    return;
+                }
+                std::ostringstream oss;
+                oss << std::setprecision(15) << number;
+                write_raw(oss.str());
+                return;
+            }
+            case value_type::string:
+                write_escaped(value.as_string());
+                return;
+            case value_type::array:
+            {
+                write_raw("[", 1);
+                const auto values = value.values();
+                for (size_t index = 0; index < values.size(); ++index)
+                {
+                    if (index != 0)
+                    {
+                        write_raw(",", 1);
+                    }
+                    if (indent > 0)
+                    {
+                        write_indent(level + 1, indent);
+                    }
+                    write_value(values[index], indent, level + 1);
+                }
+                if (indent > 0 && !values.empty())
+                {
+                    write_indent(level, indent);
+                }
+                write_raw("]", 1);
+                return;
+            }
+            case value_type::object:
+            {
+                write_raw("{", 1);
+                size_t index = 0;
+                for (auto iter = value.begin(); iter != value.end(); ++iter, ++index)
+                {
+                    if (index != 0)
+                    {
+                        write_raw(",", 1);
+                    }
+                    if (indent > 0)
+                    {
+                        write_indent(level + 1, indent);
+                    }
+                    write_escaped(iter->first);
+                    write_raw(":", 1);
+                    if (indent > 0)
+                    {
+                        write_raw(" ", 1);
+                    }
+                    write_value(iter->second, indent, level + 1);
+                }
+                if (indent > 0 && value.size() > 0)
+                {
+                    write_indent(level, indent);
+                }
+                write_raw("}", 1);
+                return;
+            }
+            }
+        }
+
+        void serializer::serialize(const myjson::json &value, int indent)
+        {
+            write_value(value, indent, 0);
+        }
 
         //-------------------------------------------------------------------------
         // [SECTION] Details : Iterators
@@ -1822,80 +2299,11 @@ namespace myjson
 
     std::string json::dump(int indent) const
     {
-        std::ostringstream oss;
-        std::function<void(const json &, int)> dump_impl =
-            [&](const json &j, int current_indent)
-        {
-            switch (j.type())
-            {
-            case value_type::null:
-                oss << "null";
-                break;
-            case value_type::boolean:
-                oss << (j.as_bool() ? "true" : "false");
-                break;
-            case value_type::integer:
-                oss << j.as_integer();
-                break;
-            case value_type::number:
-            {
-                auto num = j.as_number();
-                if (std::isnan(num) || std::isinf(num))
-                    oss << "null";
-                else
-                    oss << num;
-                break;
-            }
-            case value_type::string:
-                oss << '"' << j.as_string() << '"';
-                break;
-            case value_type::array:
-            {
-                oss << "[";
-                auto &arr = j._get_array();
-                for (size_t i = 0; i < arr.size(); ++i)
-                {
-                    if (indent > 0)
-                        oss << "\n"
-                            << std::string(current_indent + indent, ' ');
-                    dump_impl(arr[i], current_indent + indent);
-                    if (i < arr.size() - 1)
-                        oss << ",";
-                }
-                if (indent > 0 && !arr.empty())
-                    oss << "\n"
-                        << std::string(current_indent, ' ');
-                oss << "]";
-                break;
-            }
-            case value_type::object:
-            {
-                oss << "{";
-                auto &obj = j._get_object();
-                size_t i = 0;
-                for (const auto &[key, value] : obj)
-                {
-                    if (indent > 0)
-                        oss << "\n"
-                            << std::string(current_indent + indent, ' ');
-                    oss << '"' << key << "\":";
-                    if (indent > 0)
-                        oss << " ";
-                    dump_impl(value, current_indent + indent);
-                    if (i < obj.size() - 1)
-                        oss << ",";
-                    ++i;
-                }
-                if (indent > 0 && !obj.empty())
-                    oss << "\n"
-                        << std::string(current_indent, ' ');
-                oss << "}";
-                break;
-            }
-            }
-        };
-        dump_impl(*this, 0);
-        return oss.str();
+        std::ostringstream stream;
+        detail::stream_oadapter adapter(stream);
+        detail::serializer output(&adapter);
+        output.serialize(*this, indent);
+        return stream.str();
     }
 
     std::string json::dump_pretty() const { return dump(2); }
@@ -1903,13 +2311,43 @@ namespace myjson
 
     //========== Parsing ==========
 
-    json json::parse(const std::string &str) { return parse(str.c_str()); }
+    json json::parse(const std::string &str)
+    {
+        detail::memory_iadapter adapter(const_cast<char *>(str.data()), str.size());
+        return parse(adapter);
+    }
+
     json json::parse(const char *str)
     {
         if (str == nullptr)
             MYJSON_THROW(parse_error("Null pointer passed to parse"));
-        json result;
-        return result;
+
+        detail::memory_iadapter adapter(const_cast<char *>(str), strlen(str));
+        return parse(adapter);
+    }
+
+    json json::parse(FILE *file)
+    {
+        if (file == nullptr)
+            MYJSON_THROW(parse_error("Null file pointer passed to parse"));
+
+        detail::file_iadapter adapter(file);
+        return parse(adapter);
+    }
+
+#ifndef MYJSON_NO_STL
+    json json::parse(std::istream &stream)
+    {
+        detail::stream_iadapter adapter(stream);
+        return parse(adapter);
+    }
+#endif // MYJSON_NO_STL
+
+    json json::parse(detail::iadapter &adapter)
+    {
+        detail::lexer lex(&adapter);
+        detail::parser parser(&lex);
+        return parser.parse();
     }
 
     std::optional<json> json::try_parse(const std::string &str) noexcept
@@ -2545,11 +2983,15 @@ namespace myjson
 
     std::ostream &operator<<(std::ostream &ostream, const json &node)
     {
+        detail::stream_oadapter adapter(ostream);
+        detail::serializer output(&adapter);
+        output.serialize(node, -1);
         return ostream;
     };
 
     std::istream &operator>>(std::istream &ostream, const json &node)
     {
+        const_cast<json &>(node) = json::parse(ostream);
         return ostream;
     };
 
@@ -2733,6 +3175,38 @@ namespace myjson
                                            reinterpret_cast<const unsigned char *>(string) + size * 4),
                 detail::endian::native);
             return json::parse(utf8_str);
+        };
+
+        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char *string, size_t size)
+        {
+            return myjson::json_pointer(std::string(string, size));
+        };
+
+#if MYJSON_HAS_CHAR8_T
+
+        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char8_t *string, size_t size)
+        {
+            return myjson::json_pointer(std::string(reinterpret_cast<const char *>(string), size));
+        };
+
+#endif // MYJSON_HAS_CHAR8_T
+
+        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char16_t *string, size_t size)
+        {
+            auto utf8_str = detail::utf16::to_utf8(
+                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                           reinterpret_cast<const unsigned char *>(string) + size * 2),
+                detail::endian::native);
+            return myjson::json_pointer(utf8_str);
+        };
+
+        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char32_t *string, size_t size)
+        {
+            auto utf8_str = detail::utf32::to_utf8(
+                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                           reinterpret_cast<const unsigned char *>(string) + size * 4),
+                detail::endian::native);
+            return myjson::json_pointer(utf8_str);
         };
 
     }; // namespace literals
