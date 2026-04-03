@@ -231,7 +231,7 @@ extern "C"
 
     /** Structures */
 
-    struct mjVersion;
+    struct mj_version;
 
     //-----------------------------------------------------------------------------
     // [SECTION] Flags & Enumerations
@@ -243,17 +243,17 @@ extern "C"
      * @{
      */
 
-    typedef enum mjEncoding
+    typedef enum mjncoding
     {
-        mjUnspecifiedEncoding, /** Let the parser choose the encoding. */
-        mjUTF8Encoding,        /** The default UTF-8 encoding. */
-        mjUTF16Encoding,       /** The UTF-16-LE encoding with native endianness. */
-        mjUTF16LEEncoding,     /** The UTF-16-LE encoding with BOM. */
-        mjUTF16BEEncoding,     /** The UTF-16-BE encoding with BOM. */
-        mjUTF32Encoding,       /** The UTF-32 encoding with native endianness. */
-        mjUTF32LEEncoding,     /** The UTF-32-LE encoding with BOM. */
-        mjUTF32BEEncoding,     /** The UTF-32-BE encoding with BOM. */
-    } mjEncoding;
+        mj_no_encoding,      /** Let the parser choose the encoding. */
+        mj_utf8_encoding,    /** The default UTF-8 encoding. */
+        mj_utf16_encoding,   /** The UTF-16-LE encoding with native endianness. */
+        mj_utf16le_encoding, /** The UTF-16-LE encoding with BOM. */
+        mj_utf16be_encoding, /** The UTF-16-BE encoding with BOM. */
+        mj_utf32_encoding,   /** The UTF-32 encoding with native endianness. */
+        mj_utf32le_encoding, /** The UTF-32-LE encoding with BOM. */
+        mj_utf32be_encoding, /** The UTF-32-BE encoding with BOM. */
+    } mj_encoding;
 
     /** @} */
 
@@ -267,12 +267,12 @@ extern "C"
      * @{
      */
 
-    typedef struct mjVersion
+    typedef struct mj_version
     {
         unsigned int major;
         unsigned int minor;
         unsigned int patch;
-    } mjVersion;
+    } mj_version;
 
     /** @} */
 
@@ -283,24 +283,6 @@ extern "C"
 #ifdef __cplusplus
 };
 #endif //__cplusplus
-
-//-----------------------------------------------------------------------------
-
-// clang-format off
-
-#if defined(__clang__)
-    #pragma clang diagnostic pop
-#endif
-
-#if defined(__GNUC__)
-    #pragma GCC diagnostic pop
-#endif
-
-#if defined(_MSC_VER)
-    #pragma warning(pop)
-#endif
-
-// clang-format on
 
 #endif // DJOEZEKE_MYJSONC_H
 

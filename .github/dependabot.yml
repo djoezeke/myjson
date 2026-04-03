@@ -9,8 +9,26 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
-  - package-ecosystem: uv
+  - package-ecosystem: pip
     directory: /docs/mkdocs
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "documentation"
+    groups:
+      mkdocs-python-deps:
+        patterns:
+          - "*"

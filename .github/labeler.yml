@@ -1,108 +1,84 @@
-version: 1
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - README.md
+          - docs/**
 
-labels:
-  - label: "Documentation"
-    files:
-      - "README.md"
+mkdocs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/mkdocs/**
 
-  - label: "Documentation"
-    files:
-      - "docs/.*"
+examples:
+  - changed-files:
+      - any-glob-to-any-file:
+          - examples/**
 
-  - label: "MkDocs"
-    files:
-      - "docs/mkdocs/.*"
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tests/**
 
-  - label: "Examples"
-    files:
-      - "examples/.*"
+c:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.c"
+          - "**/*.h"
+          - include/myjson/myjson.h
+          - src/myjsonc.cpp
 
-  - label: "Tests"
-    files:
-      - "tests/.*"
+cxx:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.cpp"
+          - "**/*.hpp"
+          - include/myjson/myjson.hpp
+          - src/myjson.cpp
 
-  - label: "C"
-    files:
-      - "tests/c/.*"
+build:
+  - changed-files:
+      - any-glob-to-any-file:
+          - CMakeLists.txt
+          - "**/CMakeLists.txt"
+          - CMakePresets.json
+          - cmake/**
+          - meson.build
+          - "**/meson.build"
+          - meson_options.txt
+          - BUILD.bazel
+          - "**/BUILD.bazel"
+          - MODULE.bazel
+          - Makefile
 
-  - label: "Cxx"
-    files:
-      - "tests/cxx/.*"
+cmake:
+  - changed-files:
+      - any-glob-to-any-file:
+          - CMakeLists.txt
+          - "**/CMakeLists.txt"
+          - CMakePresets.json
+          - cmake/**
 
-  - label: "C"
-    files:
-      - ".*myjson.h"
+meson:
+  - changed-files:
+      - any-glob-to-any-file:
+          - meson.build
+          - "**/meson.build"
+          - meson_options.txt
 
-  - label: "Cxx"
-    files:
-      - ".*myjson.hpp"
+bazel:
+  - changed-files:
+      - any-glob-to-any-file:
+          - BUILD.bazel
+          - "**/BUILD.bazel"
+          - MODULE.bazel
 
-  - label: "C"
-    files:
-      - ".*myjsonc.cpp"
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
 
-  - label: "Cxx"
-    files:
-      - ".*myjson.cpp"
-
-  - label: "Build"
-    files:
-      - ".*CMakeLists.txt"
-
-  - label: "Build"
-    files:
-      - ".*meson.build"
-
-  - label: "Build"
-    files:
-      - ".*meson_option.txt"
-
-  - label: "Build"
-    files:
-      - ".*BUILD.bazel"
-
-  - label: "Build"
-    files:
-      - ".*MODULE.bazel"
-
-  - label: "CMake"
-    files:
-      - ".*CMakeLists.txt"
-
-  - label: "CMake"
-    files:
-      - ".*CMakePresets.json"
-
-  - label: "CMake"
-    files:
-      - "cmake/.*"
-
-  - label: "Meson"
-    files:
-      - ".*meson.build"
-
-  - label: "Meson"
-    files:
-      - ".*meson_option.txt"
-
-  - label: "Bazel"
-    files:
-      - ".*BUILD.bazel"
-
-  - label: "Bazel"
-    files:
-      - ".*MODULE.bazel"
-
-  - label: "CI"
-    files:
-      - "github/workflows/.*"
-
-  - label: "Small"
-    size-below: 10
-
-  - label: "Meduim"
-    size-above: 9
-    size-below: 100
-
-  - label: "Large"
-    size-above: 100
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/dependabot.yml
+          - tests/vendor/**

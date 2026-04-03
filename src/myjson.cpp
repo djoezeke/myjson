@@ -283,7 +283,7 @@ namespace myjson
             return -1;
         };
 
-        std::vector<unsigned char> utf8::to_utf16(const std::string &string, endian order)
+        std::vector<unsigned char> utf8::to_utf16(const std::string &string, myjson_endian_value_t order)
         {
             std::vector<unsigned char> out;
             size_t idx = 0;
@@ -302,7 +302,7 @@ namespace myjson
             return out;
         };
 
-        std::vector<unsigned char> utf8::to_utf32(const std::string &string, endian order)
+        std::vector<unsigned char> utf8::to_utf32(const std::string &string, myjson_endian_value_t order)
         {
             std::vector<unsigned char> out;
             size_t idx = 0;
@@ -349,7 +349,7 @@ namespace myjson
          *
          */
 
-        int utf16::decode(const char *data, size_t size, unsigned int &value, endian order)
+        int utf16::decode(const char *data, size_t size, unsigned int &value, myjson_endian_value_t order)
         {
             if (size < 2 || data == nullptr)
             {
@@ -361,13 +361,13 @@ namespace myjson
 
             auto read_u16 = [&](size_t offset) -> uint16_t
             {
-                if (order == endian::native)
+                if (order == myjson_endian_t::native)
                 {
                     uint16_t tmp = 0;
                     memcpy(&tmp, b + offset, 2);
                     return tmp;
                 }
-                else if (order == endian::little)
+                else if (order == myjson_endian_t::little)
                 {
                     return static_cast<uint16_t>(b[offset] | (b[offset + 1] << 8));
                 }
@@ -403,7 +403,7 @@ namespace myjson
             return 2;
         };
 
-        int utf16::encode(unsigned int codepoint, utf16::char_t *output, size_t size, endian order)
+        int utf16::encode(unsigned int codepoint, utf16::char_t *output, size_t size, myjson_endian_value_t order)
         {
             if (size < 2 || output == nullptr)
             {
@@ -414,11 +414,11 @@ namespace myjson
 
             auto write_u16 = [&](size_t offset, uint16_t val)
             {
-                if (order == endian::native)
+                if (order == myjson_endian_t::native)
                 {
                     memcpy(out + offset, &val, 2);
                 }
-                else if (order == endian::little)
+                else if (order == myjson_endian_t::little)
                 {
                     out[offset] = static_cast<unsigned char>(val & 0xFF);
                     out[offset + 1] = static_cast<unsigned char>((val >> 8) & 0xFF);
@@ -455,7 +455,7 @@ namespace myjson
             return 2;
         };
 
-        std::string utf16::to_utf8(const std::vector<unsigned char> &bytes, endian order)
+        std::string utf16::to_utf8(const std::vector<unsigned char> &bytes, myjson_endian_value_t order)
         {
             std::string out;
             size_t idx = 0;
@@ -473,7 +473,7 @@ namespace myjson
             return out;
         };
 
-        int utf32::decode(const char *data, size_t size, unsigned int &value, endian order)
+        int utf32::decode(const char *data, size_t size, unsigned int &value, myjson_endian_value_t order)
         {
             if (size < 4 || data == nullptr)
             {
@@ -484,11 +484,11 @@ namespace myjson
             const unsigned char *b = reinterpret_cast<const unsigned char *>(data);
             uint32_t tmp = 0;
 
-            if (order == endian::native)
+            if (order == myjson_endian_t::native)
             {
                 memcpy(&tmp, b, 4);
             }
-            else if (order == endian::little)
+            else if (order == myjson_endian_t::little)
             {
                 tmp = (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
             }
@@ -501,7 +501,7 @@ namespace myjson
             return 4;
         };
 
-        int utf32::encode(unsigned int codepoint, utf32::char_t *output, size_t size, endian order)
+        int utf32::encode(unsigned int codepoint, utf32::char_t *output, size_t size, myjson_endian_value_t order)
         {
             if (size < 4 || output == nullptr)
             {
@@ -511,11 +511,11 @@ namespace myjson
             uint32_t cp = static_cast<uint32_t>(codepoint);
             unsigned char *out = reinterpret_cast<unsigned char *>(output);
 
-            if (order == endian::native)
+            if (order == myjson_endian_t::native)
             {
                 memcpy(out, &cp, 4);
             }
-            else if (order == endian::little)
+            else if (order == myjson_endian_t::little)
             {
                 out[0] = static_cast<unsigned char>(cp & 0xFF);
                 out[1] = static_cast<unsigned char>((cp >> 8) & 0xFF);
@@ -533,7 +533,7 @@ namespace myjson
             return 1;
         };
 
-        std::string utf32::to_utf8(const std::vector<unsigned char> &bytes, endian order)
+        std::string utf32::to_utf8(const std::vector<unsigned char> &bytes, myjson_endian_value_t order)
         {
             std::string out;
             size_t idx = 0;
@@ -642,10 +642,6 @@ namespace myjson
         // - lexer()
         //-----------------------------------------------------------------------------
 
-        // Lexer constructor: read the whole input from the adapter, detect
-        // encoding (using BOM when present), strip the BOM and convert the
-        // payload into UTF-8 bytes stored in m_input. This approach simplifies
-        // tokenization: subsequent get_char() returns UTF-8 bytes only.
         lexer::lexer(iadapter *adapter)
             : m_position{}, m_token{}, m_string(), m_adapter(adapter), m_encoding(myjson::encoding::unspecified), m_putback(-1)
         {
@@ -715,13 +711,13 @@ namespace myjson
             // Convert to UTF-8 if necessary, otherwise copy bytes directly.
             if (m_encoding == myjson::encoding::utf16le || m_encoding == myjson::encoding::utf16be || m_encoding == myjson::encoding::utf16)
             {
-                endian order = (m_encoding == myjson::encoding::utf16be) ? endian::big : endian::little;
+                myjson_endian_value_t order = (m_encoding == myjson::encoding::utf16be) ? myjson_endian_t::big : myjson_endian_t::little;
                 std::string utf8 = utf16::to_utf8(payload, order);
                 m_input.assign(utf8.begin(), utf8.end());
             }
             else if (m_encoding == myjson::encoding::utf32le || m_encoding == myjson::encoding::utf32be || m_encoding == myjson::encoding::utf32)
             {
-                endian order = (m_encoding == myjson::encoding::utf32be) ? endian::big : endian::little;
+                myjson_endian_value_t order = (m_encoding == myjson::encoding::utf32be) ? myjson_endian_t::big : myjson_endian_t::little;
                 std::string utf8 = utf32::to_utf8(payload, order);
                 m_input.assign(utf8.begin(), utf8.end());
             }
@@ -736,64 +732,7 @@ namespace myjson
 
         token lexer::scan()
         {
-            m_token.text.clear();
-            m_token.type = token_t::unknown;
-            m_char = skip_ws();
-
-            if (m_char == EOF)
-            {
-                m_token.type = token_t::end_of_input;
-                return m_token;
-            }
-
-            advance();
-
-            switch (m_char)
-            {
-            case '{':
-                m_token.type = token_t::object_start;
-                return m_token;
-            case '}':
-                m_token.type = token_t::object_end;
-                return m_token;
-            case '[':
-                m_token.type = token_t::array_start;
-                return m_token;
-            case ']':
-                m_token.type = token_t::array_end;
-                return m_token;
-            case ',':
-                m_token.type = token_t::value_separator;
-                return m_token;
-            case ':':
-                m_token.type = token_t::name_separator;
-                return m_token;
-            case '"':
-                scan_string();
-                return m_token;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                scan_number();
-                return m_token;
-            case 't':
-            case 'f':
-            case 'n':
-                scan_literal();
-                return m_token;
-            default:
-                break;
-            }
-
-            m_token.type = token_t::unknown;
-            return m_token;
+            return next_token();
         };
 
         mark lexer::position() const
@@ -803,44 +742,42 @@ namespace myjson
 
         void lexer::advance(size_t amount)
         {
-            int times = 1;
-            do
+            while (amount-- > 0 && m_input_pos < m_input.size())
             {
-                m_position.index += 1;
-                m_position.column += 1;
-                if (m_char == '\n')
+                const char ch = m_input[m_input_pos++];
+                ++m_position.index;
+                if (ch == '\n')
                 {
-                    m_position.line += 1;
+                    ++m_position.line;
                     m_position.column = 0;
                 }
-
-                if (m_position.index < m_input.size())
+                else
                 {
-                    m_char = m_input[m_position.index];
+                    ++m_position.column;
                 }
-
-            } while (times != amount);
+                m_char = static_cast<unsigned char>(ch);
+            }
         };
 
         void lexer::reverse(size_t amount)
         {
-            int times = 1;
-            do
+            while (amount-- > 0 && m_input_pos > 0)
             {
-                m_position.index -= 1;
-                m_position.column -= 1;
-                if (m_char == '\n')
+                --m_input_pos;
+                --m_position.index;
+                const char ch = m_input[m_input_pos];
+                if (ch == '\n')
                 {
-                    m_position.line -= 1;
+                    if (m_position.line > 0)
+                        --m_position.line;
                     m_position.column = 0;
                 }
-
-                if (m_position.index > 0)
+                else if (m_position.column > 0)
                 {
-                    m_char = m_input[m_position.index];
+                    --m_position.column;
                 }
-
-            } while (times != amount);
+                m_char = static_cast<unsigned char>(ch);
+            }
         };
 
         bool lexer::scan_literal()
@@ -1358,7 +1295,7 @@ namespace myjson
 
         myjson::json parser::parse_number(const std::string &text)
         {
-            try
+            MYJSON_TRY
             {
                 const bool is_integer = (text.find('.') == std::string::npos) &&
                                         (text.find('e') == std::string::npos) &&
@@ -1370,7 +1307,7 @@ namespace myjson
                 }
                 return myjson::json(static_cast<myjson::json::number_t>(std::stod(text)));
             }
-            catch (const std::exception &)
+            MYJSON_CATCH(const std::exception &)
             {
                 MYJSON_THROW(parse_error("Invalid number literal"));
             }
@@ -1501,6 +1438,11 @@ namespace myjson
                 MYJSON_THROW(parse_error("Unexpected trailing tokens"));
             }
             return value;
+        }
+
+        deserializer::deserializer(const json &value)
+            : m_value(value)
+        {
         }
 
         //-------------------------------------------------------------------------
@@ -1953,6 +1895,60 @@ namespace myjson
     json &json::operator=(const json &other) = default;
     json &json::operator=(json &&other) noexcept = default;
 
+    json &json::operator=(std::nullptr_t) noexcept
+    {
+        m_value = nullptr;
+        return *this;
+    }
+
+    json &json::operator=(bool value) noexcept
+    {
+        m_value = value;
+        return *this;
+    }
+
+    json &json::operator=(int value) noexcept
+    {
+        m_value = static_cast<integer_t>(value);
+        return *this;
+    }
+
+    json &json::operator=(integer_t value) noexcept
+    {
+        m_value = value;
+        return *this;
+    }
+
+    json &json::operator=(number_t value) noexcept
+    {
+        m_value = value;
+        return *this;
+    }
+
+    json &json::operator=(const string_t &value)
+    {
+        m_value = value;
+        return *this;
+    }
+
+    json &json::operator=(const char *value)
+    {
+        m_value = string_t(value != nullptr ? value : "");
+        return *this;
+    }
+
+    json &json::operator=(const array_t &value)
+    {
+        m_value = value;
+        return *this;
+    }
+
+    json &json::operator=(const object_t &value)
+    {
+        m_value = value;
+        return *this;
+    }
+
     //========== Type Information ==========
 
     value_type json::type() const noexcept
@@ -2067,56 +2063,56 @@ namespace myjson
     template <typename T>
     T json::get_safe() const
     {
-        return get<T>();
+        return get<T>(T{});
     }
 
     template <>
     int json::get_safe<int>() const
     {
-        return get<int>();
+        return get<int>(0);
     }
 
-    bool json::as_bool() const noexcept { return get<bool>(); }
-    json::integer_t json::as_integer() const noexcept { return get<integer_t>(); }
-    json::number_t json::as_number() const noexcept { return get<number_t>(); }
-    json::string_t json::as_string() const noexcept { return get<std::string>(); }
+    bool json::as_bool() const noexcept { return get<bool>(false); }
+    json::integer_t json::as_integer() const noexcept { return get<integer_t>(0); }
+    json::number_t json::as_number() const noexcept { return get<number_t>(0.0); }
+    json::string_t json::as_string() const noexcept { return get<std::string>(std::string()); }
 
     //========== Helper Methods ==========
 
-    void json::_ensure_object()
+    void json::ensure_object()
     {
         if (!is_object())
             m_value = object_t();
     }
 
-    void json::_ensure_array()
+    void json::ensure_array()
     {
         if (!is_array())
             m_value = array_t();
     }
 
-    const json::object_t &json::_get_object() const
+    const json::object_t &json::get_object() const
     {
         if (!is_object())
             MYJSON_THROW(std::runtime_error("Cannot access as object"));
         return std::get<object_t>(m_value);
     }
 
-    const json::array_t &json::_get_array() const
+    const json::array_t &json::get_array() const
     {
         if (!is_array())
             MYJSON_THROW(std::runtime_error("Cannot access as array"));
         return std::get<array_t>(m_value);
     }
 
-    json::object_t &json::_get_object()
+    json::object_t &json::get_object()
     {
         if (!is_object())
             MYJSON_THROW(std::runtime_error("Cannot access as object"));
         return std::get<object_t>(m_value);
     }
 
-    json::array_t &json::_get_array()
+    json::array_t &json::get_array()
     {
         if (!is_array())
             MYJSON_THROW(std::runtime_error("Cannot access as array"));
@@ -2125,20 +2121,20 @@ namespace myjson
 
     //========== Container Access (Objects) ==========
 
-    json &json::at(const std::string &key) { return _get_object().at(key); }
-    const json &json::at(const std::string &key) const { return _get_object().at(key); }
+    json &json::at(const std::string &key) { return get_object().at(key); }
+    const json &json::at(const std::string &key) const { return get_object().at(key); }
 
     json &json::operator[](const std::string &key)
     {
-        _ensure_object();
-        return _get_object()[key];
+        ensure_object();
+        return get_object()[key];
     }
 
     json json::operator[](const std::string &key) const
     {
         if (!is_object())
             return json();
-        auto &obj = _get_object();
+        auto &obj = get_object();
         auto it = obj.find(key);
         return it != obj.end() ? it->second : json();
     }
@@ -2150,78 +2146,84 @@ namespace myjson
     {
         if (!is_object())
             return false;
-        return _get_object().find(key) != _get_object().end();
+        return get_object().find(key) != get_object().end();
     }
 
     size_t json::count(const std::string &key) const noexcept
     {
         if (!is_object())
             return 0;
-        return _get_object().count(key);
+        return get_object().count(key);
     }
 
     size_t json::erase(const std::string &key) noexcept
     {
         if (!is_object())
             return 0;
-        return _get_object().erase(key);
+        return get_object().erase(key);
     }
 
     //========== Container Access (Arrays) ==========
 
-    json &json::at(size_t index) { return _get_array().at(index); }
-    const json &json::at(size_t index) const { return _get_array().at(index); }
+    json &json::at(size_t index) { return get_array().at(index); }
+    const json &json::at(size_t index) const { return get_array().at(index); }
 
     json &json::operator[](size_t index)
     {
-        _ensure_array();
-        auto &arr = _get_array();
+        ensure_array();
+        auto &arr = get_array();
         if (index >= arr.size())
             arr.resize(index + 1);
         return arr[index];
     }
 
-    const json &json::operator[](size_t index) const { return _get_array().at(index); }
+    const json &json::operator[](size_t index) const { return get_array().at(index); }
 
-    json &json::front() { return _get_array().front(); }
-    const json &json::front() const { return _get_array().front(); }
-    json &json::back() { return _get_array().back(); }
-    const json &json::back() const { return _get_array().back(); }
+    json &json::front() { return get_array().front(); }
+    const json &json::front() const { return get_array().front(); }
+    json &json::back() { return get_array().back(); }
+    const json &json::back() const { return get_array().back(); }
 
     void json::push_back(const json &value)
     {
-        _ensure_array();
-        _get_array().push_back(value);
+        ensure_array();
+        get_array().push_back(value);
     }
 
     void json::push_back(json &&value)
     {
-        _ensure_array();
-        _get_array().push_back(std::move(value));
+        ensure_array();
+        get_array().push_back(std::move(value));
+    }
+
+    void json::push_back(bool value)
+    {
+        ensure_array();
+        get_array().push_back(json(value));
     }
 
     void json::push_front(const json &value)
     {
-        _ensure_array();
-        _get_array().insert(_get_array().begin(), value);
+        ensure_array();
+        get_array().insert(get_array().begin(), value);
     }
 
     json::array_iterator json::insert(const array_const_iterator &pos, const json &value)
     {
-        _ensure_array();
-        return _get_array().insert(pos, value);
+        ensure_array();
+        return get_array().insert(pos, value);
     }
 
     json::array_iterator json::insert(const array_const_iterator &pos, json &&value)
     {
-        _ensure_array();
-        return _get_array().insert(pos, std::move(value));
+        ensure_array();
+        return get_array().insert(pos, std::move(value));
     }
 
-    json::array_iterator json::erase(array_const_iterator pos) { return _get_array().erase(pos); }
+    json::array_iterator json::erase(array_const_iterator pos) { return get_array().erase(pos); }
     json::array_iterator json::erase(array_const_iterator first, array_const_iterator last)
     {
-        return _get_array().erase(first, last);
+        return get_array().erase(first, last);
     }
 
     //========== Size and Capacity ==========
@@ -2229,9 +2231,9 @@ namespace myjson
     size_t json::size() const noexcept
     {
         if (is_object())
-            return _get_object().size();
+            return get_object().size();
         if (is_array())
-            return _get_array().size();
+            return get_array().size();
         return 0;
     }
 
@@ -2240,27 +2242,27 @@ namespace myjson
     void json::clear() noexcept
     {
         if (is_object())
-            _get_object().clear();
+            get_object().clear();
         else if (is_array())
-            _get_array().clear();
+            get_array().clear();
     }
 
     //========== Iteration ==========
 
-    json::iterator json::begin() { return _get_object().begin(); }
-    json::const_iterator json::begin() const { return _get_object().begin(); }
-    json::const_iterator json::cbegin() const { return _get_object().cbegin(); }
-    json::iterator json::end() { return _get_object().end(); }
-    json::const_iterator json::end() const { return _get_object().end(); }
-    json::const_iterator json::cend() const { return _get_object().cend(); }
-    json::reverse_iterator json::rbegin() { return _get_object().rbegin(); }
-    json::const_reverse_iterator json::rbegin() const { return _get_object().rbegin(); }
-    json::reverse_iterator json::rend() { return _get_object().rend(); }
-    json::const_reverse_iterator json::rend() const { return _get_object().rend(); }
-    json::array_iterator json::array_begin() { return _get_array().begin(); }
-    json::array_const_iterator json::array_begin() const { return _get_array().begin(); }
-    json::array_iterator json::array_end() { return _get_array().end(); }
-    json::array_const_iterator json::array_end() const { return _get_array().end(); }
+    json::iterator json::begin() { return get_object().begin(); }
+    json::const_iterator json::begin() const { return get_object().begin(); }
+    json::const_iterator json::cbegin() const { return get_object().cbegin(); }
+    json::iterator json::end() { return get_object().end(); }
+    json::const_iterator json::end() const { return get_object().end(); }
+    json::const_iterator json::cend() const { return get_object().cend(); }
+    json::reverse_iterator json::rbegin() { return get_object().rbegin(); }
+    json::const_reverse_iterator json::rbegin() const { return get_object().rbegin(); }
+    json::reverse_iterator json::rend() { return get_object().rend(); }
+    json::const_reverse_iterator json::rend() const { return get_object().rend(); }
+    json::array_iterator json::array_begin() { return get_array().begin(); }
+    json::array_const_iterator json::array_begin() const { return get_array().begin(); }
+    json::array_iterator json::array_end() { return get_array().end(); }
+    json::array_const_iterator json::array_end() const { return get_array().end(); }
 
     //========== Comparison ==========
 
@@ -2284,9 +2286,9 @@ namespace myjson
         case value_type::string:
             return as_string() < other.as_string();
         case value_type::array:
-            return _get_array() < other._get_array();
+            return get_array() < other.get_array();
         case value_type::object:
-            return _get_object() < other._get_object();
+            return get_object() < other.get_object();
         }
 
         return false;
@@ -2412,9 +2414,9 @@ namespace myjson
     {
         if (!other.is_object())
             return;
-        _ensure_object();
-        auto &self_obj = _get_object();
-        const auto &other_obj = other._get_object();
+        ensure_object();
+        auto &self_obj = get_object();
+        const auto &other_obj = other.get_object();
         for (const auto &[key, value] : other_obj)
         {
             if (self_obj.find(key) == self_obj.end())
@@ -2427,7 +2429,7 @@ namespace myjson
         std::vector<std::string> result;
         if (is_object())
         {
-            for (const auto &[key, _] : _get_object())
+            for (const auto &[key, _] : get_object())
                 result.push_back(key);
         }
         return result;
@@ -2437,10 +2439,10 @@ namespace myjson
     {
         std::vector<json> result;
         if (is_array())
-            result = _get_array();
+            result = get_array();
         else if (is_object())
         {
-            for (const auto &[_, value] : _get_object())
+            for (const auto &[_, value] : get_object())
                 result.push_back(value);
         }
         return result;
@@ -2489,21 +2491,21 @@ namespace myjson
         }
     }
 
-    patch_operation_type json_patch::get_operation_type(const json &op)
+    json_patch::operation_t json_patch::get_operation_type(const json &op)
     {
         std::string op_str = op["op"].as_string();
         if (op_str == "add")
-            return patch_operation_type::add;
+            return json_patch::operation_t::add;
         if (op_str == "remove")
-            return patch_operation_type::remove;
+            return json_patch::operation_t::remove;
         if (op_str == "replace")
-            return patch_operation_type::replace;
+            return json_patch::operation_t::replace;
         if (op_str == "move")
-            return patch_operation_type::move;
+            return json_patch::operation_t::move;
         if (op_str == "copy")
-            return patch_operation_type::copy;
+            return json_patch::operation_t::copy;
         if (op_str == "test")
-            return patch_operation_type::test;
+            return json_patch::operation_t::test;
         MYJSON_THROW(std::invalid_argument("Unknown patch operation: " + op_str));
     }
 
@@ -2516,14 +2518,14 @@ namespace myjson
 
         switch (op_type)
         {
-        case patch_operation_type::add:
-        case patch_operation_type::replace:
+        case operation_t::add:
+        case operation_t::replace:
             if (!op.contains("value"))
                 MYJSON_THROW(std::invalid_argument("Missing value in operation"));
             document.at_pointer(op["path"].as_string()) = op["value"];
             break;
 
-        case patch_operation_type::remove:
+        case operation_t::remove:
         {
             std::string path = op["path"].as_string();
             json_pointer ptr(path);
@@ -2536,11 +2538,11 @@ namespace myjson
                     p.erase(key);
                 else if (p.is_array())
                 {
-                    try
+                    MYJSON_TRY
                     {
                         p.erase(p.array_begin() + std::stoul(key));
                     }
-                    catch (...)
+                    MYJSON_CATCH(...)
                     {
                         MYJSON_THROW(std::runtime_error("Invalid array index"));
                     }
@@ -2549,14 +2551,14 @@ namespace myjson
             break;
         }
 
-        case patch_operation_type::move:
-        case patch_operation_type::copy:
+        case operation_t::move:
+        case operation_t::copy:
         {
             if (!op.contains("from"))
                 MYJSON_THROW(std::invalid_argument("Missing from in operation"));
             json value = document.at_pointer(op["from"].as_string());
             document.at_pointer(op["path"].as_string()) = value;
-            if (op_type == patch_operation_type::move)
+            if (op_type == operation_t::move)
             {
                 std::string from = op["from"].as_string();
                 json_pointer ptr(from);
@@ -2569,11 +2571,11 @@ namespace myjson
                         p.erase(key);
                     else if (p.is_array())
                     {
-                        try
+                        MYJSON_TRY
                         {
                             p.erase(p.array_begin() + std::stoul(key));
                         }
-                        catch (...)
+                        MYJSON_CATCH(...)
                         {
                         }
                     }
@@ -2582,7 +2584,7 @@ namespace myjson
             break;
         }
 
-        case patch_operation_type::test:
+        case operation_t::test:
             if (!op.contains("value"))
                 MYJSON_THROW(std::invalid_argument("Missing value in test"));
             if (!(document.at_pointer(op["path"].as_string()) == op["value"]))
@@ -2746,20 +2748,24 @@ namespace myjson
         {
             if (current->is_array())
             {
-                try
+                MYJSON_TRY
                 {
                     size_t index = std::stoul(token);
                     current = &current->at(index);
                 }
-                catch (...)
+                MYJSON_CATCH(...)
                 {
                     MYJSON_THROW(std::out_of_range("Invalid array index"));
                 }
             }
             else if (current->is_object())
+            {
                 current = &current->at(token);
+            }
             else
+            {
                 MYJSON_THROW(std::invalid_argument("Cannot traverse non-container"));
+            }
         }
         return *current;
     }
@@ -2784,13 +2790,11 @@ namespace myjson
     //-----------------------------------------------------------------------------
     // [Class] json_merge_patch
     //-----------------------------------------------------------------------------
-
-    //========== JSON Merge Patch Implementation (RFC 7386) ==========
+    // ================ JSON Merge Patch Implementation (RFC 7386) ================
+    //-----------------------------------------------------------------------------
 
     json_merge_patch::json_merge_patch(const json &patch_json)
-        : m_patch(patch_json)
-    {
-    }
+        : m_patch(patch_json) {}
 
     json json_merge_patch::apply(const json &document) const
     {
@@ -2805,20 +2809,29 @@ namespace myjson
     json json_merge_patch::apply_recursive(const json &target, const json &patch)
     {
         if (patch.is_null())
+        {
             return json();
+        }
+
         if (!patch.is_object() || !target.is_object())
+        {
             return patch;
+        }
 
         json result = target.clone();
         for (const auto &key : patch.keys())
         {
             json value = patch[key];
             if (value.is_null())
+            {
                 result.erase(key);
+            }
             else
+            {
                 result[key] = apply_recursive(
                     result.contains(key) ? result[key] : json::object(),
                     value);
+            }
         }
         return result;
     }
@@ -2826,21 +2839,31 @@ namespace myjson
     json json_merge_patch::generate(const json &source, const json &target)
     {
         if (source == target)
+        {
             return json::object();
+        }
+
         if (!source.is_object() || !target.is_object())
+        {
             return target;
+        }
 
         json patch = json::object();
         for (const auto &key : target.keys())
         {
             json value = target[key];
             if (!source.contains(key) || source[key] != value)
+            {
                 patch[key] = value;
+            }
         }
+
         for (const auto &key : source.keys())
         {
             if (!target.contains(key))
+            {
                 patch[key] = nullptr;
+            }
         }
         return patch;
     }
@@ -2989,10 +3012,10 @@ namespace myjson
         return ostream;
     };
 
-    std::istream &operator>>(std::istream &ostream, const json &node)
+    std::istream &operator>>(std::istream &stream, json &node)
     {
-        const_cast<json &>(node) = json::parse(ostream);
-        return ostream;
+        node = json::parse(stream);
+        return stream;
     };
 
 #endif // MYJSON_NO_STL
@@ -3164,7 +3187,7 @@ namespace myjson
             auto utf8_str = detail::utf16::to_utf8(
                 std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
                                            reinterpret_cast<const unsigned char *>(string) + size * 2),
-                detail::endian::native);
+                detail::myjson_endian_t::native);
             return json::parse(utf8_str);
         };
 
@@ -3173,7 +3196,7 @@ namespace myjson
             auto utf8_str = detail::utf32::to_utf8(
                 std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
                                            reinterpret_cast<const unsigned char *>(string) + size * 4),
-                detail::endian::native);
+                detail::myjson_endian_t::native);
             return json::parse(utf8_str);
         };
 
@@ -3196,7 +3219,7 @@ namespace myjson
             auto utf8_str = detail::utf16::to_utf8(
                 std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
                                            reinterpret_cast<const unsigned char *>(string) + size * 2),
-                detail::endian::native);
+                detail::myjson_endian_t::native);
             return myjson::json_pointer(utf8_str);
         };
 
@@ -3205,7 +3228,7 @@ namespace myjson
             auto utf8_str = detail::utf32::to_utf8(
                 std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
                                            reinterpret_cast<const unsigned char *>(string) + size * 4),
-                detail::endian::native);
+                detail::myjson_endian_t::native);
             return myjson::json_pointer(utf8_str);
         };
 

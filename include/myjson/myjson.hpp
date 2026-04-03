@@ -156,6 +156,7 @@
 
 // clang-format off
 
+#include <cstddef>
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
     #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -655,6 +656,10 @@
     #define MYJSON_DEPRECATED(msg)
 #endif
 
+#ifndef MYJSON_NODISCARD
+    #define MYJSON_NODISCARD [[nodiscard]]
+#endif
+
 // switch usage of constexpr keyword depending on active C++ standard.
 #if defined(MYJSON_HAS_CXX_17)
     #define MYJSON_CONSTEXPR constexpr
@@ -1061,29 +1066,27 @@ namespace myjson
 
         using encoding = myjson::encoding;
 
-#if defined(__cpp_lib_endian)
+#ifdef endian
+#undef endian
+#endif
 
         /**
-         * @brief Standard-compliant enum class representing endianness.
+         * @brief Internal numeric endianness representation.
          */
-        using endian = std::endian;
-#else
-        /**
-         * @brief Indicates the byte order (endianness) of scalar types.
-         */
-        enum class endian
+        using myjson_endian_value_t = uint16_t;
+
+        struct myjson_endian_t
         {
 #if MYJSON_COMPILER_IS_GCC
-            little = __ORDER_LITTLE_ENDIAN__,
-            big = __ORDER_BIG_ENDIAN__,
-            native = __BYTE_ORDER__
+            static constexpr myjson_endian_value_t little = __ORDER_LITTLE_ENDIAN__;
+            static constexpr myjson_endian_value_t big = __ORDER_BIG_ENDIAN__;
+            static constexpr myjson_endian_value_t native = __BYTE_ORDER__;
 #else
-            little = 0,
-            big = 1,
-            native = little
+            static constexpr myjson_endian_value_t little = 0;
+            static constexpr myjson_endian_value_t big = 1;
+            static constexpr myjson_endian_value_t native = little;
 #endif // MYJSON_COMPILER_IS_GCC
         };
-#endif // __cpp_lib_endian
 
         /**
          * @brief Determine the text encoding of the supplied buffer.
@@ -1172,7 +1175,7 @@ namespace myjson
              * @param order Desired byte order for output (default: native).
              * @return A vector of bytes containing the UTF-16 encoding.
              */
-            static std::vector<unsigned char> to_utf16(const std::string &string, endian order = endian::native);
+            static std::vector<unsigned char> to_utf16(const std::string &string, myjson_endian_value_t order);
 
             /**
              * @brief Convert a UTF-8 std::string to a UTF-32 byte vector.
@@ -1184,7 +1187,7 @@ namespace myjson
              * @param order Desired byte order for output (default: native).
              * @return A vector of bytes containing the UTF-32 encoding.
              */
-            static std::vector<unsigned char> to_utf32(const std::string &string, endian order = endian::native);
+            static std::vector<unsigned char> to_utf32(const std::string &string, myjson_endian_value_t order);
         };
 
         /**
@@ -1212,7 +1215,7 @@ namespace myjson
              * @param order Order to interprete incoming bytes.
              * @return Number of bytes consumed (2 or 4) or -1 on error.
              */
-            static int decode(const char *data, size_t size, unsigned int &value, endian order = endian::native);
+            static int decode(const char *data, size_t size, unsigned int &value, myjson_endian_value_t order);
 
             /**
              * @brief Encode a Unicode code point into UTF-16 code units.
@@ -1227,7 +1230,7 @@ namespace myjson
              * @param order Order to represent/write the code units (codepoint) in.
              * @return Number of UTF-16 bytes written (2 or 4) or -1 on error.
              */
-            static int encode(unsigned int codepoint, char_t *output, size_t size, endian order = endian::native);
+            static int encode(unsigned int codepoint, char_t *output, size_t size, myjson_endian_value_t order);
 
             /**
              * @brief Convert a UTF-16 byte vector into a UTF-8 std::string.
@@ -1241,7 +1244,7 @@ namespace myjson
              *         ill-formed the function will attempt best-effort
              *         conversion and may replace invalid sequences.
              */
-            static std::string to_utf8(const std::vector<unsigned char> &bytes, endian order = endian::native);
+            static std::string to_utf8(const std::vector<unsigned char> &bytes, myjson_endian_value_t order);
         };
 
         /**
@@ -1267,7 +1270,7 @@ namespace myjson
              * @param order Byte order of the input bytes.
              * @return Number of bytes consumed (4) on success, or -1 on error.
              */
-            static int decode(const char *data, size_t size, unsigned int &value, endian order = endian::native);
+            static int decode(const char *data, size_t size, unsigned int &value, myjson_endian_value_t order);
 
             /**
              * @brief Encode a Unicode code point as UTF-32.
@@ -1281,7 +1284,7 @@ namespace myjson
              * @param order Byte order to use for the output.
              * @return Number of units written (1 == 4 bytes) or -1 on error.
              */
-            static int encode(unsigned int codepoint, char_t *output, size_t size, endian order = endian::native);
+            static int encode(unsigned int codepoint, char_t *output, size_t size, myjson_endian_value_t order);
 
             /**
              * @brief Convert a UTF-32 byte vector into a UTF-8 std::string.
@@ -1291,7 +1294,7 @@ namespace myjson
              * @return UTF-8 encoded std::string on success. Invalid input
              *         sequences are handled best-effort.
              */
-            static std::string to_utf8(const std::vector<unsigned char> &bytes, endian order = endian::native);
+            static std::string to_utf8(const std::vector<unsigned char> &bytes, myjson_endian_value_t order);
         };
 
         /** @} group encoding */
@@ -1559,17 +1562,17 @@ namespace myjson
              *
              * @return The current token.
              */
-            [[nodiscard]] token get_token();
+            MYJSON_NODISCARD token get_token();
 
             /**
              * @brief Return the type of the current token.
              * @return The current token type.
              */
-            [[nodiscard]] token_t get_type() const;
+            MYJSON_NODISCARD token_t get_type() const;
 
-            [[nodiscard]] token scan();
+            MYJSON_NODISCARD token scan();
 
-            [[nodiscard]] mark position() const;
+            MYJSON_NODISCARD mark position() const;
 
         private:
             /**
@@ -1606,7 +1609,7 @@ namespace myjson
              * @brief Read a character (byte) from the input adapter.
              * @return The read character value or EOF-like sentinel.
              */
-            [[nodiscard]] int get_char();
+            MYJSON_NODISCARD int get_char();
 
             /**
              * @brief Push back the last-read character so it can be read again.
@@ -1623,7 +1626,7 @@ namespace myjson
             iadapter *m_adapter{nullptr};
             myjson::encoding m_encoding;
             std::string m_string; //!
-            std::string m_input{};
+            std::string m_input;
             size_t m_input_pos{0};
             int m_putback{-1};
             mark m_position;
@@ -1671,14 +1674,14 @@ namespace myjson
              * @brief Parse one complete JSON value.
              * @return Parsed JSON value.
              */
-            [[nodiscard]] myjson::json parse();
+            MYJSON_NODISCARD myjson::json parse();
 
         private:
-            [[nodiscard]] myjson::json parse_value();
-            [[nodiscard]] myjson::json parse_object();
-            [[nodiscard]] myjson::json parse_array();
-            [[nodiscard]] myjson::json parse_number(const std::string &text);
-            [[nodiscard]] std::string parse_string(const std::string &text);
+            MYJSON_NODISCARD myjson::json parse_value();
+            MYJSON_NODISCARD myjson::json parse_object();
+            MYJSON_NODISCARD myjson::json parse_array();
+            MYJSON_NODISCARD myjson::json parse_number(const std::string &text);
+            MYJSON_NODISCARD std::string parse_string(const std::string &text);
             void advance();
 
         private:
@@ -1689,6 +1692,12 @@ namespace myjson
         class deserializer
         {
         public:
+            /**
+             * @brief Construct a deserializer view over an existing JSON value.
+             * @param value JSON value to read from.
+             */
+            explicit deserializer(const json &value);
+
             /**
              * @brief Deleted copy constructor
              */
@@ -1708,6 +1717,22 @@ namespace myjson
              * @brief Delete move assignment operator
              */
             deserializer &operator=(deserializer &&) = delete;
+
+            /**
+             * @brief Read a value of type @p T from the wrapped JSON value.
+             * @param default_value Value returned if conversion is not possible.
+             */
+            template <typename T>
+            T get(const T &default_value = T{}) const noexcept;
+
+            /**
+             * @brief Read a value of type @p T and throw on unsupported conversion.
+             */
+            template <typename T>
+            T get_safe() const;
+
+        private:
+            const json &m_value;
         };
 
         /** @} group input */
@@ -1953,7 +1978,7 @@ namespace myjson
              * @param value Value to serialize.
              * @param indent Pretty-print indentation. Use a negative value for compact output.
              */
-            void serialize(const myjson::json &value, int indent = -1);
+            void serialize(const myjson::json &value, int indent);
 
         private:
             void write_raw(const char *text, size_t size);
@@ -2188,7 +2213,7 @@ namespace myjson
          * empty string will be returned.
          * @return An error message internally held. The message might be empty.
          */
-        [[nodiscard]] const char *what() const noexcept override;
+        MYJSON_NODISCARD const char *what() const noexcept override;
 
     private:
         std::string m_Message; /** An error message holder. */
@@ -2293,20 +2318,6 @@ namespace myjson
     };
 
     /**
-     * @enum patch_operation_type
-     * @brief Types of JSON Patch operations (RFC 6902).
-     */
-    enum class patch_operation_type : uint8_t
-    {
-        add,     ///< Add a value at path
-        remove,  ///< Remove the value at path
-        replace, ///< Replace the value at path
-        move,    ///< Move value from one path to another
-        copy,    ///< Copy value from one path to another
-        test     ///< Test that a value at path equals specified value
-    };
-
-    /**
      * @class json
      * @brief A JSON value that can hold any JSON type.
      *
@@ -2335,7 +2346,7 @@ namespace myjson
         using boolean_t = bool;
         using null_t = std::nullptr_t;
 
-        // Iterator types
+        // Json/Object Iterator types
         using iterator = object_t::iterator;
         using const_iterator = object_t::const_iterator;
         using reverse_iterator = object_t::reverse_iterator;
@@ -2348,15 +2359,15 @@ namespace myjson
     public:
         //========== Constructors ==========
         json() noexcept;
-        json(std::nullptr_t) noexcept;
-        json(bool value) noexcept;
-        json(int value) noexcept;
-        json(integer_t value) noexcept;
-        json(number_t value) noexcept;
-        json(const string_t &value);
-        json(const char *value);
-        json(const array_t &value);
-        json(const object_t &value);
+        explicit json(std::nullptr_t) noexcept;
+        explicit json(bool value) noexcept;
+        explicit json(int value) noexcept;
+        explicit json(integer_t value) noexcept;
+        explicit json(number_t value) noexcept;
+        explicit json(const string_t &value);
+        explicit json(const char *value);
+        explicit json(const array_t &value);
+        explicit json(const object_t &value);
 
         static json object();
         static json array();
@@ -2368,50 +2379,102 @@ namespace myjson
         json &operator=(const json &other);
         json &operator=(json &&other) noexcept;
 
+        /**
+         * @brief Assign JSON null.
+         */
+        json &operator=(std::nullptr_t) noexcept;
+
+        /**
+         * @brief Assign a boolean value.
+         */
+        json &operator=(bool value) noexcept;
+
+        /**
+         * @brief Assign a signed integer value.
+         */
+        json &operator=(int value) noexcept;
+
+        /**
+         * @brief Assign a 64-bit integer value.
+         */
+        json &operator=(integer_t value) noexcept;
+
+        /**
+         * @brief Assign a floating-point numeric value.
+         */
+        json &operator=(number_t value) noexcept;
+
+        /**
+         * @brief Assign a UTF-8 string value.
+         */
+        json &operator=(const string_t &value);
+
+        /**
+         * @brief Assign a C-string value (nullptr becomes empty string).
+         */
+        json &operator=(const char *value);
+
+        /**
+         * @brief Assign an array value.
+         */
+        json &operator=(const array_t &value);
+
+        /**
+         * @brief Assign an object value.
+         */
+        json &operator=(const object_t &value);
+
         //========== Type Information ==========
-        value_type type() const noexcept;
-        bool is_null() const noexcept;
-        bool is_object() const noexcept;
-        bool is_array() const noexcept;
-        bool is_string() const noexcept;
-        bool is_number() const noexcept;
-        bool is_integer() const noexcept;
-        bool is_boolean() const noexcept;
-        bool is_primitive() const noexcept;
-        bool is_structured() const noexcept;
+        MYJSON_NODISCARD value_type type() const noexcept;
+        MYJSON_NODISCARD bool is_null() const noexcept;
+        MYJSON_NODISCARD bool is_object() const noexcept;
+        MYJSON_NODISCARD bool is_array() const noexcept;
+        MYJSON_NODISCARD bool is_string() const noexcept;
+        MYJSON_NODISCARD bool is_number() const noexcept;
+        MYJSON_NODISCARD bool is_integer() const noexcept;
+        MYJSON_NODISCARD bool is_boolean() const noexcept;
+        MYJSON_NODISCARD bool is_primitive() const noexcept;
+        MYJSON_NODISCARD bool is_structured() const noexcept;
 
         //========== Type Conversions ==========
         template <typename T>
-        T get(const T &default_value = T()) const noexcept;
+        T get(const T &default_value) const noexcept;
         template <typename T>
         T get_safe() const;
-        bool as_bool() const noexcept;
-        integer_t as_integer() const noexcept;
-        number_t as_number() const noexcept;
-        string_t as_string() const noexcept;
+
+        MYJSON_NODISCARD bool as_bool() const noexcept;
+        MYJSON_NODISCARD integer_t as_integer() const noexcept;
+        MYJSON_NODISCARD number_t as_number() const noexcept;
+        MYJSON_NODISCARD string_t as_string() const noexcept;
 
         //========== Container Access (Objects) ==========
         json &at(const std::string &key);
-        const json &at(const std::string &key) const;
+        MYJSON_NODISCARD const json &at(const std::string &key) const;
         json &operator[](const std::string &key);
         json operator[](const std::string &key) const;
         json &operator[](const char *key);
         json operator[](const char *key) const;
-        bool contains(const std::string &key) const noexcept;
-        size_t count(const std::string &key) const noexcept;
+        MYJSON_NODISCARD bool contains(const std::string &key) const noexcept;
+        MYJSON_NODISCARD size_t count(const std::string &key) const noexcept;
         size_t erase(const std::string &key) noexcept;
 
         //========== Container Access (Arrays) ==========
         json &at(size_t index);
-        const json &at(size_t index) const;
+        MYJSON_NODISCARD const json &at(size_t index) const;
         json &operator[](size_t index);
         const json &operator[](size_t index) const;
         json &front();
-        const json &front() const;
+        MYJSON_NODISCARD const json &front() const;
         json &back();
-        const json &back() const;
+        MYJSON_NODISCARD const json &back() const;
         void push_back(const json &value);
         void push_back(json &&value);
+
+        /**
+         * @brief Append a boolean element to the array.
+         */
+        void push_back(bool value);
+
         void push_front(const json &value);
         array_iterator insert(const array_const_iterator &pos, const json &value);
         array_iterator insert(const array_const_iterator &pos, json &&value);
@@ -2419,25 +2482,25 @@ namespace myjson
         array_iterator erase(array_const_iterator first, array_const_iterator last);
 
         //========== Size and Capacity ==========
-        size_t size() const noexcept;
-        bool empty() const noexcept;
+        MYJSON_NODISCARD size_t size() const noexcept;
+        MYJSON_NODISCARD bool empty() const noexcept;
         void clear() noexcept;
 
         //========== Iteration ==========
         iterator begin();
-        const_iterator begin() const;
-        const_iterator cbegin() const;
+        MYJSON_NODISCARD const_iterator begin() const;
+        MYJSON_NODISCARD const_iterator cbegin() const;
         iterator end();
-        const_iterator end() const;
-        const_iterator cend() const;
+        MYJSON_NODISCARD const_iterator end() const;
+        MYJSON_NODISCARD const_iterator cend() const;
         reverse_iterator rbegin();
-        const_reverse_iterator rbegin() const;
+        MYJSON_NODISCARD const_reverse_iterator rbegin() const;
         reverse_iterator rend();
-        const_reverse_iterator rend() const;
+        MYJSON_NODISCARD const_reverse_iterator rend() const;
         array_iterator array_begin();
-        array_const_iterator array_begin() const;
+        MYJSON_NODISCARD array_const_iterator array_begin() const;
         array_iterator array_end();
-        array_const_iterator array_end() const;
+        MYJSON_NODISCARD array_const_iterator array_end() const;
 
         //========== Comparison ==========
         bool operator==(const json &other) const noexcept;
@@ -2448,9 +2511,9 @@ namespace myjson
         bool operator>=(const json &other) const noexcept;
 
         //========== Serialization ==========
-        string_t dump(int indent = -1) const;
-        string_t dump_pretty() const;
-        string_t dump_compact() const;
+        MYJSON_NODISCARD string_t dump(int indent = -1) const;
+        MYJSON_NODISCARD string_t dump_pretty() const;
+        MYJSON_NODISCARD string_t dump_compact() const;
 
         //========== Parsing ==========
         static json parse(const string_t &str);
@@ -2464,34 +2527,34 @@ namespace myjson
 
         //========== JSON Pointer (RFC 6901) ==========
         json &at_pointer(const std::string &pointer);
-        const json &at_pointer(const std::string &pointer) const;
+        MYJSON_NODISCARD const json &at_pointer(const std::string &pointer) const;
         std::optional<json *> find_pointer(const std::string &pointer) noexcept;
-        std::optional<const json *> find_pointer(const std::string &pointer) const noexcept;
-        std::string pointer_to(const json &value) const;
+        MYJSON_NODISCARD std::optional<const json *> find_pointer(const std::string &pointer) const noexcept;
+        MYJSON_NODISCARD std::string pointer_to(const json &value) const;
 
         //========== JSON Patch (RFC 6902) ==========
-        json apply_patch(const json &patch) const;
+        MYJSON_NODISCARD json apply_patch(const json &patch) const;
         static json generate_patch(const json &source, const json &target);
 
         //========== JSON Merge Patch (RFC 7386) ==========
-        json apply_merge_patch(const json &patch) const;
+        MYJSON_NODISCARD json apply_merge_patch(const json &patch) const;
 
         //========== Utility ==========
-        json clone() const;
+        MYJSON_NODISCARD json clone() const;
         void merge(const json &other);
-        std::vector<std::string> keys() const;
-        std::vector<json> values() const;
+        MYJSON_NODISCARD std::vector<std::string> keys() const;
+        MYJSON_NODISCARD std::vector<json> values() const;
 
         template <typename Visitor>
         auto apply_visitor(Visitor &&vis);
 
     private:
-        void _ensure_object();
-        void _ensure_array();
-        const object_t &_get_object() const;
-        const array_t &_get_array() const;
-        object_t &_get_object();
-        array_t &_get_array();
+        void ensure_object();
+        void ensure_array();
+        MYJSON_NODISCARD const object_t &get_object() const;
+        MYJSON_NODISCARD const array_t &get_array() const;
+        object_t &get_object();
+        array_t &get_array();
 
     private:
         std::variant<
@@ -2517,17 +2580,18 @@ namespace myjson
 
     public:
         explicit json_pointer(const std::string &pointer_str);
-        std::string to_string() const;
-        const std::vector<std::string> &tokens() const;
-        size_t depth() const;
-        bool is_root() const;
-        json_pointer parent() const;
-        std::string back() const;
-        json_pointer push(const std::string &token) const;
+
+        MYJSON_NODISCARD std::string to_string() const;
+        MYJSON_NODISCARD const std::vector<std::string> &tokens() const;
+        MYJSON_NODISCARD size_t depth() const;
+        MYJSON_NODISCARD bool is_root() const;
+        MYJSON_NODISCARD json_pointer parent() const;
+        MYJSON_NODISCARD std::string back() const;
+        MYJSON_NODISCARD json_pointer push(const std::string &token) const;
         json &ref(json &document);
-        const json &ref(const json &document) const;
+        MYJSON_NODISCARD const json &ref(const json &document) const;
         std::optional<json *> try_ref(json &document) noexcept;
-        std::optional<const json *> try_ref(const json &document) const noexcept;
+        MYJSON_NODISCARD std::optional<const json *> try_ref(const json &document) const noexcept;
 
         json_pointer &operator/=(const json_pointer &ptr);
         json_pointer &operator/=(std::string token);
@@ -2549,13 +2613,30 @@ namespace myjson
      */
     class json_patch
     {
+        /**
+         * @enum operation_t
+         * @brief Types of JSON Patch operations (RFC 6902).
+         */
+        enum class operation_t : uint8_t
+        {
+            add,     ///< Add a value at path
+            remove,  ///< Remove the value at path
+            replace, ///< Replace the value at path
+            move,    ///< Move value from one path to another
+            copy,    ///< Copy value from one path to another
+            test,    ///< Test that a value at path equals specified value
+        };
+
     public:
         explicit json_patch(const json &patch_json);
-        json apply(const json &document) const;
+
+        MYJSON_NODISCARD json apply(const json &document) const;
         void apply_inplace(json &document) const;
-        const json &operations() const;
-        size_t size() const;
-        bool empty() const;
+
+        MYJSON_NODISCARD const json &operations() const;
+        MYJSON_NODISCARD size_t size() const;
+        MYJSON_NODISCARD bool empty() const;
+
         static json add_operation(const std::string &path, const json &value);
         static json remove_operation(const std::string &path);
         static json replace_operation(const std::string &path, const json &value);
@@ -2564,8 +2645,8 @@ namespace myjson
         static json test_operation(const std::string &path, const json &value);
 
     private:
-        void apply_operation(const json &op, json &document) const;
-        static patch_operation_type get_operation_type(const json &op);
+        void apply_operation(const json &operation, json &document) const;
+        static operation_t get_operation_type(const json &operation);
 
     private:
         json m_operations;
@@ -2579,8 +2660,10 @@ namespace myjson
     {
     public:
         explicit json_merge_patch(const json &patch_json);
-        json apply(const json &document) const;
+
+        MYJSON_NODISCARD json apply(const json &document) const;
         void apply_inplace(json &document) const;
+
         static json generate(const json &source, const json &target);
 
     private:
@@ -2589,6 +2672,21 @@ namespace myjson
     private:
         json m_patch;
     };
+
+    namespace detail
+    {
+        template <typename T>
+        T deserializer::get(const T &default_value) const noexcept
+        {
+            return m_value.template get<T>(default_value);
+        }
+
+        template <typename T>
+        T deserializer::get_safe() const
+        {
+            return m_value.template get_safe<T>();
+        }
+    } // namespace detail
 
     /** @} */
 
@@ -2649,7 +2747,7 @@ namespace myjson
      * @param[in] node A json object.
      * @return Reference to the input stream object `stream`.
      */
-    std::istream &operator>>(std::istream &stream, const json &node);
+    std::istream &operator>>(std::istream &stream, json &node);
 
 #endif // MYJSON_NO_STL
 
