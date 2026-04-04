@@ -121,5 +121,36 @@ int main()
         }
     }
 
+        // Example 6: Pointer utilities
+    std::cout << "\nExample 6: Pointer utilities" << std::endl;
+
+            myjson::json document = myjson::json::parse(R"({
+        "user": {
+            "name": "Ada",
+            "roles": ["admin", "editor", "reader"],
+            "active": true
+        }
+    })");
+
+    std::cout << "Initial document:\n" << document.dump_pretty() << "\n\n";
+
+    std::cout << "contains /user/name: " << document.contains_pointer("/user/name") << "\n";
+    std::cout << "contains /user/email: " << document.contains_pointer("/user/email") << "\n";
+
+    const bool removed = document.erase_pointer("/user/roles/1");
+    std::cout << "erase /user/roles/1: " << removed << "\n";
+
+    const bool removed_missing = document.erase_pointer("/user/roles/99");
+    std::cout << "erase /user/roles/99: " << removed_missing << "\n";
+
+    std::cout << "\nAfter erase:\n" << document.dump_pretty() << "\n";
+
+    myjson::json_pointer pointer("/user");
+    pointer /= "roles";
+    pointer /= 0;
+
+    std::cout << "\nPointer built with /=: " << pointer.to_string() << "\n";
+    std::cout << "Value at pointer: " << document[pointer].dump_compact() << "\n";
+
     return 0;
 }

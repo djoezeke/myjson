@@ -82,6 +82,7 @@
 #include <stdio.h>  //
 #include <stdlib.h> //
 #include <string.h> //
+#include <type_traits>
 
 //-------------------------------------------------------------------------
 // [SECTION] Defines
@@ -121,6 +122,134 @@ namespace myjson
 
     namespace detail
     {
+
+#ifndef MYJSON_NO_EXCEPTIONS
+
+        //-----------------------------------------------------------------------------
+        // [SECTION] Myjson : Exceptions
+        //-----------------------------------------------------------------------------
+        // - exception()
+        // - what()
+        // - parse_error()
+        // - generate()
+        // - encoding_error()
+        // - generate()
+        //-----------------------------------------------------------------------------
+
+        exception::exception(const char *message) noexcept
+        {
+            if (message != nullptr)
+            {
+                m_Message.append(message);
+            }
+        };
+
+        const char *exception::what() const noexcept { return m_Message.c_str(); };
+
+        parse_error::parse_error(const char *message) noexcept
+            : exception(generate(message, {})) {};
+
+        parse_error::parse_error(const char *message, detail::mark mark) noexcept
+            : exception(generate(message, mark)) {};
+
+        const char *parse_error::generate(const char *message, detail::mark mark) noexcept
+        {
+            // Use a thread_local buffer so the returned pointer remains valid
+            // until the next call on the same thread. Callers should copy the
+            // string if they need to keep it longer.
+            thread_local std::string buffer;
+            buffer.clear();
+
+            if (message != nullptr)
+            {
+                buffer.append(message);
+            }
+
+            // Append positional information if available
+            char tmp[128];
+            int n = snprintf(tmp, sizeof(tmp), " (line: %zu, column: %zu, index: %zu)", mark.line, mark.column, mark.index);
+            if (n > 0)
+            {
+                buffer.append(tmp, static_cast<size_t>(n));
+            }
+
+            // Ensure null-termination and return pointer
+            return buffer.c_str();
+        };
+
+        encoding_error::encoding_error(const char *message) noexcept
+            : exception(generate(encoding::unspecified, message, nullptr, 0)) {};
+
+        encoding_error::encoding_error(encoding encoding, const char *message, void *data, size_t size) noexcept
+            : exception(generate(encoding, message, data, size)) {};
+
+        const char *encoding_error::generate(encoding enc, const char *message, void *data, size_t size) noexcept
+        {
+            thread_local std::string buffer;
+            buffer.clear();
+
+            if (message != nullptr)
+            {
+                buffer.append(message);
+            }
+
+            // Append encoding name
+            const char *enc_name = "unspecified";
+            switch (enc)
+            {
+            case encoding::utf8:
+                enc_name = "utf-8";
+                break;
+            case encoding::utf16:
+            case encoding::utf16le:
+                enc_name = "utf-16-le";
+                break;
+            case encoding::utf16be:
+                enc_name = "utf-16-be";
+                break;
+            case encoding::utf32:
+            case encoding::utf32le:
+                enc_name = "utf-32-le";
+                break;
+            case encoding::utf32be:
+                enc_name = "utf-32-be";
+                break;
+            default:
+                break;
+            }
+
+            char tmp[128];
+            int n = snprintf(tmp, sizeof(tmp), " [encoding: %s]", enc_name);
+            if (n > 0)
+            {
+                buffer.append(tmp, static_cast<size_t>(n));
+            }
+
+            // If data is provided, append a short hex preview (up to 8 bytes)
+            if (data != nullptr && size > 0)
+            {
+                const unsigned char *b = reinterpret_cast<const unsigned char *>(data);
+                size_t preview = (size < 8) ? size : 8; // limit
+                buffer.append(" [data: 0x");
+                for (size_t i = 0; i < preview; ++i)
+                {
+                    int written = snprintf(tmp, sizeof(tmp), "%02x", b[i]);
+                    if (written > 0)
+                    {
+                        buffer.append(tmp, static_cast<size_t>(written));
+                    }
+                }
+                if (size > preview)
+                {
+                    buffer.append("...");
+                }
+                buffer.append("]");
+            }
+
+            return buffer.c_str();
+        };
+
+#endif // MYJSON_NO_EXCEPTIONS
 
         //-------------------------------------------------------------------------
         // [SECTION] Details : Encoding
@@ -1445,6 +1574,74 @@ namespace myjson
         {
         }
 
+        template <typename T>
+        T deserializer::get(const T &default_value) const noexcept
+        {
+            if (m_value.is_object())
+            {
+                if constexpr (std::is_same<T, std::string>::value)
+                {
+                    for (auto it = m_value.begin(); it != m_value.end(); ++it)
+                    {
+                        if (it->second.is_string())
+                        {
+                            return it->second.as_string();
+                        }
+                    }
+                }
+                else if constexpr (std::is_same<T, bool>::value)
+                {
+                    for (auto it = m_value.begin(); it != m_value.end(); ++it)
+                    {
+                        if (it->second.is_boolean())
+                        {
+                            return it->second.as_bool();
+                        }
+                    }
+                }
+                else if constexpr (std::is_same<T, int>::value || std::is_same<T, int64_t>::value)
+                {
+                    for (auto it = m_value.begin(); it != m_value.end(); ++it)
+                    {
+                        if (it->second.is_integer() || it->second.is_number())
+                        {
+                            return static_cast<T>(it->second.as_integer());
+                        }
+                    }
+                }
+                else if constexpr (std::is_same<T, double>::value)
+                {
+                    for (auto it = m_value.begin(); it != m_value.end(); ++it)
+                    {
+                        if (it->second.is_number() || it->second.is_integer())
+                        {
+                            return it->second.as_number();
+                        }
+                    }
+                }
+            }
+
+            return m_value.get<T>(default_value);
+        }
+
+        template <typename T>
+        T deserializer::get_safe() const
+        {
+            return m_value.get_safe<T>();
+        }
+
+        template bool deserializer::get<bool>(const bool &default_value) const noexcept;
+        template int deserializer::get<int>(const int &default_value) const noexcept;
+        template int64_t deserializer::get<int64_t>(const int64_t &default_value) const noexcept;
+        template double deserializer::get<double>(const double &default_value) const noexcept;
+        template std::string deserializer::get<std::string>(const std::string &default_value) const noexcept;
+
+        template bool deserializer::get_safe<bool>() const;
+        template int deserializer::get_safe<int>() const;
+        template int64_t deserializer::get_safe<int64_t>() const;
+        template double deserializer::get_safe<double>() const;
+        template std::string deserializer::get_safe<std::string>() const;
+
         //-------------------------------------------------------------------------
         // [SECTION] Details : Output
         //-------------------------------------------------------------------------
@@ -1619,16 +1816,16 @@ namespace myjson
         {
             switch (value.type())
             {
-            case value_type::null:
+            case value_t::null:
                 write_raw("null", 4);
                 return;
-            case value_type::boolean:
+            case value_t::boolean:
                 write_raw(value.as_bool() ? "true" : "false", value.as_bool() ? 4 : 5);
                 return;
-            case value_type::integer:
+            case value_t::integer:
                 write_raw(std::to_string(value.as_integer()));
                 return;
-            case value_type::number:
+            case value_t::number:
             {
                 const auto number = value.as_number();
                 if (std::isnan(number) || std::isinf(number))
@@ -1641,10 +1838,10 @@ namespace myjson
                 write_raw(oss.str());
                 return;
             }
-            case value_type::string:
+            case value_t::string:
                 write_escaped(value.as_string());
                 return;
-            case value_type::array:
+            case value_t::array:
             {
                 write_raw("[", 1);
                 const auto values = value.values();
@@ -1667,7 +1864,7 @@ namespace myjson
                 write_raw("]", 1);
                 return;
             }
-            case value_type::object:
+            case value_t::object:
             {
                 write_raw("{", 1);
                 size_t index = 0;
@@ -1712,15 +1909,119 @@ namespace myjson
         // [SECTION] Details : Conversions
         //-------------------------------------------------------------------------
 
+        void from_json(const json &j, std::nullptr_t &v)
+        {
+            if (!j.is_null())
+            {
+                MYJSON_THROW(std::invalid_argument("from_json(null): value is not null"));
+            }
+            v = nullptr;
+        }
+
+        void from_json(const json &j, bool &v)
+        {
+            v = j.as_bool();
+        }
+
+        void from_json(const json &j, int64_t &v)
+        {
+            v = j.as_integer();
+        }
+
+        void from_json(const json &j, double &v)
+        {
+            v = j.as_number();
+        }
+
+        void from_json(const json &j, std::string &v)
+        {
+            v = j.as_string();
+        }
+
+        void to_json(json &j, const std::nullptr_t &)
+        {
+            j = nullptr;
+        }
+
+        void to_json(json &j, const bool &v)
+        {
+            j = v;
+        }
+
+        void to_json(json &j, const int64_t &v)
+        {
+            j = v;
+        }
+
+        void to_json(json &j, const double &v)
+        {
+            j = v;
+        }
+
+        void to_json(json &j, const std::string &v)
+        {
+            j = v;
+        }
+
+        void external_constructor<value_t::null>::construct(json &j, std::nullptr_t) noexcept
+        {
+            j = nullptr;
+        }
+
+        void external_constructor<value_t::object>::construct(json &j, const std::map<std::string, json> &type) noexcept
+        {
+            j = json(type);
+        }
+
+        void external_constructor<value_t::array>::construct(json &j, const std::vector<json> &type) noexcept
+        {
+            j = json(type);
+        }
+
+        void external_constructor<value_t::string>::construct(json &j, const std::string &type) noexcept
+        {
+            j = json(type);
+        }
+
+        void external_constructor<value_t::number>::construct(json &j, double type) noexcept
+        {
+            j = json(type);
+        }
+
+        void external_constructor<value_t::integer>::construct(json &j, int64_t type) noexcept
+        {
+            j = json(type);
+        }
+
+        void external_constructor<value_t::boolean>::construct(json &j, bool type) noexcept
+        {
+            j = json(type);
+        }
+
         //-----------------------------------------------------------------------------
         // [SECTION] Details : Functions
         //-----------------------------------------------------------------------------
 
-        const char *string(mark type) { return ""; };
+        const char *string(mark type)
+        {
+            static thread_local std::string text;
+            text = "line=" + std::to_string(type.line) + ", column=" + std::to_string(type.column) + ", index=" + std::to_string(type.index);
+            return text.c_str();
+        };
 
-        const char *string(event type) { return ""; };
+        const char *string(event type)
+        {
+            static thread_local std::string text;
+            text = "event(type=" + std::to_string(static_cast<unsigned int>(type.type)) + ", start={" + string(type.start) + "}, end={" + string(type.end) + "})";
+            return text.c_str();
+        };
 
-        const char *string(token type) { return ""; };
+        const char *string(token type)
+        {
+            static thread_local std::string text;
+            text = "token(type=" + std::to_string(static_cast<unsigned int>(type.type)) + ", text=\"" + type.text + "\", start={" + string(type.start) + "}, end={" + string(type.end) + "})";
+            return text.c_str();
+        };
 
 #ifndef MYJSON_NO_STL
 
@@ -1728,6 +2029,51 @@ namespace myjson
         {
             switch (type)
             {
+            case token_t::unknown:
+                ostream << "unknown";
+                break;
+            case token_t::array_end:
+                ostream << "array_end";
+                break;
+            case token_t::stream_end:
+                ostream << "stream_end";
+                break;
+            case token_t::object_end:
+                ostream << "object_end";
+                break;
+            case token_t::array_start:
+                ostream << "array_start";
+                break;
+            case token_t::end_of_input:
+                ostream << "end_of_input";
+                break;
+            case token_t::stream_start:
+                ostream << "stream_start";
+                break;
+            case token_t::object_start:
+                ostream << "object_start";
+                break;
+            case token_t::null_literal:
+                ostream << "null_literal";
+                break;
+            case token_t::true_literal:
+                ostream << "true_literal";
+                break;
+            case token_t::string_value:
+                ostream << "string_value";
+                break;
+            case token_t::number_value:
+                ostream << "number_value";
+                break;
+            case token_t::false_literal:
+                ostream << "false_literal";
+                break;
+            case token_t::name_separator:
+                ostream << "name_separator";
+                break;
+            case token_t::value_separator:
+                ostream << "value_separator";
+                break;
             default:
                 ostream << "unknown";
             }
@@ -1738,6 +2084,30 @@ namespace myjson
         {
             switch (type)
             {
+            case error_t::unknown:
+                ostream << "unknown";
+                break;
+            case error_t::lexer:
+                ostream << "lexer";
+                break;
+            case error_t::parser:
+                ostream << "parser";
+                break;
+            case error_t::reader:
+                ostream << "reader";
+                break;
+            case error_t::writer:
+                ostream << "writer";
+                break;
+            case error_t::emitter:
+                ostream << "emitter";
+                break;
+            case error_t::encoding:
+                ostream << "encoding";
+                break;
+            case error_t::decoding:
+                ostream << "decoding";
+                break;
             default:
                 ostream << "unknown";
             }
@@ -1748,6 +2118,9 @@ namespace myjson
         {
             switch (type)
             {
+            case event_t::unknown:
+                ostream << "unknown";
+                break;
             default:
                 ostream << "unknown";
             }
@@ -1758,6 +2131,27 @@ namespace myjson
         {
             switch (type)
             {
+            case value_t::null:
+                ostream << "null";
+                break;
+            case value_t::object:
+                ostream << "object";
+                break;
+            case value_t::array:
+                ostream << "array";
+                break;
+            case value_t::string:
+                ostream << "string";
+                break;
+            case value_t::number:
+                ostream << "number";
+                break;
+            case value_t::integer:
+                ostream << "integer";
+                break;
+            case value_t::boolean:
+                ostream << "boolean";
+                break;
             default:
                 ostream << "unknown";
             }
@@ -1770,10 +2164,16 @@ namespace myjson
             {
             case break_t::cr:
                 ostream << "cr";
+                break;
             case break_t::ln:
                 ostream << "ln";
+                break;
             case break_t::crln:
                 ostream << "crln";
+                break;
+            case break_t::any:
+                ostream << "any";
+                break;
             default:
                 ostream << "any";
             }
@@ -1843,6 +2243,34 @@ namespace myjson
     {
     }
 
+    json::json(value_t value) noexcept
+    {
+        switch (value)
+        {
+        case value_t::null:
+            m_value = nullptr;
+            break;
+        case value_t::boolean:
+            m_value = false;
+            break;
+        case value_t::integer:
+            m_value = static_cast<integer_t>(0);
+            break;
+        case value_t::number:
+            m_value = static_cast<number_t>(0.0);
+            break;
+        case value_t::string:
+            m_value = string_t();
+            break;
+        case value_t::array:
+            m_value = array_t();
+            break;
+        case value_t::object:
+            m_value = object_t();
+            break;
+        }
+    }
+
     json::json(integer_t value) noexcept
         : m_value(value)
     {
@@ -1853,13 +2281,18 @@ namespace myjson
     {
     }
 
+    json::json(const char *value)
+        : m_value(string_t(value != nullptr ? value : ""))
+    {
+    }
+
     json::json(const string_t &value)
         : m_value(value)
     {
     }
 
-    json::json(const char *value)
-        : m_value(string_t(value != nullptr ? value : ""))
+    json::json(const string_t &&value)
+        : m_value(std::move(value))
     {
     }
 
@@ -1868,23 +2301,70 @@ namespace myjson
     {
     }
 
+    json::json(const array_t &&value)
+        : m_value(std::move(value))
+    {
+    }
+
     json::json(const object_t &value)
         : m_value(value)
     {
     }
 
-    json json::object()
+    json::json(const object_t &&value)
+        : m_value(std::move(value))
     {
-        json j;
-        j.m_value = object_t();
-        return j;
     }
 
-    json json::array()
+    json::json(json::initializer_list_t init, bool type_deduction, json::value_t manual_type)
     {
-        json j;
-        j.m_value = array_t();
-        return j;
+        bool as_object = (manual_type == value_t::object);
+        if (manual_type != value_t::array && manual_type != value_t::object)
+        {
+            as_object = false;
+        }
+
+        if (type_deduction && !as_object)
+        {
+            as_object = true;
+            for (const auto &element : init)
+            {
+                if (!element.is_array() || element.size() != 2 || !element[static_cast<size_t>(0)].is_string())
+                {
+                    as_object = false;
+                    break;
+                }
+            }
+        }
+
+        if (as_object)
+        {
+            object_t object;
+            for (const auto &element : init)
+            {
+                object[element[static_cast<size_t>(0)].as_string()] = element[static_cast<size_t>(1)];
+            }
+            m_value = std::move(object);
+            return;
+        }
+
+        array_t array;
+        array.reserve(init.size());
+        for (const auto &element : init)
+        {
+            array.push_back(element);
+        }
+        m_value = std::move(array);
+    }
+
+    json json::object(initializer_list_t init)
+    {
+        return json(init, false, value_t::object);
+    }
+
+    json json::array(initializer_list_t init)
+    {
+        return json(init, false, value_t::array);
     }
 
     //========== Destructor and Assignment ==========
@@ -1949,28 +2429,34 @@ namespace myjson
         return *this;
     }
 
+    json &json::operator=(initializer_list_t init)
+    {
+        *this = json(init);
+        return *this;
+    }
+
     //========== Type Information ==========
 
-    value_type json::type() const noexcept
+    json::value_t json::type() const noexcept
     {
         switch (m_value.index())
         {
         case 0:
-            return value_type::null;
+            return value_t::null;
         case 1:
-            return value_type::boolean;
+            return value_t::boolean;
         case 2:
-            return value_type::integer;
+            return value_t::integer;
         case 3:
-            return value_type::number;
+            return value_t::number;
         case 4:
-            return value_type::string;
+            return value_t::string;
         case 5:
-            return value_type::array;
+            return value_t::array;
         case 6:
-            return value_type::object;
+            return value_t::object;
         default:
-            return value_type::null;
+            return value_t::null;
         }
     }
 
@@ -2275,19 +2761,19 @@ namespace myjson
 
         switch (type())
         {
-        case value_type::null:
+        case value_t::null:
             return false;
-        case value_type::boolean:
+        case value_t::boolean:
             return as_bool() < other.as_bool();
-        case value_type::integer:
+        case value_t::integer:
             return as_integer() < other.as_integer();
-        case value_type::number:
+        case value_t::number:
             return as_number() < other.as_number();
-        case value_type::string:
+        case value_t::string:
             return as_string() < other.as_string();
-        case value_type::array:
+        case value_t::array:
             return get_array() < other.get_array();
-        case value_type::object:
+        case value_t::object:
             return get_object() < other.get_object();
         }
 
@@ -2311,11 +2797,48 @@ namespace myjson
     std::string json::dump_pretty() const { return dump(2); }
     std::string json::dump_compact() const { return dump(-1); }
 
+    void json::dump(FILE *file)
+    {
+        if (file != nullptr)
+        {
+            std::fputs("null", file);
+        }
+    };
+
+    void json::dump(const char *str)
+    {
+        if (str != nullptr)
+        {
+            std::puts(str);
+        }
+    };
+
+    void json::dump(const string_t &str)
+    {
+        std::puts(str.c_str());
+    };
+
+#ifndef MYJSON_NO_STL
+    void json::dump(std::ostream &stream)
+    {
+        stream << "null";
+    };
+#endif // MYJSON_NO_STL
+
+    void json::dump(detail::oadapter &adapter)
+    {
+        const char text[] = "null";
+        adapter.write(text, 4);
+    };
+
     //========== Parsing ==========
 
-    json json::parse(const std::string &str)
+    json json::parse(FILE *file)
     {
-        detail::memory_iadapter adapter(const_cast<char *>(str.data()), str.size());
+        if (file == nullptr)
+            MYJSON_THROW(parse_error("Null file pointer passed to parse"));
+
+        detail::file_iadapter adapter(file);
         return parse(adapter);
     }
 
@@ -2328,12 +2851,9 @@ namespace myjson
         return parse(adapter);
     }
 
-    json json::parse(FILE *file)
+    json json::parse(const string_t &str)
     {
-        if (file == nullptr)
-            MYJSON_THROW(parse_error("Null file pointer passed to parse"));
-
-        detail::file_iadapter adapter(file);
+        detail::memory_iadapter adapter(const_cast<char *>(str.data()), str.size());
         return parse(adapter);
     }
 
@@ -2352,17 +2872,31 @@ namespace myjson
         return parser.parse();
     }
 
-    std::optional<json> json::try_parse(const std::string &str) noexcept
-    {
-        MYJSON_TRY { return parse(str); }
-        MYJSON_CATCH(const std::exception &) { return std::nullopt; }
-    }
-
     //========== JSON Pointer (RFC 6901) ==========
+
+    json::reference json::operator[](const json_pointer &ptr)
+    {
+        return const_cast<json_pointer &>(ptr).ref(*this);
+    };
+
+    json::const_reference json::operator[](const json_pointer &ptr) const
+    {
+        return ptr.ref(*this);
+    };
+
+    json::reference json::at(const json_pointer &ptr)
+    {
+        return const_cast<json_pointer &>(ptr).ref(*this);
+    };
+
+    json::const_reference json::at(const json_pointer &ptr) const
+    {
+        return ptr.ref(*this);
+    };
 
     json &json::at_pointer(const std::string &pointer)
     {
-        if (pointer.empty() || pointer[0] != '/')
+        if (!pointer.empty() && pointer[0] != '/')
             MYJSON_THROW(std::invalid_argument("JSON Pointer must be empty or start with /"));
 
         return json_pointer(pointer).ref(*this);
@@ -2385,9 +2919,135 @@ namespace myjson
         MYJSON_CATCH(const std::exception &) { return std::nullopt; }
     }
 
-    std::string json::pointer_to(const json &value) const { return ""; }
+    std::string json::pointer_to(const json &value) const
+    {
+        if (this == &value)
+        {
+            return "";
+        }
+
+        std::function<bool(const json &, std::string &)> walk = [&](const json &current, std::string &path) -> bool
+        {
+            if (&current == &value)
+            {
+                return true;
+            }
+
+            if (current.is_object())
+            {
+                for (auto it = current.begin(); it != current.end(); ++it)
+                {
+                    const std::string segment = "/" + json_pointer::escape(it->first);
+                    std::string next = path + segment;
+                    if (walk(it->second, next))
+                    {
+                        path = std::move(next);
+                        return true;
+                    }
+                }
+            }
+            else if (current.is_array())
+            {
+                for (size_t i = 0; i < current.size(); ++i)
+                {
+                    std::string next = path + "/" + std::to_string(i);
+                    if (walk(current[i], next))
+                    {
+                        path = std::move(next);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
+
+        std::string pointer;
+        if (walk(*this, pointer))
+        {
+            return pointer;
+        }
+
+        return "";
+    }
+
+    bool json::contains_pointer(const std::string &pointer) const noexcept
+    {
+        return find_pointer(pointer).has_value();
+    }
+
+    bool json::erase_pointer(const std::string &pointer) noexcept
+    {
+        MYJSON_TRY
+        {
+            json_pointer ptr(pointer);
+            if (ptr.is_root())
+            {
+                return false;
+            }
+
+            auto parent_ptr = ptr.parent();
+            const std::string key = ptr.back();
+            json &parent = parent_ptr.ref(*this);
+
+            if (parent.is_object())
+            {
+                return parent.erase(key) > 0;
+            }
+
+            if (parent.is_array())
+            {
+                const auto index = static_cast<size_t>(std::stoull(key));
+                if (index >= parent.size())
+                {
+                    return false;
+                }
+                parent.erase(parent.array_begin() + static_cast<json::difference_type>(index));
+                return true;
+            }
+
+            return false;
+        }
+        MYJSON_CATCH(...)
+        {
+            return false;
+        }
+    }
 
     //========== JSON Patch (RFC 6902) ==========
+
+    void json::patch_inplace(const json &patch)
+    {
+        *this = apply_patch(patch);
+    }
+
+    json json::patch(const json &patch) const
+    {
+        return apply_patch(patch);
+    }
+
+    json json::diff(const json &source, const json &target, const string_t &path)
+    {
+        json result = myjson::diff(source, target);
+        if (path.empty() || !result.is_array())
+        {
+            return result;
+        }
+
+        for (size_t i = 0; i < result.size(); ++i)
+        {
+            if (result[i].contains("path"))
+            {
+                result[i]["path"] = path + result[i]["path"].as_string();
+            }
+            if (result[i].contains("from"))
+            {
+                result[i]["from"] = path + result[i]["from"].as_string();
+            }
+        }
+
+        return result;
+    }
 
     json json::apply_patch(const json &patch) const
     {
@@ -2400,6 +3060,11 @@ namespace myjson
     }
 
     //========== JSON Merge Patch (RFC 7386) ==========
+
+    void json::merge_patch(const json &apply_patch)
+    {
+        *this = apply_merge_patch(apply_patch);
+    }
 
     json json::apply_merge_patch(const json &patch) const
     {
@@ -2787,6 +3452,38 @@ namespace myjson
         MYJSON_CATCH(const std::exception &) { return std::nullopt; }
     }
 
+    json_pointer &json_pointer::operator/=(const json_pointer &ptr)
+    {
+        for (const auto &token : ptr.m_tokens)
+        {
+            m_tokens.push_back(token);
+        }
+
+        for (const auto &token : ptr.m_tokens)
+        {
+            m_original += "/" + escape(token);
+        }
+
+        if (m_original.empty())
+        {
+            m_original = "/";
+        }
+
+        return *this;
+    }
+
+    json_pointer &json_pointer::operator/=(std::string token)
+    {
+        m_tokens.push_back(token);
+        m_original += "/" + escape(token);
+        return *this;
+    }
+
+    json_pointer &json_pointer::operator/=(std::size_t index)
+    {
+        return operator/=(std::to_string(index));
+    }
+
     //-----------------------------------------------------------------------------
     // [Class] json_merge_patch
     //-----------------------------------------------------------------------------
@@ -3019,134 +3716,6 @@ namespace myjson
     };
 
 #endif // MYJSON_NO_STL
-
-#ifndef MYJSON_NO_EXCEPTIONS
-
-    //-----------------------------------------------------------------------------
-    // [SECTION] Myjson : Exceptions
-    //-----------------------------------------------------------------------------
-    // - exception()
-    // - what()
-    // - parse_error()
-    // - generate()
-    // - encoding_error()
-    // - generate()
-    //-----------------------------------------------------------------------------
-
-    exception::exception(const char *message) noexcept
-    {
-        if (message != nullptr)
-        {
-            m_Message.append(message);
-        }
-    };
-
-    const char *exception::what() const noexcept { return m_Message.c_str(); };
-
-    parse_error::parse_error(const char *message) noexcept
-        : exception(generate(message, {})) {};
-
-    parse_error::parse_error(const char *message, detail::mark mark) noexcept
-        : exception(generate(message, mark)) {};
-
-    const char *parse_error::generate(const char *message, detail::mark mark) noexcept
-    {
-        // Use a thread_local buffer so the returned pointer remains valid
-        // until the next call on the same thread. Callers should copy the
-        // string if they need to keep it longer.
-        thread_local std::string buffer;
-        buffer.clear();
-
-        if (message != nullptr)
-        {
-            buffer.append(message);
-        }
-
-        // Append positional information if available
-        char tmp[128];
-        int n = snprintf(tmp, sizeof(tmp), " (line: %zu, column: %zu, index: %zu)", mark.line, mark.column, mark.index);
-        if (n > 0)
-        {
-            buffer.append(tmp, static_cast<size_t>(n));
-        }
-
-        // Ensure null-termination and return pointer
-        return buffer.c_str();
-    };
-
-    encoding_error::encoding_error(const char *message) noexcept
-        : exception(generate(encoding::unspecified, message, nullptr, 0)) {};
-
-    encoding_error::encoding_error(encoding encoding, const char *message, void *data, size_t size) noexcept
-        : exception(generate(encoding, message, data, size)) {};
-
-    const char *encoding_error::generate(encoding enc, const char *message, void *data, size_t size) noexcept
-    {
-        thread_local std::string buffer;
-        buffer.clear();
-
-        if (message != nullptr)
-        {
-            buffer.append(message);
-        }
-
-        // Append encoding name
-        const char *enc_name = "unspecified";
-        switch (enc)
-        {
-        case encoding::utf8:
-            enc_name = "utf-8";
-            break;
-        case encoding::utf16:
-        case encoding::utf16le:
-            enc_name = "utf-16-le";
-            break;
-        case encoding::utf16be:
-            enc_name = "utf-16-be";
-            break;
-        case encoding::utf32:
-        case encoding::utf32le:
-            enc_name = "utf-32-le";
-            break;
-        case encoding::utf32be:
-            enc_name = "utf-32-be";
-            break;
-        default:
-            break;
-        }
-
-        char tmp[128];
-        int n = snprintf(tmp, sizeof(tmp), " [encoding: %s]", enc_name);
-        if (n > 0)
-        {
-            buffer.append(tmp, static_cast<size_t>(n));
-        }
-
-        // If data is provided, append a short hex preview (up to 8 bytes)
-        if (data != nullptr && size > 0)
-        {
-            const unsigned char *b = reinterpret_cast<const unsigned char *>(data);
-            size_t preview = (size < 8) ? size : 8; // limit
-            buffer.append(" [data: 0x");
-            for (size_t i = 0; i < preview; ++i)
-            {
-                int written = snprintf(tmp, sizeof(tmp), "%02x", b[i]);
-                if (written > 0)
-                {
-                    buffer.append(tmp, static_cast<size_t>(written));
-                }
-            }
-            if (size > preview)
-            {
-                buffer.append("...");
-            }
-            buffer.append("]");
-        }
-
-        return buffer.c_str();
-    };
-
-#endif // MYJSON_NO_EXCEPTIONS
 
     MYJSON_VERSION_NAMESPACE_END
 

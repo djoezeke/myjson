@@ -23,6 +23,14 @@ Main resource:
 
 Additional resources:
 
+## API Examples
+
+- `examples/apis/Basic.cpp`: Object creation, assignment, and serialization basics.
+- `examples/apis/Conversion.cpp`: Value conversion and extraction helpers.
+- `examples/apis/Pointer.cpp`: JSON Pointer navigation and safe access patterns.
+- `examples/apis/Patch.cpp`: JSON Patch and merge patch workflows.
+- `examples/apis/PointerUtilities.cpp`: Pointer existence checks, pointer erase, and pointer composition with `operator/=`.
+
 <!-- ## Building the Examples
 
 The examples assume you have already built the `myjson` library in `../src`.
