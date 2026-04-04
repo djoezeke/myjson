@@ -17,8 +17,8 @@ int main()
     using namespace myjson;
 
     // Create a JSON object
-    json person = json::object();
-    person["name"] = "Alice";
+    json person = json::object({{"name", "Rose"}, {"gender", "Female"}, {"id", 23030}});
+    // person["name"] = "Alice";
     person["age"] = 30;
     person["email"] = "alice@example.com";
     person["active"] = true;
@@ -26,9 +26,9 @@ int main()
     std::cout << "Person JSON: " << person.dump() << std::endl;
 
     // Create a JSON array
-    json scores = json::array();
-    scores.push_back(95);
-    scores.push_back(87);
+    json scores = json::array({23, "Hello", 25, 26});
+    scores.push_back("95");
+    scores.push_back("87");
     scores.push_back(92);
     scores.push_back(true); // Mixed types are allowed
 

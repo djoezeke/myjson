@@ -2682,12 +2682,6 @@ namespace myjson
         get_array().push_back(std::move(value));
     }
 
-    void json::push_back(bool value)
-    {
-        ensure_array();
-        get_array().push_back(json(value));
-    }
-
     void json::push_front(const json &value)
     {
         ensure_array();
@@ -2881,7 +2875,7 @@ namespace myjson
 
     json::const_reference json::operator[](const json_pointer &ptr) const
     {
-        return ptr.ref(*this);
+        return const_cast<json *>(this)->operator[](ptr);
     };
 
     json::reference json::at(const json_pointer &ptr)
@@ -2891,7 +2885,7 @@ namespace myjson
 
     json::const_reference json::at(const json_pointer &ptr) const
     {
-        return ptr.ref(*this);
+        return const_cast<json *>(this)->at(ptr);
     };
 
     json &json::at_pointer(const std::string &pointer)
@@ -3406,6 +3400,10 @@ namespace myjson
         return p;
     }
 
+    void json_pointer::push_back(const std::string &token) {};
+
+    void json_pointer::push_back(std::string &&token) {};
+
     json &json_pointer::ref(json &document)
     {
         json *current = &document;
@@ -3483,6 +3481,32 @@ namespace myjson
     {
         return operator/=(std::to_string(index));
     }
+
+    json_pointer operator/(const json_pointer &lhs, const json_pointer &rhs) {};
+
+    json_pointer operator/(const json_pointer &lhs, std::string token) {};
+
+    json_pointer operator/(const json_pointer &lhs, std::size_t array_idx) {};
+
+    bool operator==(const json_pointer &lhs, const json_pointer &rhs) noexcept {};
+
+    bool operator==(const json_pointer &lhs, const std::string &rhs) {};
+
+    bool operator==(const std::string &lhs,
+                    const json_pointer &rhs) {};
+
+    bool operator!=(const json_pointer &lhs,
+                    const json_pointer &rhs) noexcept {};
+
+    bool operator!=(const json_pointer &lhs,
+                    const std::string &rhs) {};
+
+    bool operator!=(const std::string &lhs,
+                    const json_pointer &rhs) {};
+
+#ifndef MYJSON_NO_IO
+    std::ostream &operator<<(std::ostream &o, const json_pointer &ptr) {};
+#endif
 
     //-----------------------------------------------------------------------------
     // [Class] json_merge_patch
