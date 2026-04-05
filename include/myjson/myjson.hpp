@@ -823,57 +823,53 @@ namespace myjson
 
         /** Enumerations */
 
-        enum class token_t : uint8_t;
-        enum class error_t : uint8_t;
-        enum class event_t : uint8_t;
-        enum class value_t : uint8_t;
-        enum class break_t : uint8_t;
+        enum class token_t : uint8_t; /** enum token type. */
+        enum class error_t : uint8_t; /** enum token type. */
+        enum class event_t : uint8_t; /** enum token type. */
+        enum class value_t : uint8_t; /** enum token type. */
+        enum class break_t : uint8_t; /** enum token type. */
 
         /** Structures */
 
-        struct mark;
-        struct event;
-        struct token;
+        struct mark;  /** struct mark. */
+        struct event; /** struct event. */
+        struct token; /** struct event. */
 
 #ifndef MYJSON_NO_EXCEPTIONS
         // exception
-        class exception;
-        class io_error;
-        class parse_error;
-        class encoding_error;
-#endif // MYJSON_NO_EXCEPTIONS
+        class exception;      /** class exception. */
+        class io_error;       /** class io_error. */
+        class parse_error;    /** class parse_error. */
+        class encoding_error; /** class encoding_error. */
+#endif                        // MYJSON_NO_EXCEPTIONS
 
         // input
-        class lexer;
-        class parser;
-        class iadapter;
-        class deserializer;
-        class file_iadapter;
-        class memory_iadapter;
-
+        class lexer;           /** class lexer. */
+        class parser;          /** class parser. */
+        class iadapter;        /** class iadapter. */
+        class deserializer;    /** class deserializer. */
+        class file_iadapter;   /** class file_iadapter. */
+        class memory_iadapter; /** class memory_iadapter. */
 #ifndef MYJSON_NO_STL
-        class stream_iadapter;
-        class iterator_iadapter;
-#endif // MYJSON_NO_STL
+        class stream_iadapter;   /** class stream_iadapter. */
+        class iterator_iadapter; /** class iterator_iadapter. */
+#endif                           // MYJSON_NO_STL
 
         // output
-        class emitter;
-        class oadapter;
-        class serializer;
-        class file_iadapter;
-        class memory_oadapter;
-
+        class emitter;         /** class emitter. */
+        class oadapter;        /** class oadapter. */
+        class serializer;      /** class serializer. */
+        class file_iadapter;   /** class file_iadapter. */
+        class memory_oadapter; /** class memory_oadapter. */
 #ifndef MYJSON_NO_STL
-        class stream_oadapter;
-        class iterator_oadapter;
-#endif // MYJSON_NO_STL
+        class stream_oadapter;   /** class stream_oadapter. */
+        class iterator_oadapter; /** class iterator_oadapter. */
+#endif                           // MYJSON_NO_STL
 
         // encoding
-        struct utf8;
-        struct utf16;
-        struct utf32;
-
-        class json_ref;
+        struct utf8;  /** struct utf8. */
+        struct utf16; /** struct utf16. */
+        struct utf32; /** struct utf32. */
 
     } // namespace detail
 
@@ -895,19 +891,15 @@ namespace myjson
 
     /** Enumerations */
 
-    enum class encoding : uint8_t;
-    enum class node_t : uint8_t;
+    enum class encoding : uint8_t; /** enum encoding. */
 
     /** Structures */
 
-    class json;
-    class version;
-    class formatter;
-
-    class json;
-    class json_patch;
-    class json_pointer;
-    class json_merge_patch;
+    class json;             /** class json. */
+    class version;          /** class version. */
+    class json_patch;       /** class json_patch. */
+    class json_pointer;     /** class json_pointer. */
+    class json_merge_patch; /** class json_merge_patch. */
 
     MYJSON_VERSION_NAMESPACE_END
 
@@ -2372,11 +2364,6 @@ namespace myjson
         utf32be,     /** The UTF-32-BE encoding with BOM. */
     };
 
-    enum class node_t : uint8_t
-    {
-        unknown,
-    };
-
     /** @} */
 
     //-----------------------------------------------------------------------------
@@ -2691,11 +2678,21 @@ namespace myjson
 
         //========== Type Conversions ==========
 
-        /** @brief Convert to @p T or return @p default_value if unsupported. */
+        /**
+         * @brief Get value as target type T with default fallback.
+         * @tparam T The target type (bool, int, double, string, etc.)
+         * @param default_value The value to return if conversion fails.
+         * @return Converted value or default_value.
+         */
         template <typename T>
-        T get(const T &default_value) const noexcept;
+        T get(const T &default_value = T()) const noexcept;
 
-        /** @brief Convert to @p T with strict semantics. */
+        /**
+         * @brief Get value as target type T with exception on failure.
+         * @tparam T The target type.
+         * @return Converted value.
+         * @throws std::runtime_error if conversion fails.
+         */
         template <typename T>
         T get_safe() const;
 
@@ -2896,20 +2893,46 @@ namespace myjson
          * {@
          */
 
-        /** @brief Parse JSON from C FILE stream. */
+        /**
+         * @brief Parse JSON from FILE.
+         * @param file The JSON FILE* to parse.
+         * @return Parsed json object.
+         * @throws parse_error on invalid JSON.
+         */
         static json parse(FILE *file);
 
-        /** @brief Parse JSON from null-terminated C string. */
+        /**
+         * @brief Parse JSON from C string.
+         * @param str The JSON string to parse.
+         * @return Parsed json object.
+         * @throws parse_error on invalid JSON.
+         */
         static json parse(const char *str);
 
-        /** @brief Parse JSON from std::string. */
+        /**
+         * @brief Parse JSON from string.
+         * @param str The JSON string to parse.
+         * @return Parsed json object.
+         * @throws parse_error on invalid JSON.
+         */
         static json parse(const string_t &str);
 
 #ifndef MYJSON_NO_STL
+        /**
+         * @brief Parse JSON from an input stream.
+         * @param stream The JSON input stream to parse.
+         * @return Parsed json object.
+         * @throws parse_error on invalid JSON.
+         */
         static json parse(std::istream &stream);
 #endif // MYJSON_NO_STL
 
-        /** @brief Parse JSON from input adapter implementation. */
+        /**
+         * @brief Parse JSON from an input adapter.
+         * @param adapter The JSON input adapter to parse.
+         * @return Parsed json object.
+         * @throws parse_error on invalid JSON.
+         */
         static json parse(detail::iadapter &adapter);
 
 #ifndef MYJSON_NO_IO
@@ -2971,10 +2994,20 @@ namespace myjson
         static json diff(const json &source, const json &target,
                          const string_t &path = "");
 
-        /** @brief Apply RFC 6902 patch and return patched copy. */
+        /**
+         * @brief Apply JSON Patch operations.
+         * @param patch Array of patch operation objects.
+         * @return Resulting json after applying patch.
+         * @throws std::runtime_error on invalid patch.
+         */
         MYJSON_NODISCARD json apply_patch(const json &patch) const;
 
-        /** @brief Generate patch operations from source and target. */
+        /**
+         * @brief Generate JSON Patch between two values.
+         * @param source The original value.
+         * @param target The target value.
+         * @return Array of patch operations to transform source to target.
+         */
         static json generate_patch(const json &source, const json &target);
 
         /* @} patch */
@@ -2987,7 +3020,12 @@ namespace myjson
         /** @brief Apply merge patch to this value in-place. */
         void merge_patch(const json &apply_patch);
 
-        /** @brief Apply RFC 7386 merge patch and return patched copy. */
+
+        /**
+         * @brief Apply JSON Merge Patch.
+         * @param patch The merge patch object.
+         * @return Resulting json after applying merge patch.
+         */
         MYJSON_NODISCARD json apply_merge_patch(const json &patch) const;
 
         /* @} merge patch */
@@ -3039,7 +3077,14 @@ namespace myjson
      * @class json_pointer
      * @brief Utility class for working with JSON Pointers (RFC 6901).
      *
-     * Example: "/users/0/email" points to the email field of the first user.
+     * A JSON Pointer is a Unicode string (containing ABNF basic rules
+     * percent-encoded octets RFC 3986) that identifies a single value
+     * within a JSON document.
+     *
+     * Example:
+     * - "/foo/bar" points to the member "bar" within "foo"
+     * - "/0/name" points to "name" in the first array element
+     * - "/" points to the document root (empty key)
      */
     class json_pointer
     {
@@ -3052,10 +3097,16 @@ namespace myjson
         using const_reference = const json_pointer &;
 
     public:
-        /** @brief Construct pointer from RFC 6901 string. */
+        /**
+         * @brief Construct pointer from string representation.
+         * @param pointer_str JSON Pointer string (must start with '/' or be empty).
+         * @throws std::invalid_argument if format is invalid.
+         */
         explicit json_pointer(const std::string &pointer_str);
 
-        /** @brief Return the original pointer string. */
+        /**
+         * @brief Get the pointer as string representation.
+         */
         MYJSON_NODISCARD std::string to_string() const;
 
         /** @brief Return unescaped pointer tokens. */
@@ -3082,7 +3133,10 @@ namespace myjson
         /** @brief Append one movable token to this pointer. */
         void push_back(std::string &&token);
 
-        /** @brief Resolve pointer against mutable document. */
+        /**
+         * @brief @brief Resolve pointer against mutable document.
+         * @throws std::out_of_range if path doesn't exist.
+         */
         json::reference ref(json &document);
 
         /** @brief Resolve pointer against const document. */
@@ -3153,6 +3207,16 @@ namespace myjson
     /**
      * @class json_patch
      * @brief Utility class for applying JSON Patch operations (RFC 6902).
+     *
+     * JSON Patch defines a JSON document structure for expressing a sequence
+     * of operations to apply to a JSON document.
+     *
+     * Example patch:
+     * [
+     *   {"op": "add", "path": "/foo", "value": "bar"},
+     *   {"op": "remove", "path": "/baz"},
+     *   {"op": "replace", "path": "/qux", "value": 42}
+     * ]
      */
     class json_patch
     {
@@ -3171,13 +3235,27 @@ namespace myjson
         };
 
     public:
-        /** @brief Construct patch helper from patch operation array. */
+        /**
+         * @brief Construct patch from JSON array of operations.
+         * @param patch_json Array of patch operation objects.
+         * @throws std::invalid_argument if format is invalid.
+         */
         explicit json_patch(const json &patch_json);
 
-        /** @brief Apply patch and return patched copy. */
+        /**
+         * @brief Apply this patch to a document.
+         * @param document The JSON document to patch.
+         * @return Modified copy of the document.
+         * @throws std::runtime_error on patch application failure.
+         */
         MYJSON_NODISCARD json apply(const json &document) const;
 
-        /** @brief Apply patch in-place. */
+        /**
+         * @brief Apply in-place to document.
+         * @param document The JSON document to patch.
+         * @note modifies the original document.
+         * @throws std::runtime_error on patch application failure.
+         */
         void apply_inplace(json &document) const;
 
         /** @brief Access underlying patch operation array. */
@@ -3219,23 +3297,48 @@ namespace myjson
     /**
      * @class json_merge_patch
      * @brief Utility class for JSON Merge Patch (RFC 7386).
+     *
+     * Simpler than JSON Patch, merge patch applies changes by merging
+     * the patch object with the target object.
+     *
+     * - If patch is null, delete the value
+     * - If patch is not an object, replace entire value
+     * - If patch is an object, merge recursively
      */
     class json_merge_patch
     {
     public:
-        /** @brief Construct merge-patch helper from patch document. */
+        /**
+         * @brief Construct merge patch from JSON object.
+         * @param patch_json The patch object to apply.
+         */
         explicit json_merge_patch(const json &patch_json);
 
-        /** @brief Apply merge-patch and return patched copy. */
+        /**
+         * @brief Apply this merge patch to a document.
+         * @param document The JSON document to patch.
+         * @return Modified copy of the document.
+         */
         MYJSON_NODISCARD json apply(const json &document) const;
 
-        /** @brief Apply merge-patch in-place. */
+        /**
+         * @brief Apply merge-patch in-place to document .
+         * @param document The JSON document to patch.
+         * @note modifies the original document.
+         * @throws std::runtime_error on patch application failure.
+         */
         void apply_inplace(json &document) const;
 
-        /** @brief Generate a merge-patch document from source and target. */
+        /**
+         * @brief Generate merge patch from source to target.
+         * @return Minimal patch that transforms source to target.
+         */
         static json generate(const json &source, const json &target);
 
     private:
+        /**
+         * @brief Recursively apply merge patch.
+         */
         static json apply_recursive(const json &target, const json &patch);
 
     private:
@@ -3278,8 +3381,6 @@ namespace myjson
 
     const char *string(encoding type);
 
-    const char *string(node_t type);
-
 #ifndef MYJSON_NO_STL
 
     /**
@@ -3289,14 +3390,6 @@ namespace myjson
      * @return Reference to the output stream object `ostream`.
      */
     std::ostream &operator<<(std::ostream &ostream, const encoding &type);
-
-    /**
-     * @brief Write the node type string into stream.
-     * @param[in] ostream An output stream object.
-     * @param[in] type A node type.
-     * @return Reference to the output stream object `ostream`.
-     */
-    std::ostream &operator<<(std::ostream &ostream, const node_t &type);
 
     /**
      * @brief A wrapper for the serialization feature.
@@ -3342,13 +3435,11 @@ namespace myjson
         inline namespace json_literals
         {
             //-----------------------------------------------------------------------------
-            // [SECTION] Literals : Functions
+            // [SECTION] Literals : Json
             //-----------------------------------------------------------------------------
 
             // Whitespace before the literal operator is deprecated in C++23 or later but required in C++11.
             MYJSON_CLANG_SUPPRESS_WARNING_WITH_PUSH("-Wdeprecated")
-
-#ifndef __INTELLISENSE__
 
             /**
              * @brief Deserializes a `char` array into a `json` object.
@@ -3358,7 +3449,7 @@ namespace myjson
              *
              * @return The resulting `json` object deserialized from `string`.
              */
-            MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char *string, size_t size);
+            json MYJSON_QUOTE_OPERATOR(const char *string, size_t size);
 
 #if MYJSON_HAS_CHAR8_T
 
@@ -3370,7 +3461,7 @@ namespace myjson
              *
              * @return The resulting `json` object deserialized from `string`.
              */
-            MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char8_t *string, size_t size);
+            json MYJSON_QUOTE_OPERATOR(const char8_t *string, size_t size);
 
 #endif // MYJSON_HAS_CHAR8_T
 
@@ -3382,7 +3473,7 @@ namespace myjson
              *
              * @return The resulting `json` object deserialized from `string`.
              */
-            MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char16_t *string, size_t size);
+            json MYJSON_QUOTE_OPERATOR(const char16_t *string, size_t size);
 
             /**
              * @brief Deserializes a `char32_t` array into a `json` object.
@@ -3392,7 +3483,11 @@ namespace myjson
              *
              * @return The resulting `json` object deserialized from `string`.
              */
-            MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size);
+            json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size);
+
+            //-----------------------------------------------------------------------------
+            // [SECTION] Literals : Json Pointer
+            //-----------------------------------------------------------------------------
 
             /**
              * @brief Identify a specific value (`char`) with in a `json` object.
@@ -3402,7 +3497,7 @@ namespace myjson
              *
              * @return The `json_pointer` object identified from `string`.
              */
-            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char *string, size_t size);
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char *string, size_t size);
 
 #if MYJSON_HAS_CHAR8_T
 
@@ -3414,7 +3509,7 @@ namespace myjson
              *
              * @return The `json_pointer` object identified from `string`.
              */
-            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char8_t *string, size_t size);
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char8_t *string, size_t size);
 
 #endif // MYJSON_HAS_CHAR8_T
 
@@ -3426,7 +3521,7 @@ namespace myjson
              *
              * @return The `json_pointer` object identified from `string`.
              */
-            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char16_t *string, size_t size);
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char16_t *string, size_t size);
 
             /**
              * @brief Identify a specific value (`char32_t`) with in a `json` object.
@@ -3436,9 +3531,7 @@ namespace myjson
              *
              * @return The `json_pointer` object identified from `string`.
              */
-            MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char32_t *string, size_t size);
-
-#endif // __INTELLISENSE__
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char32_t *string, size_t size);
 
             MYJSON_CLANG_SUPPRESS_WARNING_POP
 

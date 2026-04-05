@@ -3780,24 +3780,9 @@ namespace myjson
         }
     };
 
-    const char *string(node_t type)
-    {
-        switch (type)
-        {
-        default:
-            return "unknown";
-        }
-    };
-
 #ifndef MYJSON_NO_STL
 
     std::ostream &operator<<(std::ostream &ostream, const encoding &type)
-    {
-        ostream << string(type);
-        return ostream;
-    };
-
-    std::ostream &operator<<(std::ostream &ostream, const node_t &type)
     {
         ostream << string(type);
         return ostream;
@@ -3835,73 +3820,82 @@ namespace myjson
     namespace literals
     {
 
-        //-----------------------------------------------------------------------------
-        // [SECTION] Literals : Json
-        //-----------------------------------------------------------------------------
-
-        MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char *string, size_t size)
+        inline namespace json_literals
         {
-            return json::parse(std::string(string, size));
-        };
+
+            //-----------------------------------------------------------------------------
+            // [SECTION] Literals : Json
+            //-----------------------------------------------------------------------------
+
+            json MYJSON_QUOTE_OPERATOR(const char *string, size_t size)
+            {
+                return json::parse(std::string(string, size));
+            };
 
 #if MYJSON_HAS_CHAR8_T
 
-        MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char8_t *string, size_t size)
-        {
-            return json::parse(std::string(reinterpret_cast<const char *>(string), size));
-        };
+            json MYJSON_QUOTE_OPERATOR(const char8_t *string, size_t size)
+            {
+                return json::parse(std::string(reinterpret_cast<const char *>(string), size));
+            };
 
 #endif // MYJSON_HAS_CHAR8_T
 
-        MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char16_t *string, size_t size)
-        {
-            auto utf8_str = detail::utf16::to_utf8(
-                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
-                                           reinterpret_cast<const unsigned char *>(string) + size * 2),
-                detail::myjson_endian_t::native);
-            return json::parse(utf8_str);
-        };
+            json MYJSON_QUOTE_OPERATOR(const char16_t *string, size_t size)
+            {
+                auto utf8_str = detail::utf16::to_utf8(
+                    std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                               reinterpret_cast<const unsigned char *>(string) + size * 2),
+                    detail::myjson_endian_t::native);
+                return json::parse(utf8_str);
+            };
 
-        MYJSON_INLINE json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size)
-        {
-            auto utf8_str = detail::utf32::to_utf8(
-                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
-                                           reinterpret_cast<const unsigned char *>(string) + size * 4),
-                detail::myjson_endian_t::native);
-            return json::parse(utf8_str);
-        };
+            json MYJSON_QUOTE_OPERATOR(const char32_t *string, size_t size)
+            {
+                auto utf8_str = detail::utf32::to_utf8(
+                    std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                               reinterpret_cast<const unsigned char *>(string) + size * 4),
+                    detail::myjson_endian_t::native);
+                return json::parse(utf8_str);
+            };
 
-        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char *string, size_t size)
-        {
-            return myjson::json_pointer(std::string(string, size));
-        };
+            //-----------------------------------------------------------------------------
+            // [SECTION] Literals : Json Pointer
+            //-----------------------------------------------------------------------------
+
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char *string, size_t size)
+            {
+                return myjson::json_pointer(std::string(string, size));
+            };
 
 #if MYJSON_HAS_CHAR8_T
 
-        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char8_t *string, size_t size)
-        {
-            return myjson::json_pointer(std::string(reinterpret_cast<const char *>(string), size));
-        };
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char8_t *string, size_t size)
+            {
+                return myjson::json_pointer(std::string(reinterpret_cast<const char *>(string), size));
+            };
 
 #endif // MYJSON_HAS_CHAR8_T
 
-        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char16_t *string, size_t size)
-        {
-            auto utf8_str = detail::utf16::to_utf8(
-                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
-                                           reinterpret_cast<const unsigned char *>(string) + size * 2),
-                detail::myjson_endian_t::native);
-            return myjson::json_pointer(utf8_str);
-        };
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char16_t *string, size_t size)
+            {
+                auto utf8_str = detail::utf16::to_utf8(
+                    std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                               reinterpret_cast<const unsigned char *>(string) + size * 2),
+                    detail::myjson_endian_t::native);
+                return myjson::json_pointer(utf8_str);
+            };
 
-        MYJSON_INLINE json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char32_t *string, size_t size)
-        {
-            auto utf8_str = detail::utf32::to_utf8(
-                std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
-                                           reinterpret_cast<const unsigned char *>(string) + size * 4),
-                detail::myjson_endian_t::native);
-            return myjson::json_pointer(utf8_str);
-        };
+            json_pointer MYJSON_POINTER_QUOTE_OPERATOR(const char32_t *string, size_t size)
+            {
+                auto utf8_str = detail::utf32::to_utf8(
+                    std::vector<unsigned char>(reinterpret_cast<const unsigned char *>(string),
+                                               reinterpret_cast<const unsigned char *>(string) + size * 4),
+                    detail::myjson_endian_t::native);
+                return myjson::json_pointer(utf8_str);
+            };
+
+        }; // namespace json_literals
 
     }; // namespace literals
 
