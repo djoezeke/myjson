@@ -1928,6 +1928,11 @@ namespace myjson
             v = j.as_integer();
         }
 
+        void from_json(const json &j, int &v)
+        {
+            v = static_cast<int>(j.as_integer());
+        }
+
         void from_json(const json &j, double &v)
         {
             v = j.as_number();
@@ -1936,6 +1941,11 @@ namespace myjson
         void from_json(const json &j, std::string &v)
         {
             v = j.as_string();
+        }
+
+        void from_json(const json &j, json &v)
+        {
+            v = j;
         }
 
         void to_json(json &j, const std::nullptr_t &)
@@ -1953,12 +1963,22 @@ namespace myjson
             j = v;
         }
 
+        void to_json(json &j, const int &v)
+        {
+            j = v;
+        }
+
         void to_json(json &j, const double &v)
         {
             j = v;
         }
 
         void to_json(json &j, const std::string &v)
+        {
+            j = v;
+        }
+
+        void to_json(json &j, const json &v)
         {
             j = v;
         }
@@ -2508,7 +2528,7 @@ namespace myjson
     template <>
     json::number_t json::get<json::number_t>(const number_t &default_value) const noexcept
     {
-        if (is_number())
+        if (std::holds_alternative<number_t>(m_value))
             return std::get<number_t>(m_value);
         if (is_integer())
             return static_cast<number_t>(std::get<integer_t>(m_value));
@@ -3395,14 +3415,36 @@ namespace myjson
     json_pointer json_pointer::push(const std::string &token) const
     {
         json_pointer p = *this;
-        p.m_tokens.push_back(token);
-        p.m_original += "/" + escape(token);
+        p.push_back(token);
         return p;
     }
 
-    void json_pointer::push_back(const std::string &token) {};
+    void json_pointer::push_back(const std::string &token)
+    {
+        m_tokens.push_back(token);
+        if (m_original.empty() || m_original == "/")
+        {
+            m_original = "/" + escape(token);
+        }
+        else
+        {
+            m_original += "/" + escape(token);
+        }
+    }
 
-    void json_pointer::push_back(std::string &&token) {};
+    void json_pointer::push_back(std::string &&token)
+    {
+        std::string escaped = escape(token);
+        m_tokens.push_back(std::move(token));
+        if (m_original.empty() || m_original == "/")
+        {
+            m_original = "/" + escaped;
+        }
+        else
+        {
+            m_original += "/" + escaped;
+        }
+    }
 
     json &json_pointer::ref(json &document)
     {
@@ -3472,8 +3514,7 @@ namespace myjson
 
     json_pointer &json_pointer::operator/=(std::string token)
     {
-        m_tokens.push_back(token);
-        m_original += "/" + escape(token);
+        push_back(std::move(token));
         return *this;
     }
 
@@ -3482,30 +3523,67 @@ namespace myjson
         return operator/=(std::to_string(index));
     }
 
-    json_pointer operator/(const json_pointer &lhs, const json_pointer &rhs) {};
+    json_pointer operator/(const json_pointer &lhs, const json_pointer &rhs)
+    {
+        json_pointer result(lhs);
+        result /= rhs;
+        return result;
+    }
 
-    json_pointer operator/(const json_pointer &lhs, std::string token) {};
+    json_pointer operator/(const json_pointer &lhs, std::string token)
+    {
+        json_pointer result(lhs);
+        result /= std::move(token);
+        return result;
+    }
 
-    json_pointer operator/(const json_pointer &lhs, std::size_t array_idx) {};
+    json_pointer operator/(const json_pointer &lhs, std::size_t array_idx)
+    {
+        json_pointer result(lhs);
+        result /= array_idx;
+        return result;
+    }
 
-    bool operator==(const json_pointer &lhs, const json_pointer &rhs) noexcept {};
+    bool operator==(const json_pointer &lhs, const json_pointer &rhs) noexcept
+    {
+        return lhs.m_tokens == rhs.m_tokens;
+    }
 
-    bool operator==(const json_pointer &lhs, const std::string &rhs) {};
+    bool operator==(const json_pointer &lhs, const std::string &rhs)
+    {
+        return lhs.to_string() == rhs;
+    }
 
     bool operator==(const std::string &lhs,
-                    const json_pointer &rhs) {};
+                    const json_pointer &rhs)
+    {
+        return lhs == rhs.to_string();
+    }
 
     bool operator!=(const json_pointer &lhs,
-                    const json_pointer &rhs) noexcept {};
+                    const json_pointer &rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
 
     bool operator!=(const json_pointer &lhs,
-                    const std::string &rhs) {};
+                    const std::string &rhs)
+    {
+        return !(lhs == rhs);
+    }
 
     bool operator!=(const std::string &lhs,
-                    const json_pointer &rhs) {};
+                    const json_pointer &rhs)
+    {
+        return !(lhs == rhs);
+    }
 
 #ifndef MYJSON_NO_IO
-    std::ostream &operator<<(std::ostream &o, const json_pointer &ptr) {};
+    std::ostream &operator<<(std::ostream &o, const json_pointer &ptr)
+    {
+        o << ptr.to_string();
+        return o;
+    }
 #endif
 
     //-----------------------------------------------------------------------------

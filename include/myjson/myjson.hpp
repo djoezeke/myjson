@@ -2153,15 +2153,26 @@ namespace myjson
 
         // FROM
 
+        /** @brief Convert JSON null into @p std::nullptr_t. */
         void from_json(const json &j, std::nullptr_t &v);
 
+        /** @brief Convert JSON scalar into @p bool. */
         void from_json(const json &j, bool &v);
 
+        /** @brief Convert JSON numeric scalar into @p int64_t. */
         void from_json(const json &j, int64_t &v);
 
+        /** @brief Convert JSON numeric scalar into @p int. */
+        void from_json(const json &j, int &v);
+
+        /** @brief Convert JSON numeric scalar into @p double. */
         void from_json(const json &j, double &v);
 
+        /** @brief Convert JSON scalar into @p std::string. */
         void from_json(const json &j, std::string &v);
+
+        /** @brief Copy JSON value into another JSON value. */
+        void from_json(const json &j, json &v);
 
         // TO
 
@@ -2210,15 +2221,26 @@ namespace myjson
             static void construct(json &j, bool type) noexcept;
         };
 
+        /** @brief Convert @p std::nullptr_t into a JSON null value. */
         void to_json(json &j, const std::nullptr_t &v);
 
+        /** @brief Convert @p bool into a JSON boolean value. */
         void to_json(json &j, const bool &v);
 
+        /** @brief Convert @p int64_t into a JSON integer value. */
         void to_json(json &j, const int64_t &v);
 
+        /** @brief Convert @p int into a JSON integer value. */
+        void to_json(json &j, const int &v);
+
+        /** @brief Convert @p double into a JSON number value. */
         void to_json(json &j, const double &v);
 
+        /** @brief Convert @p std::string into a JSON string value. */
         void to_json(json &j, const std::string &v);
+
+        /** @brief Copy one JSON value into another JSON value. */
+        void to_json(json &j, const json &v);
 
         /// @brief A function object to call to_node functions.
         /// @note User-defined specialization is available by providing implementation **OUTSIDE** fkyaml namespace.
@@ -3054,8 +3076,10 @@ namespace myjson
         /** @brief Return a pointer with token appended. */
         MYJSON_NODISCARD json_pointer push(const std::string &token) const;
 
+        /** @brief Append one token to this pointer. */
         void push_back(const std::string &token);
 
+        /** @brief Append one movable token to this pointer. */
         void push_back(std::string &&token);
 
         /** @brief Resolve pointer against mutable document. */
@@ -3079,25 +3103,34 @@ namespace myjson
         /** @brief Append all tokens from another pointer. */
         reference operator/=(const json_pointer &ptr);
 
+        /** @brief Return a concatenated pointer of @p lhs and @p rhs. */
         friend json_pointer operator/(const json_pointer &lhs, const json_pointer &rhs);
 
+        /** @brief Return @p lhs with one token appended. */
         friend json_pointer operator/(const json_pointer &lhs, std::string token);
 
+        /** @brief Return @p lhs with one array index token appended. */
         friend json_pointer operator/(const json_pointer &lhs, std::size_t array_idx);
 
+        /** @brief Compare two pointers for equality. */
         friend bool operator==(const json_pointer &lhs, const json_pointer &rhs) noexcept;
 
+        /** @brief Compare pointer string form with @p rhs. */
         friend bool operator==(const json_pointer &lhs, const std::string &rhs);
 
+        /** @brief Compare pointer string form with @p lhs. */
         friend bool operator==(const std::string &lhs,
                                const json_pointer &rhs);
 
+        /** @brief Compare two pointers for inequality. */
         friend bool operator!=(const json_pointer &lhs,
                                const json_pointer &rhs) noexcept;
 
+        /** @brief Compare pointer string form with @p rhs for inequality. */
         friend bool operator!=(const json_pointer &lhs,
                                const std::string &rhs);
 
+        /** @brief Compare pointer string form with @p lhs for inequality. */
         friend bool operator!=(const std::string &lhs,
                                const json_pointer &rhs);
 
