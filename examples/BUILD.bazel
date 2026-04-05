@@ -3,4 +3,10 @@
 # Distributed under the terms of the MIT license.
 # ===================================================================
 
+alias(
+	name = "basic_cpp",
+	actual = "//examples/apis:basic_cpp",
+	visibility = ["//visibility:public"],
+)
+
 # ===================================================================

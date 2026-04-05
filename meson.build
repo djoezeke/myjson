@@ -8,14 +8,14 @@
 #--------------------------------------------------------------------
 
 project('myjson',
-	'cpp',
+	['c', 'cpp'],
 	version : '0.1.0',
 	license : 'MIT',
 	default_options : [
 		'buildtype=release',
 		'default_library=static',
-		'cpp_std=c++17'
-		]
+		],
+  	subproject_dir: 'tests/vendor'
 )
 
 compiler = meson.get_compiler('cpp')
@@ -34,6 +34,8 @@ myjson_is_subproject = meson.is_subproject()
 myjson_include_dirs = include_directories('include')
 myjson_build_tests = get_option('myjson_build_tests') and not myjson_is_subproject
 myjson_build_examples = get_option('myjson_build_examples') and not myjson_is_subproject
+myjson_install = get_option('myjson_install') and not myjson_is_subproject
+myjson_build_c_api = get_option('myjson_build_c_api')
 
 src_files = []
 
@@ -45,24 +47,38 @@ src_files = []
 # Build C++ Library        #
 #===========================
 
-myjson_lib = static_library(
+myjson_lib = library(
 	'myjson',
 	'src/myjson.cpp',
 	include_directories : myjson_include_dirs,
-	install : true,
+	install : myjson_install,
 )
 
 #===========================
 # Build C Library          #
 #===========================
 
-myjsonc_lib = static_library(
-	'myjsonc', 
-	'src/myjsonc.cpp',
-	include_directories : myjson_include_dirs,
+myjson_dep = declare_dependency(
 	link_with : myjson_lib,
-	install : true,
+	include_directories : myjson_include_dirs,
 )
+
+myjsonc_dep = myjson_dep
+
+if myjson_build_c_api
+	myjsonc_lib = library(
+		'myjsonc', 
+		'src/myjsonc.cpp',
+		include_directories : myjson_include_dirs,
+		link_with : myjson_lib,
+		install : myjson_install,
+	)
+
+	myjsonc_dep = declare_dependency(
+		link_with : myjsonc_lib,
+		include_directories : myjson_include_dirs,
+	)
+endif
 
 #--------------------------------------------------------------------
 # Add Project subdirectories.
@@ -82,15 +98,23 @@ endif
 
 if not meson.is_subproject()
 
-	install_headers('include/myjson/myjson.h', subdir : 'myjson')
-	install_headers('include/myjson/myjson.hpp', subdir : 'myjson')
+	if myjson_install
+		install_headers('include/myjson/myjson.h', subdir : 'myjson')
+		install_headers('include/myjson/myjson.hpp', subdir : 'myjson')
+	endif
 
 	pkgc = import('pkgconfig')
+	pkg_libraries = [myjson_lib]
+	if myjson_build_c_api
+		pkg_libraries += [myjsonc_lib]
+	endif
 	pkgc.generate(
 		name : meson.project_name(),
 		version: meson.project_version(),
-		description: 'JSON for Modern C/C++',
+		description: 'TOML for Modern C/C++',
 		url: 'https://github.com/djoezeke/myjson',
+		libraries: pkg_libraries,
+		subdirs : 'myjson',
 	)
 
 endif

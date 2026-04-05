@@ -4,42 +4,49 @@
 # ===================================================================
 
 if myjson_build_tests
+	catch2_include_dirs = include_directories('vendor/Catch2/src')
+
+	catch2_dep = dependency(
+		'catch2-with-main',
+        fallback: ['Catch2', 'catch2_with_main_dep'],
+		required: true
+	)
 
     #===========================
     # C++ Library Tests        #
     #===========================
 
 	myjson_test_sources = [
-		'cxx/Version.test.cpp'
+		'cxx/Main.test.cpp',
 	]
 
 	myjson_test_exe = executable(
-		myjson_test, 
+		'myjson_cpp_tests', 
 		myjson_test_sources,
-		include_directories: myjson_include_dirs,
-		link_with: [myjson_lib], 
+		include_directories: [myjson_include_dirs, catch2_include_dirs],
+		dependencies: [myjson_dep, catch2_dep], 
 		install: false
 	)
 
-	test(myjson_test, myjson_test_exe)
+	test('myjson_cpp_tests', myjson_test_exe)
 
     #===========================
     # C Library Tests          #
     #===========================
 
 	myjsonc_test_sources = [
-		'c/Version.test.cpp'
+		'c/Main.test.cpp'
 	]
 
 	myjsonc_test_exe = executable(
-		myjsonc_test, 
+		'myjson_c_tests', 
 		myjsonc_test_sources,
-		include_directories: myjson_include_dirs,
-		link_with: [myjsonc_lib], 
+		include_directories: [myjson_include_dirs, catch2_include_dirs],
+		dependencies: [myjsonc_dep, catch2_dep], 
 		install: false
 	)
 
-	test(myjsonc_test, myjsonc_test_exe)
+	test('myjson_c_tests', myjsonc_test_exe)
 
 endif
 

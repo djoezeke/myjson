@@ -15,9 +15,10 @@ if myjson_build_examples
     foreach example : myjson_examples
 
 		exe = executable(
-            example, example,
-            include_directories: incdir,
-            link_with: [myjson_lib],
+                        example,
+                        'apis/' + example,
+                        include_directories: myjson_include_dirs,
+                        dependencies: [myjson_dep],
             install: false
         )
         
@@ -31,10 +32,11 @@ if myjson_build_examples
 
     foreach example : myjsonc_examples
 
-		exe = executable(example + 'c',
+		exe = executable(
+                        example + 'c',
             'apis/' + example,
-            include_directories: incdir,
-            link_with: [myjsonc_lib], 
+                        include_directories: myjson_include_dirs,
+                        dependencies: [myjsonc_dep],
             install: false
         )
 

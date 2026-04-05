@@ -4,13 +4,17 @@
 # ===================================================================
 
 #--------------------------------------------------------------------
-# Example Function
+# Basic Example Configures   
+#--------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+# Test Functions
 #--------------------------------------------------------------------
 
 # add a new target which is an example
-# example: myjson_add_example(example
+# example: myjson_add_example(main-examples
 #                     SOURCES example.cpp
-#                     DEPENDS Myjson::Myjson)
+#                     DEPENDS Mytoml::Mytoml)
 function(myjson_add_example target)
 
     # parse the arguments
@@ -19,19 +23,23 @@ function(myjson_add_example target)
         message(FATAL_ERROR "Extra unparsed arguments when calling myjson_add_example: ${THIS_UNPARSED_ARGUMENTS}")
     endif()
 
+    if(NOT THIS_SOURCES)
+        message(FATAL_ERROR "myjson_add_example requires SOURCES")
+    endif()
+
     # set a source group for the source files
     source_group("" FILES ${THIS_SOURCES})
 
     # create the target
     add_executable(${target} ${THIS_SOURCES})
 
+    target_include_directories(${target} PRIVATE ${MYJSON_INCLUDE_BUILD_DIR})
+
     # set the target's folder (for IDEs that support it, e.g. Visual Studio)
     set_target_properties(${target} PROPERTIES FOLDER "Examples")
 
     # set the Visual Studio startup path for debugging
     set_target_properties(${target} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
-    target_include_directories(${target} PRIVATE ${MYJSON_INCLUDE_DIR}>)
 
     # link the target to its dependencies
     target_link_libraries(${target} PRIVATE ${THIS_DEPENDS})
@@ -52,4 +60,3 @@ add_subdirectory(apis)
 #--------------------------------------------------------------------
 add_subdirectory(tutorials)
 
-# ===================================================================
