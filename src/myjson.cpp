@@ -681,8 +681,431 @@ namespace myjson
         };
 
         //-------------------------------------------------------------------------
-        // [SECTION] Details : Input
+        // [SECTION] Details : Iterators
         //-------------------------------------------------------------------------
+
+        //-----------------------------------------------------------------------------
+        // [Class] iterator
+        //-----------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------
+
+        template <class node_type>
+        iterator<node_type>::iterator(pointer json) noexcept
+            : m_object(json)
+        {
+            if (m_object != nullptr && m_object->is_array())
+            {
+                m_type = iterator_t::array;
+            }
+            else
+            {
+                m_type = iterator_t::object;
+            }
+        }
+
+        template <class node_type>
+        template <typename T, typename std::enable_if<std::is_const<T>::value, int>::type>
+        iterator<node_type>::iterator(const other_iterator &other) noexcept
+            : m_object(other.m_object)
+        {
+            if (other.type() == other_iterator::iterator_t::array)
+            {
+                m_type = iterator_t::array;
+                m_holder.array_iter = other.m_holder.array_iter;
+            }
+            else
+            {
+                m_type = iterator_t::object;
+                m_holder.object_iter = other.m_holder.object_iter;
+            }
+        }
+
+        template <class node_type>
+        iterator<node_type>::iterator(const object_iterator &itr) noexcept
+            : m_type(iterator_t::object)
+        {
+            m_holder.object_iter = itr;
+        }
+
+        template <class node_type>
+        iterator<node_type>::iterator(const array_iterator &itr) noexcept
+            : m_type(iterator_t::array)
+        {
+            m_holder.array_iter = itr;
+        }
+
+        template <class node_type>
+        typename iterator<node_type>::iterator_t iterator<node_type>::type() const noexcept
+        {
+            return m_type;
+        }
+
+        template <class node_type>
+        const std::string &iterator<node_type>::key() const
+        {
+            if (m_type != iterator_t::object)
+            {
+                MYJSON_THROW(std::runtime_error("Cannot retrieve key from non-object iterator"));
+            }
+            return m_holder.object_iter->first;
+        }
+
+        template <class node_type>
+        typename iterator<node_type>::reference iterator<node_type>::value() const noexcept
+        {
+            return operator*();
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator==(const myjson::detail::iterator<node_type> &rhs) const
+        {
+            if (m_type != rhs.m_type)
+            {
+                return false;
+            }
+
+            if (m_type == iterator_t::array)
+            {
+                return m_holder.array_iter == rhs.m_holder.array_iter;
+            }
+
+            return m_holder.object_iter == rhs.m_holder.object_iter;
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator==(const typename iterator<node_type>::other_iterator &rhs) const
+        {
+            if (static_cast<unsigned int>(m_type) != static_cast<unsigned int>(rhs.type()))
+            {
+                return false;
+            }
+
+            if (m_type == iterator_t::array)
+            {
+                return m_holder.array_iter == rhs.m_holder.array_iter;
+            }
+
+            return m_holder.object_iter == rhs.m_holder.object_iter;
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator!=(const myjson::detail::iterator<node_type> &rhs) const
+        {
+            return !(*this == rhs);
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator!=(const typename iterator<node_type>::other_iterator &rhs) const
+        {
+            return !(*this == rhs);
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator<(const myjson::detail::iterator<node_type> &rhs) const
+        {
+            if (m_type != rhs.m_type)
+            {
+                return static_cast<unsigned int>(m_type) < static_cast<unsigned int>(rhs.m_type);
+            }
+
+            if (m_type == iterator_t::array)
+            {
+                return m_holder.array_iter < rhs.m_holder.array_iter;
+            }
+
+            return false;
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator<(const typename iterator<node_type>::other_iterator &rhs) const
+        {
+            const auto lhs_type = static_cast<unsigned int>(m_type);
+            const auto rhs_type = static_cast<unsigned int>(rhs.type());
+            if (lhs_type != rhs_type)
+            {
+                return lhs_type < rhs_type;
+            }
+
+            if (m_type == iterator_t::array)
+            {
+                return m_holder.array_iter < rhs.m_holder.array_iter;
+            }
+
+            return false;
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator<=(const myjson::detail::iterator<node_type> &rhs) const
+        {
+            return (*this < rhs) || (*this == rhs);
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator<=(const typename iterator<node_type>::other_iterator &rhs) const
+        {
+            return (*this < rhs) || (*this == rhs);
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator>(const myjson::detail::iterator<node_type> &rhs) const
+        {
+            return rhs < *this;
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator>(const typename iterator<node_type>::other_iterator &rhs) const
+        {
+            return rhs < *this;
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator>=(const myjson::detail::iterator<node_type> &rhs) const
+        {
+            return !(*this < rhs);
+        }
+
+        template <class node_type>
+        bool iterator<node_type>::operator>=(const typename iterator<node_type>::other_iterator &rhs) const
+        {
+            return !(*this < rhs);
+        }
+
+        template <class node_type>
+        typename iterator<node_type>::pointer iterator<node_type>::operator->() noexcept
+        {
+            if (m_type == iterator_t::array)
+            {
+                return &(*m_holder.array_iter);
+            }
+            return &m_holder.object_iter->second;
+        }
+
+        template <class node_type>
+        typename iterator<node_type>::reference iterator<node_type>::operator*() const noexcept
+        {
+            if (m_type == iterator_t::array)
+            {
+                return *m_holder.array_iter;
+            }
+            return m_holder.object_iter->second;
+        }
+
+        template <class node_type>
+        iterator<node_type> iterator<node_type>::operator+(difference_type i) const noexcept
+        {
+            iterator result(*this);
+            result += i;
+            return result;
+        }
+
+        template <class node_type>
+        iterator<node_type> &iterator<node_type>::operator+=(difference_type i) noexcept
+        {
+            if (i >= 0)
+            {
+                while (i-- > 0)
+                {
+                    ++(*this);
+                }
+            }
+            else
+            {
+                while (i++ < 0)
+                {
+                    --(*this);
+                }
+            }
+            return *this;
+        }
+
+        template <class node_type>
+        iterator<node_type> &iterator<node_type>::operator++() noexcept
+        {
+            if (m_type == iterator_t::array)
+            {
+                ++m_holder.array_iter;
+            }
+            else
+            {
+                ++m_holder.object_iter;
+            }
+            return *this;
+        }
+
+        template <class node_type>
+        iterator<node_type> iterator<node_type>::operator++(int) & noexcept
+        {
+            iterator result(*this);
+            ++(*this);
+            return result;
+        }
+
+        template <class node_type>
+        iterator<node_type> iterator<node_type>::operator-(difference_type i) const noexcept
+        {
+            iterator result(*this);
+            result -= i;
+            return result;
+        }
+
+        template <class node_type>
+        iterator<node_type> &iterator<node_type>::operator-=(difference_type i) noexcept
+        {
+            return (*this += -i);
+        }
+
+        template <class node_type>
+        iterator<node_type> &iterator<node_type>::operator--() noexcept
+        {
+            if (m_type == iterator_t::array)
+            {
+                --m_holder.array_iter;
+            }
+            else
+            {
+                --m_holder.object_iter;
+            }
+            return *this;
+        }
+
+        template <class node_type>
+        iterator<node_type> iterator<node_type>::operator--(int) & noexcept
+        {
+            iterator result(*this);
+            --(*this);
+            return result;
+        }
+
+        //-----------------------------------------------------------------------------
+        // [Class] reverse_iterator
+        //-----------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type>::reverse_iterator(const iterator_type &iter) noexcept
+            : base_iterator(iter)
+        {
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type>::reverse_iterator(const base_iterator &iter) noexcept
+            : base_iterator(iter)
+        {
+        }
+
+        template <class iterator_type>
+        const std::string &reverse_iterator<iterator_type>::key() const
+        {
+            auto it = this->base();
+            --it;
+            return it.key();
+        }
+
+        template <class iterator_type>
+        typename reverse_iterator<iterator_type>::reference reverse_iterator<iterator_type>::value() const noexcept
+        {
+            auto it = this->base();
+            --it;
+            return *it;
+        }
+
+        template <class iterator_type>
+        typename reverse_iterator<iterator_type>::reference reverse_iterator<iterator_type>::operator[](difference_type i) const
+        {
+            return *(*this + i);
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> reverse_iterator<iterator_type>::operator+(difference_type i) const noexcept
+        {
+            reverse_iterator result(*this);
+            result += i;
+            return result;
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> &reverse_iterator<iterator_type>::operator+=(difference_type i) noexcept
+        {
+            if (i >= 0)
+            {
+                while (i-- > 0)
+                {
+                    ++(*this);
+                }
+            }
+            else
+            {
+                while (i++ < 0)
+                {
+                    --(*this);
+                }
+            }
+            return *this;
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> &reverse_iterator<iterator_type>::operator++() noexcept
+        {
+            base_iterator::operator++();
+            return *this;
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> reverse_iterator<iterator_type>::operator++(int) & noexcept
+        {
+            reverse_iterator result(*this);
+            ++(*this);
+            return result;
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> reverse_iterator<iterator_type>::operator-(difference_type i) const noexcept
+        {
+            reverse_iterator result(*this);
+            result -= i;
+            return result;
+        }
+
+        template <class iterator_type>
+        typename reverse_iterator<iterator_type>::difference_type reverse_iterator<iterator_type>::operator-(const reverse_iterator &other) const
+        {
+            difference_type distance = 0;
+            auto it = other;
+
+            while (it != *this)
+            {
+                ++it;
+                ++distance;
+            }
+
+            return distance;
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> &reverse_iterator<iterator_type>::operator-=(difference_type i) noexcept
+        {
+            return (*this += -i);
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> &reverse_iterator<iterator_type>::operator--() noexcept
+        {
+            base_iterator::operator--();
+            return *this;
+        }
+
+        template <class iterator_type>
+        reverse_iterator<iterator_type> reverse_iterator<iterator_type>::operator--(int) & noexcept
+        {
+            reverse_iterator result(*this);
+            --(*this);
+            return result;
+        }
+
+        template class iterator<json>;
+        template class iterator<const json>;
+        template class reverse_iterator<iterator<json>>;
+        template class reverse_iterator<iterator<const json>>;
 
         //-----------------------------------------------------------------------------
         // [Class] file_iadapter
@@ -692,7 +1115,13 @@ namespace myjson
         //-----------------------------------------------------------------------------
 
         file_iadapter::file_iadapter(FILE *file)
-            : m_file(file) {};
+            : m_file(file)
+        {
+            if (m_file == nullptr)
+            {
+                MYJSON_THROW(exception("invalid file pointer"));
+            }
+        }
 
         size_t file_iadapter::read(void *data, size_t size)
         {
@@ -703,7 +1132,7 @@ namespace myjson
             // fread returns number of elements read; using 1-byte elements.
             const size_t nsize = fread(data, 1, size, m_file);
             return nsize;
-        };
+        }
 
 #ifndef MYJSON_NO_STL
 
@@ -1583,9 +2012,9 @@ namespace myjson
                 {
                     for (auto it = m_value.begin(); it != m_value.end(); ++it)
                     {
-                        if (it->second.is_string())
+                        if (it.value().is_string())
                         {
-                            return it->second.as_string();
+                            return it.value().as_string();
                         }
                     }
                 }
@@ -1593,9 +2022,9 @@ namespace myjson
                 {
                     for (auto it = m_value.begin(); it != m_value.end(); ++it)
                     {
-                        if (it->second.is_boolean())
+                        if (it.value().is_boolean())
                         {
-                            return it->second.as_bool();
+                            return it.value().as_bool();
                         }
                     }
                 }
@@ -1603,9 +2032,9 @@ namespace myjson
                 {
                     for (auto it = m_value.begin(); it != m_value.end(); ++it)
                     {
-                        if (it->second.is_integer() || it->second.is_number())
+                        if (it.value().is_integer() || it.value().is_number())
                         {
-                            return static_cast<T>(it->second.as_integer());
+                            return static_cast<T>(it.value().as_integer());
                         }
                     }
                 }
@@ -1613,9 +2042,9 @@ namespace myjson
                 {
                     for (auto it = m_value.begin(); it != m_value.end(); ++it)
                     {
-                        if (it->second.is_number() || it->second.is_integer())
+                        if (it.value().is_number() || it.value().is_integer())
                         {
-                            return it->second.as_number();
+                            return it.value().as_number();
                         }
                     }
                 }
@@ -1878,13 +2307,13 @@ namespace myjson
                     {
                         write_indent(level + 1, indent);
                     }
-                    write_escaped(iter->first);
+                    write_escaped(iter.key());
                     write_raw(":", 1);
                     if (indent > 0)
                     {
                         write_raw(" ", 1);
                     }
-                    write_value(iter->second, indent, level + 1);
+                    write_value(iter.value(), indent, level + 1);
                 }
                 if (indent > 0 && value.size() > 0)
                 {
@@ -2708,22 +3137,48 @@ namespace myjson
         get_array().insert(get_array().begin(), value);
     }
 
-    json::array_iterator json::insert(const array_const_iterator &pos, const json &value)
+    json::iterator json::insert(const const_iterator &pos, const json &value)
     {
         ensure_array();
-        return get_array().insert(pos, value);
+        const auto index = static_cast<size_type>(std::distance(cbegin(), pos));
+        auto it = get_array().insert(get_array().cbegin() + static_cast<difference_type>(index), value);
+        return iterator(it);
     }
 
-    json::array_iterator json::insert(const array_const_iterator &pos, json &&value)
+    json::iterator json::insert(const const_iterator &pos, json &&value)
     {
         ensure_array();
-        return get_array().insert(pos, std::move(value));
+        const auto index = static_cast<size_type>(std::distance(cbegin(), pos));
+        auto it = get_array().insert(get_array().cbegin() + static_cast<difference_type>(index), std::move(value));
+        return iterator(it);
     }
 
-    json::array_iterator json::erase(array_const_iterator pos) { return get_array().erase(pos); }
-    json::array_iterator json::erase(array_const_iterator first, array_const_iterator last)
+    json::iterator json::erase(const_iterator pos)
     {
-        return get_array().erase(first, last);
+        if (!is_array())
+        {
+            return end();
+        }
+
+        const auto index = static_cast<size_type>(std::distance(cbegin(), pos));
+        auto it = get_array().erase(get_array().cbegin() + static_cast<difference_type>(index));
+        return iterator(it);
+    }
+
+    json::iterator json::erase(const_iterator first, const_iterator last)
+    {
+        if (!is_array())
+        {
+            return end();
+        }
+
+        const auto begin_index = static_cast<size_type>(std::distance(cbegin(), first));
+        const auto end_index = static_cast<size_type>(std::distance(cbegin(), last));
+
+        auto it = get_array().erase(
+            get_array().cbegin() + static_cast<difference_type>(begin_index),
+            get_array().cbegin() + static_cast<difference_type>(end_index));
+        return iterator(it);
     }
 
     //========== Size and Capacity ==========
@@ -2737,7 +3192,14 @@ namespace myjson
         return 0;
     }
 
-    bool json::empty() const noexcept { return size() == 0; }
+    bool json::empty() const noexcept
+    {
+        if (is_object())
+            return get_object().empty();
+        if (is_array())
+            return get_array().empty();
+        return size() == 0;
+    }
 
     void json::clear() noexcept
     {
@@ -2749,20 +3211,67 @@ namespace myjson
 
     //========== Iteration ==========
 
-    json::iterator json::begin() { return get_object().begin(); }
-    json::const_iterator json::begin() const { return get_object().begin(); }
-    json::const_iterator json::cbegin() const { return get_object().cbegin(); }
-    json::iterator json::end() { return get_object().end(); }
-    json::const_iterator json::end() const { return get_object().end(); }
-    json::const_iterator json::cend() const { return get_object().cend(); }
-    json::reverse_iterator json::rbegin() { return get_object().rbegin(); }
-    json::const_reverse_iterator json::rbegin() const { return get_object().rbegin(); }
-    json::reverse_iterator json::rend() { return get_object().rend(); }
-    json::const_reverse_iterator json::rend() const { return get_object().rend(); }
-    json::array_iterator json::array_begin() { return get_array().begin(); }
-    json::array_const_iterator json::array_begin() const { return get_array().begin(); }
-    json::array_iterator json::array_end() { return get_array().end(); }
-    json::array_const_iterator json::array_end() const { return get_array().end(); }
+    json::iterator json::begin()
+    {
+        if (is_object())
+        {
+            return iterator(get_object().begin());
+        }
+        if (is_array())
+        {
+            return iterator(get_array().begin());
+        }
+        return iterator(typename object_t::iterator{});
+    }
+
+    json::const_iterator json::begin() const { return cbegin(); }
+
+    json::const_iterator json::cbegin() const
+    {
+        if (is_object())
+        {
+            return const_iterator(get_object().cbegin());
+        }
+        if (is_array())
+        {
+            return const_iterator(get_array().cbegin());
+        }
+        return const_iterator(typename object_t::const_iterator{});
+    }
+
+    json::iterator json::end()
+    {
+        if (is_object())
+        {
+            return iterator(get_object().end());
+        }
+        if (is_array())
+        {
+            return iterator(get_array().end());
+        }
+        return iterator(typename object_t::iterator{});
+    }
+
+    json::const_iterator json::end() const { return cend(); }
+    json::const_iterator json::cend() const
+    {
+        if (is_object())
+        {
+            return const_iterator(get_object().cend());
+        }
+        if (is_array())
+        {
+            return const_iterator(get_array().cend());
+        }
+        return const_iterator(typename object_t::const_iterator{});
+    }
+
+    json::reverse_iterator json::rbegin() { return reverse_iterator(end()); }
+    json::const_reverse_iterator json::rbegin() const { return crbegin(); };
+    json::const_reverse_iterator json::crbegin() const { return const_reverse_iterator(cend()); }
+    json::reverse_iterator json::rend() { return reverse_iterator(begin()); }
+    json::const_reverse_iterator json::rend() const { return crend(); }
+    json::const_reverse_iterator json::crend() const { return const_reverse_iterator(cbegin()); }
 
     //========== Comparison ==========
 
@@ -2951,9 +3460,9 @@ namespace myjson
             {
                 for (auto it = current.begin(); it != current.end(); ++it)
                 {
-                    const std::string segment = "/" + json_pointer::escape(it->first);
+                    const std::string segment = "/" + json_pointer::escape(it.key());
                     std::string next = path + segment;
-                    if (walk(it->second, next))
+                    if (walk(it.value(), next))
                     {
                         path = std::move(next);
                         return true;
@@ -3016,7 +3525,7 @@ namespace myjson
                 {
                     return false;
                 }
-                parent.erase(parent.array_begin() + static_cast<json::difference_type>(index));
+                parent.erase(parent.begin() + static_cast<json::difference_type>(index));
                 return true;
             }
 
@@ -3219,7 +3728,7 @@ namespace myjson
                 {
                     MYJSON_TRY
                     {
-                        p.erase(p.array_begin() + std::stoul(key));
+                        p.erase(p.begin() + std::stoul(key));
                     }
                     MYJSON_CATCH(...)
                     {
@@ -3252,7 +3761,7 @@ namespace myjson
                     {
                         MYJSON_TRY
                         {
-                            p.erase(p.array_begin() + std::stoul(key));
+                            p.erase(p.begin() + std::stoul(key));
                         }
                         MYJSON_CATCH(...)
                         {

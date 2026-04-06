@@ -30,10 +30,10 @@ int main()
 
     // Verify string types
     std::cout << "\nString verification:" << std::endl;
-    for (auto &entry : multilingual)
+    for (auto it = multilingual.begin(); it != multilingual.end(); ++it)
     {
-        const auto &value = entry.second.as_string();
-        std::cout << "  " << entry.first << " (length: " << value.length() << " bytes)" << std::endl;
+        const auto &value = it.value().as_string();
+        std::cout << "  " << it.key() << " (length: " << value.length() << " bytes)" << std::endl;
     }
 
     // UTF-8 string escaping in JSON

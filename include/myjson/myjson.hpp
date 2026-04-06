@@ -290,6 +290,8 @@
     #include <map>
     #include <optional>
     #include <string>
+    #include <iterator>
+    #include <type_traits>
     #include <variant>
     #include <vector>
 #endif // MYJSON_NO_STL
@@ -843,6 +845,17 @@ namespace myjson
         class encoding_error; /** class encoding_error. */
 #endif                        // MYJSON_NO_EXCEPTIONS
 
+        // iterator
+
+        template <typename node_type>
+        struct iterator_holder; /** class iterator_holder. */
+
+        template <typename node_type>
+        class iterator; /** class iterator. */
+
+        template <typename iterator_type>
+        class reverse_iterator; /** class reverse_iterator. */
+
         // input
         class lexer;           /** class lexer. */
         class parser;          /** class parser. */
@@ -1055,6 +1068,18 @@ namespace myjson
         };
 
         /** @} group structs */
+
+        //-----------------------------------------------------------------------------
+        // [SECTION] Details : Traits
+        //-----------------------------------------------------------------------------
+
+        /**
+         * @defgroup traits Traits
+         * @brief Traits.
+         * @{
+         */
+
+        /** @} group traits */
 
         //-----------------------------------------------------------------------------
         // [SECTION] Details : Exception
@@ -1429,6 +1454,359 @@ namespace myjson
 
         /** @} group encoding */
 
+        //-----------------------------------------------------------------------------
+        // [SECTION] Details : Iterators
+        //-----------------------------------------------------------------------------
+
+        /**
+         * @defgroup iterator Iterators
+         * @brief Detail iterator classes.
+         * @{
+         */
+
+        template <typename node_type>
+        struct iterator_holder
+        {
+            using value_type = typename std::remove_const<node_type>::type;
+            using object_iterator = typename std::conditional<
+                std::is_const<node_type>::value,
+                typename value_type::object_t::const_iterator,
+                typename value_type::object_t::iterator>::type;
+            using array_iterator = typename std::conditional<
+                std::is_const<node_type>::value,
+                typename value_type::array_t::const_iterator,
+                typename value_type::array_t::iterator>::type;
+
+            object_iterator object_iter{}; /** Underlying object iterator. */
+            array_iterator array_iter{};   /** Underlying array iterator. */
+        };
+
+        template <typename node_type>
+        struct iterator_traits
+        {
+            using value_type = typename std::remove_const<node_type>::type;
+            using pointer = node_type *;
+            using reference = node_type &;
+            using const_pointer = const value_type *;
+            using const_reference = const value_type &;
+            using difference_type = std::ptrdiff_t;
+            using object_iterator = typename std::conditional<
+                std::is_const<node_type>::value,
+                typename value_type::object_t::const_iterator,
+                typename value_type::object_t::iterator>::type;
+            using array_iterator = typename std::conditional<
+                std::is_const<node_type>::value,
+                typename value_type::array_t::const_iterator,
+                typename value_type::array_t::iterator>::type;
+        };
+
+        /**
+         * @class iterator
+         * @brief Bidirectional iterator over JSON object and array values.
+         *
+         * The iterator stores either an object iterator or an array iterator and
+         * exposes a unified interface used by the public json iterator API.
+         */
+        template <typename node_type>
+        class iterator
+        {
+            using other_iterator = typename std::conditional<
+                std::is_const<node_type>::value, iterator<typename std::remove_const<node_type>::type>,
+                iterator<const node_type>>::type;
+
+            friend other_iterator;
+
+        public:
+            using traits_type = iterator_traits<node_type>;            /** A type for iterator traits.  */
+            using iterator_category = std::bidirectional_iterator_tag; /** A type for iterator category tag. */
+
+            using value_type = typename traits_type::value_type;           /** A json object type. */
+            using pointer = typename traits_type::pointer;                 /** A pointer to a json object. */
+            using reference = typename traits_type::reference;             /** A reference to a json object. */
+            using const_pointer = typename traits_type::const_pointer;     /** A constant pointer to a json object. */
+            using const_reference = typename traits_type::const_reference; /** A constant reference to a json object. */
+            using difference_type = typename traits_type::difference_type; /** A differences between json iterators. */
+
+            using object_iterator = typename traits_type::object_iterator;
+            using array_iterator = typename traits_type::array_iterator;
+
+        public:
+            /**
+             * @brief Runtime category of the active underlying iterator.
+             */
+            enum class iterator_t : uint8_t
+            {
+                object, /** object iterator type. */
+                array,  /** array iterator type. */
+            };
+
+        public:
+            /**
+             * @brief Default constructor
+             */
+            iterator() = default;
+
+            /**
+             * @brief Default copy constructor
+             */
+            iterator(const iterator &) = default;
+
+            /**
+             * @brief Default move constructor
+             */
+            iterator(iterator &&) = default;
+
+            /**
+             * @brief Construct begin-iterator from a JSON node.
+             * @param json Pointer to JSON container (array/object).
+             */
+            explicit iterator(pointer json) noexcept;
+
+            /**
+             * @brief Convert mutable iterator to const iterator.
+             */
+            template <typename T = node_type,
+                      typename std::enable_if<std::is_const<T>::value, int>::type = 0>
+            iterator(const other_iterator &other) noexcept;
+
+            /**
+             * @brief Construct from object iterator.
+             */
+            iterator(const object_iterator &itr) noexcept;
+
+            /**
+             * @brief Construct from array iterator.
+             */
+            iterator(const array_iterator &itr) noexcept;
+
+            /**
+             * @brief Get runtime iterator category.
+             */
+            iterator_t type() const noexcept;
+
+            /**
+             * @brief Get object key at current position.
+             * @throws exception when iterating non-object values.
+             */
+            const std::string &key() const;
+
+            /**
+             * @brief Get referenced JSON value.
+             */
+            reference value() const noexcept;
+
+            /**
+             * @brief Default copy assignment operator
+             */
+            iterator &operator=(const iterator &) = default;
+
+            /**
+             * @brief Default move assignment operator
+             */
+            iterator &operator=(iterator &&) = default;
+
+            bool operator==(const iterator &rhs) const;
+            bool operator==(const other_iterator &rhs) const;
+
+            bool operator!=(const iterator &rhs) const;
+            bool operator!=(const other_iterator &rhs) const;
+
+            bool operator<(const iterator &rhs) const;
+            bool operator<(const other_iterator &rhs) const;
+
+            bool operator<=(const iterator &rhs) const;
+            bool operator<=(const other_iterator &rhs) const;
+
+            bool operator>(const iterator &rhs) const;
+            bool operator>(const other_iterator &rhs) const;
+
+            bool operator>=(const iterator &rhs) const;
+            bool operator>=(const other_iterator &rhs) const;
+
+            /**
+             * @brief Access the referenced JSON value as a pointer.
+             */
+            pointer operator->() noexcept;
+
+            /**
+             * @brief Dereference the iterator.
+             */
+            reference operator*() const noexcept;
+
+            /**
+             * @brief Return an iterator advanced by @p i steps.
+             */
+            iterator operator+(difference_type i) const noexcept;
+
+            /**
+             * @brief Advance the iterator by @p i steps.
+             */
+            iterator &operator+=(difference_type i) noexcept;
+
+            /**
+             * @brief Pre-increment the iterator.
+             */
+            iterator &operator++() noexcept;
+
+            /**
+             * @brief Post-increment the iterator.
+             */
+            iterator operator++(int) & noexcept;
+
+            /**
+             * @brief Return an iterator moved backward by @p i steps.
+             */
+            iterator operator-(difference_type i) const noexcept;
+
+            /**
+             * @brief Move the iterator backward by @p i steps.
+             */
+            iterator &operator-=(difference_type i) noexcept;
+
+            /**
+             * @brief Pre-decrement the iterator.
+             */
+            iterator &operator--() noexcept;
+
+            /**
+             * @brief Post-decrement the iterator.
+             */
+            iterator operator--(int) & noexcept;
+
+            /**
+             * @brief Default destructor.
+             */
+            ~iterator() = default;
+
+        private:
+            pointer m_object = nullptr;            /** Parent JSON node associated with this iterator. */
+            iterator_t m_type{iterator_t::object}; /** Active iterator branch (object or array). */
+            iterator_holder<node_type> m_holder{}; /** Storage for the active underlying STL iterator. */
+        };
+
+        /**
+         * @class reverse_iterator
+         * @brief Reverse iterator adapter for json iterators.
+         *
+         * Wraps a forward json iterator and provides reverse traversal semantics
+         * compatible with STL reverse iterators.
+         */
+        template <typename iterator_type>
+        class reverse_iterator : public std::reverse_iterator<iterator_type>
+        {
+        public:
+            using base_iterator = std::reverse_iterator<iterator_type>; /** A shortcut to the reverse iterator adapter. */
+            using value_type = typename iterator_type::value_type;
+            using pointer = typename iterator_type::pointer;                 /** A pointer to an iterator object. */
+            using reference = typename iterator_type::reference;             /** A reference to an iterator object. */
+            using const_pointer = typename iterator_type::const_pointer;     /** A constant pointer to an iterator object. */
+            using const_reference = typename iterator_type::const_reference; /** A constant reference to an iterator object. */
+            using difference_type = typename iterator_type::difference_type; /** Represent the differences between iterators. */
+
+        public:
+            /**
+             * @brief Default constructor
+             */
+            reverse_iterator() = default;
+
+            /**
+             * @brief Construct from a forward iterator base.
+             */
+            reverse_iterator(const iterator_type &iter) noexcept;
+
+            /**
+             * @brief Construct from a std::reverse_iterator base object.
+             */
+            reverse_iterator(const base_iterator &iter) noexcept;
+
+            /**
+             * @brief Default copy constructor
+             */
+            reverse_iterator(const reverse_iterator &) = default;
+
+            /**
+             * @brief Default move constructor
+             */
+            reverse_iterator(reverse_iterator &&) = default;
+
+            /**
+             * @brief Get object key of the element currently referenced.
+             */
+            const std::string &key() const;
+
+            /**
+             * @brief Access the JSON value referenced by the reverse iterator.
+             */
+            reference value() const noexcept;
+
+            /**
+             * @brief Default copy assignment operator
+             */
+            reverse_iterator &operator=(const reverse_iterator &) = default;
+
+            /**
+             * @brief Default move assignment operator
+             */
+            reverse_iterator &operator=(reverse_iterator &&) = default;
+
+            /**
+             * @brief Random-access style offset read from current reverse position.
+             */
+            reference operator[](difference_type n) const;
+
+            /**
+             * @brief Return reverse iterator moved by @p i steps.
+             */
+            reverse_iterator operator+(difference_type i) const noexcept;
+
+            /**
+             * @brief Move reverse iterator by @p i steps.
+             */
+            reverse_iterator &operator+=(difference_type i) noexcept;
+
+            /**
+             * @brief Pre-increment (moves toward beginning in forward order).
+             */
+            reverse_iterator &operator++() noexcept;
+
+            /**
+             * @brief Post-increment reverse iterator.
+             */
+            reverse_iterator operator++(int) & noexcept;
+
+            /**
+             * @brief Return reverse iterator moved backward by @p i steps.
+             */
+            reverse_iterator operator-(difference_type i) const noexcept;
+
+            /**
+             * @brief Compute distance between two reverse iterators.
+             */
+            difference_type operator-(const reverse_iterator &other) const;
+
+            /**
+             * @brief Move reverse iterator backward by @p i steps.
+             */
+            reverse_iterator &operator-=(difference_type i) noexcept;
+
+            /**
+             * @brief Pre-decrement reverse iterator.
+             */
+            reverse_iterator &operator--() noexcept;
+
+            /**
+             * @brief Post-decrement reverse iterator.
+             */
+            reverse_iterator operator--(int) & noexcept;
+
+            /**
+             * @brief Default destructor.
+             */
+            ~reverse_iterator() = default;
+        };
+
+        /** @} group iterator */
+
         /**
          * @defgroup input
          * @brief
@@ -1446,7 +1824,7 @@ namespace myjson
         {
         public:
             /**
-             * @brief Default copy assignment operator
+             * @brief Default constructor
              */
             iadapter() = default;
 
@@ -1889,7 +2267,7 @@ namespace myjson
         {
         public:
             /**
-             * @brief Default copy assignment operator
+             * @brief Default constructor
              */
             oadapter() = default;
 
@@ -2463,16 +2841,18 @@ namespace myjson
         friend class ::myjson::detail::parser;
         friend class ::myjson::detail::exception;
 
-    public:
-        using value_t = detail::value_t;
         using initializer_list_t = std::initializer_list<json>;
 
-        using pointer = json *;
-        using reference = json &;
-        using const_pointer = const json *;
-        using const_reference = const json &;
-        using difference_type = std::ptrdiff_t;
-        using size_type = std::size_t;
+    public:
+        using value_t = detail::value_t; /** A node value types. */
+
+        using value_type = json;                    /** A json object. */
+        using pointer = value_type *;               /** A pointer to a json object. */
+        using reference = value_type &;             /** A reference to a json object. */
+        using const_pointer = const value_type *;   /** A constant pointer to a json object. */
+        using const_reference = const value_type &; /** A constant reference to a json object. */
+        using difference_type = std::ptrdiff_t;     /** A differences between json iterators. */
+        using size_type = std::size_t;              /** A type to represent json sizes. */
 
         /**
          * @name types
@@ -2480,13 +2860,14 @@ namespace myjson
          * {@
          */
 
-        using object_t = std::map<std::string, json>;
-        using array_t = std::vector<json>;
-        using string_t = std::string;
-        using number_t = double;
-        using integer_t = int64_t;
-        using boolean_t = bool;
-        using null_t = std::nullptr_t;
+        using node_t = detail::value_t;               /** A type for a json value. */
+        using object_t = std::map<std::string, json>; /** A type for a json null value. */
+        using array_t = std::vector<json>;            /** A type for a json null value. */
+        using string_t = std::string;                 /** A type for a json null value. */
+        using number_t = double;                      /** A type for a json null value. */
+        using integer_t = int64_t;                    /** A type for a json null value. */
+        using boolean_t = bool;                       /** A type for a json null value. */
+        using null_t = std::nullptr_t;                /** A type for a json null value. */
 
         /* @} types */
 
@@ -2495,14 +2876,10 @@ namespace myjson
          * {@
          */
 
-        using iterator = object_t::iterator;
-        using const_iterator = object_t::const_iterator;
-        using reverse_iterator = object_t::reverse_iterator;
-        using const_reverse_iterator = object_t::const_reverse_iterator;
-
-        // Array iterator support
-        using array_iterator = array_t::iterator;
-        using array_const_iterator = array_t::const_iterator;
+        using iterator = myjson::detail::iterator<json>;                                 /** An iterator type for json. */
+        using const_iterator = myjson::detail::iterator<const json>;                     /** A const iterator type for json. */
+        using reverse_iterator = myjson::detail::reverse_iterator<iterator>;             /** A reverse iterator type for json. */
+        using const_reverse_iterator = myjson::detail::reverse_iterator<const_iterator>; /** A const reverse iterator type for json. */
 
         /* @} containers */
 
@@ -2770,16 +3147,16 @@ namespace myjson
         void push_front(const json &value);
 
         /** @brief Insert value at iterator position. */
-        array_iterator insert(const array_const_iterator &pos, const json &value);
+        iterator insert(const const_iterator &pos, const json &value);
 
         /** @brief Insert movable value at iterator position. */
-        array_iterator insert(const array_const_iterator &pos, json &&value);
+        iterator insert(const const_iterator &pos, json &&value);
 
         /** @brief Erase one element at iterator position. */
-        array_iterator erase(array_const_iterator pos);
+        iterator erase(const_iterator pos);
 
         /** @brief Erase range [first,last). */
-        array_iterator erase(array_const_iterator first, array_const_iterator last);
+        iterator erase(const_iterator first, const_iterator last);
 
         //========== Size and Capacity ==========
         /** @brief Return number of elements for array/object, otherwise 0. */
@@ -2813,27 +3190,19 @@ namespace myjson
 
         /** @brief Reverse begin iterator over object members. */
         reverse_iterator rbegin();
+
         /** @brief Reverse begin const iterator over object members. */
-
         MYJSON_NODISCARD const_reverse_iterator rbegin() const;
-        /** @brief Reverse end iterator over object members. */
 
+        MYJSON_NODISCARD const_reverse_iterator crbegin() const;
+
+        /** @brief Reverse end iterator over object members. */
         reverse_iterator rend();
 
         /** @brief Reverse end const iterator over object members. */
         MYJSON_NODISCARD const_reverse_iterator rend() const;
 
-        /** @brief Begin iterator over array elements. */
-        array_iterator array_begin();
-
-        /** @brief Begin const iterator over array elements. */
-        MYJSON_NODISCARD array_const_iterator array_begin() const;
-
-        /** @brief End iterator over array elements. */
-        array_iterator array_end();
-
-        /** @brief End const iterator over array elements. */
-        MYJSON_NODISCARD array_const_iterator array_end() const;
+        MYJSON_NODISCARD const_reverse_iterator crend() const;
 
         //========== Comparison ==========
 
@@ -3020,7 +3389,6 @@ namespace myjson
         /** @brief Apply merge patch to this value in-place. */
         void merge_patch(const json &apply_patch);
 
-
         /**
          * @brief Apply JSON Merge Patch.
          * @param patch The merge patch object.
@@ -3060,6 +3428,9 @@ namespace myjson
         object_t &get_object();
 
         array_t &get_array();
+
+        template <typename value_type>
+        value_type get_value();
 
     private:
         std::variant<

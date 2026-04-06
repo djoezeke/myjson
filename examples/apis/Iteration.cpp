@@ -54,20 +54,20 @@ int main()
     // Example 2: Iterate over object
     std::cout << "\nExample 2: Iterate over object" << std::endl;
     std::cout << "Team properties:" << std::endl;
-    for (auto &entry : team)
+    for (auto it = team.begin(); it != team.end(); ++it)
     {
-        std::cout << "  " << entry.first << ": ";
-        if (entry.second.is_array())
+        std::cout << "  " << it.key() << ": ";
+        if (it.value().is_array())
         {
-            std::cout << "[array with " << entry.second.size() << " items]" << std::endl;
+            std::cout << "[array with " << it.value().size() << " items]" << std::endl;
         }
-        else if (entry.second.is_object())
+        else if (it.value().is_object())
         {
             std::cout << "[object]" << std::endl;
         }
         else
         {
-            std::cout << entry.second.dump() << std::endl;
+            std::cout << it.value().dump() << std::endl;
         }
     }
 

@@ -54,9 +54,9 @@ int main()
 
     // Iterate over object entries
     std::cout << "\nObject entries:" << std::endl;
-    for (auto &entry : company)
+    for (auto it = company.begin(); it != company.end(); ++it)
     {
-        std::cout << "  " << entry.first << ": " << entry.second.dump() << std::endl;
+        std::cout << "  " << it.key() << ": " << it.value().dump() << std::endl;
     }
 
     return 0;
