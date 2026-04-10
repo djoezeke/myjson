@@ -841,7 +841,9 @@ namespace myjson
         // exception
         class exception;      /** class exception. */
         class io_error;       /** class io_error. */
+        class type_error;     /** class type_error. */
         class parse_error;    /** class parse_error. */
+        class access_error;   /** class access_error. */
         class encoding_error; /** class encoding_error. */
 #endif                        // MYJSON_NO_EXCEPTIONS
 
@@ -863,10 +865,12 @@ namespace myjson
         class deserializer;    /** class deserializer. */
         class file_iadapter;   /** class file_iadapter. */
         class memory_iadapter; /** class memory_iadapter. */
+
 #ifndef MYJSON_NO_STL
         class stream_iadapter;   /** class stream_iadapter. */
         class iterator_iadapter; /** class iterator_iadapter. */
-#endif                           // MYJSON_NO_STL
+
+#endif // MYJSON_NO_STL
 
         // output
         class emitter;         /** class emitter. */
@@ -874,10 +878,12 @@ namespace myjson
         class serializer;      /** class serializer. */
         class file_iadapter;   /** class file_iadapter. */
         class memory_oadapter; /** class memory_oadapter. */
+
 #ifndef MYJSON_NO_STL
         class stream_oadapter;   /** class stream_oadapter. */
         class iterator_oadapter; /** class iterator_oadapter. */
-#endif                           // MYJSON_NO_STL
+
+#endif // MYJSON_NO_STL
 
         // encoding
         struct utf8;  /** struct utf8. */
@@ -1075,7 +1081,7 @@ namespace myjson
 
         /**
          * @defgroup traits Traits
-         * @brief Traits.
+         * @brief All Traits For Project.
          * @{
          */
 
@@ -1088,8 +1094,8 @@ namespace myjson
 #ifndef MYJSON_NO_EXCEPTIONS
 
         /**
-         * @defgroup exception
-         * @brief
+         * @defgroup exception Exception
+         * @brief All Exception Raised in Project.
          */
 
         /**
@@ -1200,6 +1206,14 @@ namespace myjson
              * @return Pointer to a null-terminated C-string describing the error.
              */
             static const char *generate(encoding encoding, const char *message, void *data, size_t size) noexcept;
+        };
+
+        class type_error : public exception
+        {
+        };
+
+        class access_error : public exception
+        {
         };
 
         /** @} group exception */
@@ -1472,6 +1486,7 @@ namespace myjson
                 std::is_const<node_type>::value,
                 typename value_type::object_t::const_iterator,
                 typename value_type::object_t::iterator>::type;
+
             using array_iterator = typename std::conditional<
                 std::is_const<node_type>::value,
                 typename value_type::array_t::const_iterator,
@@ -1494,6 +1509,7 @@ namespace myjson
                 std::is_const<node_type>::value,
                 typename value_type::object_t::const_iterator,
                 typename value_type::object_t::iterator>::type;
+
             using array_iterator = typename std::conditional<
                 std::is_const<node_type>::value,
                 typename value_type::array_t::const_iterator,
@@ -1517,15 +1533,18 @@ namespace myjson
             friend other_iterator;
 
         public:
-            using traits_type = iterator_traits<node_type>;            /** A type for iterator traits.  */
-            using iterator_category = std::bidirectional_iterator_tag; /** A type for iterator category tag. */
+            using traits_type = iterator_traits<node_type>; /** A type for iterator traits.  */
 
-            using value_type = typename traits_type::value_type;           /** A json object type. */
-            using pointer = typename traits_type::pointer;                 /** A pointer to a json object. */
-            using reference = typename traits_type::reference;             /** A reference to a json object. */
-            using const_pointer = typename traits_type::const_pointer;     /** A constant pointer to a json object. */
-            using const_reference = typename traits_type::const_reference; /** A constant reference to a json object. */
-            using difference_type = typename traits_type::difference_type; /** A differences between json iterators. */
+#ifndef MYJSON_NO_STL
+            using iterator_category = std::bidirectional_iterator_tag; /** A type for iterator category tag. */
+#endif                                                                 // MYJSON_NO_STL
+
+            using value_type = typename traits_type::value_type;           /** A type for a json object type. */
+            using pointer = typename traits_type::pointer;                 /** A type for a pointer to a json object. */
+            using reference = typename traits_type::reference;             /** A type for a reference to a json object. */
+            using const_pointer = typename traits_type::const_pointer;     /** A type for a constant pointer to a json object. */
+            using const_reference = typename traits_type::const_reference; /** A type for a constant reference to a json object. */
+            using difference_type = typename traits_type::difference_type; /** A type for a differences between json iterators. */
 
             using object_iterator = typename traits_type::object_iterator;
             using array_iterator = typename traits_type::array_iterator;
@@ -1605,71 +1624,154 @@ namespace myjson
              */
             iterator &operator=(iterator &&) = default;
 
+            /**
+             * @brief Compare equality with another iterator of the same type.
+             * @param rhs Right-hand iterator.
+             * @return `true` when both iterators reference the same position.
+             */
             bool operator==(const iterator &rhs) const;
+
+            /**
+             * @brief Compare equality with the opposite constness iterator.
+             * @param rhs Right-hand iterator.
+             * @return `true` when both iterators reference the same position.
+             */
             bool operator==(const other_iterator &rhs) const;
 
+            /**
+             * @brief Compare inequality with another iterator of the same type.
+             * @param rhs Right-hand iterator.
+             * @return `true` when iterators reference different positions.
+             */
             bool operator!=(const iterator &rhs) const;
+
+            /**
+             * @brief Compare inequality with the opposite constness iterator.
+             * @param rhs Right-hand iterator.
+             * @return `true` when iterators reference different positions.
+             */
             bool operator!=(const other_iterator &rhs) const;
 
+            /**
+             * @brief Less-than comparison.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator precedes @p rhs.
+             * @note For object iterators, ordering is based on container iterator semantics.
+             */
             bool operator<(const iterator &rhs) const;
+
+            /**
+             * @brief Less-than comparison with opposite constness iterator.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator precedes @p rhs.
+             */
             bool operator<(const other_iterator &rhs) const;
 
+            /**
+             * @brief Less-than-or-equal comparison.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator is before or equal to @p rhs.
+             */
             bool operator<=(const iterator &rhs) const;
+
+            /**
+             * @brief Less-than-or-equal comparison with opposite constness iterator.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator is before or equal to @p rhs.
+             */
             bool operator<=(const other_iterator &rhs) const;
 
+            /**
+             * @brief Greater-than comparison.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator follows @p rhs.
+             */
             bool operator>(const iterator &rhs) const;
+
+            /**
+             * @brief Greater-than comparison with opposite constness iterator.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator follows @p rhs.
+             */
             bool operator>(const other_iterator &rhs) const;
 
+            /**
+             * @brief Greater-than-or-equal comparison.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator follows or equals @p rhs.
+             */
             bool operator>=(const iterator &rhs) const;
+
+            /**
+             * @brief Greater-than-or-equal comparison with opposite constness iterator.
+             * @param rhs Right-hand iterator.
+             * @return `true` if this iterator follows or equals @p rhs.
+             */
             bool operator>=(const other_iterator &rhs) const;
 
             /**
              * @brief Access the referenced JSON value as a pointer.
+             * @return Pointer to the current JSON value.
              */
             pointer operator->() noexcept;
 
             /**
              * @brief Dereference the iterator.
+             * @return Reference to the current JSON value.
              */
             reference operator*() const noexcept;
 
             /**
              * @brief Return an iterator advanced by @p i steps.
+             * @param i Signed number of steps to move.
+             * @return New iterator moved from the current position.
              */
             iterator operator+(difference_type i) const noexcept;
 
             /**
              * @brief Advance the iterator by @p i steps.
+             * @param i Signed number of steps to move.
+             * @return Reference to this iterator after movement.
              */
             iterator &operator+=(difference_type i) noexcept;
 
             /**
              * @brief Pre-increment the iterator.
+             * @return Reference to this iterator after increment.
              */
             iterator &operator++() noexcept;
 
             /**
              * @brief Post-increment the iterator.
+             * @param[in] Unused integer for post-increment overload resolution.
+             * @return Snapshot iterator before increment.
              */
             iterator operator++(int) & noexcept;
 
             /**
              * @brief Return an iterator moved backward by @p i steps.
+             * @param i Signed number of steps to move backward.
+             * @return New iterator moved from the current position.
              */
             iterator operator-(difference_type i) const noexcept;
 
             /**
              * @brief Move the iterator backward by @p i steps.
+             * @param i Signed number of steps to move backward.
+             * @return Reference to this iterator after movement.
              */
             iterator &operator-=(difference_type i) noexcept;
 
             /**
              * @brief Pre-decrement the iterator.
+             * @return Reference to this iterator after decrement.
              */
             iterator &operator--() noexcept;
 
             /**
              * @brief Post-decrement the iterator.
+             * @param[in] Unused integer for post-decrement overload resolution.
+             * @return Snapshot iterator before decrement.
              */
             iterator operator--(int) & noexcept;
 
@@ -1711,11 +1813,13 @@ namespace myjson
 
             /**
              * @brief Construct from a forward iterator base.
+             * @param iter Forward iterator designating the reverse base position.
              */
             reverse_iterator(const iterator_type &iter) noexcept;
 
             /**
              * @brief Construct from a std::reverse_iterator base object.
+             * @param iter Existing reverse iterator base.
              */
             reverse_iterator(const base_iterator &iter) noexcept;
 
@@ -1731,11 +1835,14 @@ namespace myjson
 
             /**
              * @brief Get object key of the element currently referenced.
+             * @return Key associated with the current object element.
+             * @throws std::runtime_error If the iterator does not reference an object element.
              */
             const std::string &key() const;
 
             /**
              * @brief Access the JSON value referenced by the reverse iterator.
+             * @return Reference to the current JSON value.
              */
             reference value() const noexcept;
 
@@ -1751,51 +1858,69 @@ namespace myjson
 
             /**
              * @brief Random-access style offset read from current reverse position.
+             * @param n Offset from current reverse iterator position.
+             * @return Reference to value at reverse offset @p n.
              */
             reference operator[](difference_type n) const;
 
             /**
              * @brief Return reverse iterator moved by @p i steps.
+             * @param i Signed number of reverse steps.
+             * @return New reverse iterator moved from current position.
              */
             reverse_iterator operator+(difference_type i) const noexcept;
 
             /**
              * @brief Move reverse iterator by @p i steps.
+             * @param i Signed number of reverse steps.
+             * @return Reference to this reverse iterator after movement.
              */
             reverse_iterator &operator+=(difference_type i) noexcept;
 
             /**
              * @brief Pre-increment (moves toward beginning in forward order).
+             * @return Reference to this reverse iterator after increment.
              */
             reverse_iterator &operator++() noexcept;
 
             /**
              * @brief Post-increment reverse iterator.
+             * @param[in] Unused integer for post-increment overload resolution.
+             * @return Snapshot reverse iterator before increment.
              */
             reverse_iterator operator++(int) & noexcept;
 
             /**
              * @brief Return reverse iterator moved backward by @p i steps.
+             * @param i Signed number of reverse steps.
+             * @return New reverse iterator moved from current position.
              */
             reverse_iterator operator-(difference_type i) const noexcept;
 
             /**
              * @brief Compute distance between two reverse iterators.
+             * @param other Right-hand reverse iterator.
+             * @return Signed distance from @p other to this iterator.
              */
             difference_type operator-(const reverse_iterator &other) const;
 
             /**
              * @brief Move reverse iterator backward by @p i steps.
+             * @param i Signed number of reverse steps.
+             * @return Reference to this reverse iterator after movement.
              */
             reverse_iterator &operator-=(difference_type i) noexcept;
 
             /**
              * @brief Pre-decrement reverse iterator.
+             * @return Reference to this reverse iterator after decrement.
              */
             reverse_iterator &operator--() noexcept;
 
             /**
              * @brief Post-decrement reverse iterator.
+             * @param[in] Unused integer for post-decrement overload resolution.
+             * @return Snapshot reverse iterator before decrement.
              */
             reverse_iterator operator--(int) & noexcept;
 
@@ -2199,10 +2324,10 @@ namespace myjson
 
         class deserializer
         {
-            using pointer = deserializer *;
-            using reference = deserializer &;
-            using const_pointer = const deserializer *;
-            using const_reference = const deserializer &;
+            using pointer = deserializer *;/** A type for a pointer to a deserializer object. */
+            using reference = deserializer &; /** A type for a reference to a deserializer object. */
+            using const_pointer = const deserializer *; /** A type for a constant pointer to a deserializer object. */
+            using const_reference = const deserializer &;/** A type for a constant reference to a deserializer object. */
 
         public:
             /**
@@ -2459,10 +2584,10 @@ namespace myjson
 
         class serializer
         {
-            using pointer = serializer *;
-            using reference = serializer &;
-            using const_pointer = const serializer *;
-            using const_reference = const serializer &;
+            using pointer = serializer *;/** A type for a pointer to a serializer object. */
+            using reference = serializer &; /** A type for a reference to a serializer object. */
+            using const_pointer = const serializer *; /** A type for a constant pointer to a serializer object. */
+            using const_reference = const serializer &;/** A type for a constant reference to a serializer object. */
 
         public:
             /**
@@ -2523,25 +2648,39 @@ namespace myjson
 
         // FROM
 
-        /** @brief Convert JSON null into @p std::nullptr_t. */
+        /**
+         * @brief Convert JSON null into @p std::nullptr_t.
+         */
         void from_json(const json &j, std::nullptr_t &v);
 
-        /** @brief Convert JSON scalar into @p bool. */
+        /**
+         * @brief Convert JSON scalar into @p bool.
+         */
         void from_json(const json &j, bool &v);
 
-        /** @brief Convert JSON numeric scalar into @p int64_t. */
+        /**
+         * @brief Convert JSON numeric scalar into @p int64_t.
+         */
         void from_json(const json &j, int64_t &v);
 
-        /** @brief Convert JSON numeric scalar into @p int. */
+        /**
+         * @brief Convert JSON numeric scalar into @p int.
+         */
         void from_json(const json &j, int &v);
 
-        /** @brief Convert JSON numeric scalar into @p double. */
+        /**
+         * @brief Convert JSON numeric scalar into @p double.
+         */
         void from_json(const json &j, double &v);
 
-        /** @brief Convert JSON scalar into @p std::string. */
+        /**
+         * @brief Convert JSON scalar into @p std::string.
+         */
         void from_json(const json &j, std::string &v);
 
-        /** @brief Copy JSON value into another JSON value. */
+        /**
+         *  @brief Copy JSON value into another JSON value.
+         */
         void from_json(const json &j, json &v);
 
         // TO
@@ -2591,29 +2730,43 @@ namespace myjson
             static void construct(json &j, bool type) noexcept;
         };
 
-        /** @brief Convert @p std::nullptr_t into a JSON null value. */
+        /**
+         * @brief Convert @p std::nullptr_t into a JSON null value.
+         */
         void to_json(json &j, const std::nullptr_t &v);
 
-        /** @brief Convert @p bool into a JSON boolean value. */
+        /**
+         * @brief Convert @p bool into a JSON boolean value.
+         */
         void to_json(json &j, const bool &v);
 
-        /** @brief Convert @p int64_t into a JSON integer value. */
+        /**
+         * @brief Convert @p int64_t into a JSON integer value.
+         */
         void to_json(json &j, const int64_t &v);
 
-        /** @brief Convert @p int into a JSON integer value. */
+        /**
+         * @brief Convert @p int into a JSON integer value.
+         */
         void to_json(json &j, const int &v);
 
-        /** @brief Convert @p double into a JSON number value. */
+        /**
+         * @brief Convert @p double into a JSON number value.
+         */
         void to_json(json &j, const double &v);
 
-        /** @brief Convert @p std::string into a JSON string value. */
+        /**
+         * @brief Convert @p std::string into a JSON string value.
+         */
         void to_json(json &j, const std::string &v);
 
-        /** @brief Copy one JSON value into another JSON value. */
+        /**
+         * @brief Copy one JSON value into another JSON value.
+         */
         void to_json(json &j, const json &v);
 
         /// @brief A function object to call to_node functions.
-        /// @note User-defined specialization is available by providing implementation **OUTSIDE** fkyaml namespace.
+        /// @note User-defined specialization is available by providing implementation **OUTSIDE** myjson namespace.
         struct to_json_fn
         {
             template <typename T>
@@ -2841,32 +2994,35 @@ namespace myjson
         friend class ::myjson::detail::parser;
         friend class ::myjson::detail::exception;
 
+        // using serializer = detail::serializer<json>;
+        // using deserializer = detail::deserializer<json>;
         using initializer_list_t = std::initializer_list<json>;
 
     public:
         using value_t = detail::value_t; /** A node value types. */
 
-        using value_type = json;                    /** A json object. */
-        using pointer = value_type *;               /** A pointer to a json object. */
-        using reference = value_type &;             /** A reference to a json object. */
-        using const_pointer = const value_type *;   /** A constant pointer to a json object. */
-        using const_reference = const value_type &; /** A constant reference to a json object. */
-        using difference_type = std::ptrdiff_t;     /** A differences between json iterators. */
-        using size_type = std::size_t;              /** A type to represent json sizes. */
+        using value_type = json;                    /** A type for a json object. */
+        using pointer = value_type *;               /** A type for a pointer to a json object. */
+        using reference = value_type &;             /** A type for a reference to a json object. */
+        using const_pointer = const value_type *;   /** A type for a constant pointer to a json object. */
+        using const_reference = const value_type &; /** A type for a constant reference to a json object. */
+        using difference_type = std::ptrdiff_t;     /** A type for a differences between json iterators. */
+        using size_type = std::size_t;              /** A type for a type to represent json sizes. */
+                                                    // using allocator_type = ; /** The allocator type */
 
         /**
          * @name types
-         * Type aliases for convenience.
+         * @brief Type aliases for convenience.
          * {@
          */
 
         using node_t = detail::value_t;               /** A type for a json value. */
-        using object_t = std::map<std::string, json>; /** A type for a json null value. */
-        using array_t = std::vector<json>;            /** A type for a json null value. */
-        using string_t = std::string;                 /** A type for a json null value. */
-        using number_t = double;                      /** A type for a json null value. */
-        using integer_t = int64_t;                    /** A type for a json null value. */
-        using boolean_t = bool;                       /** A type for a json null value. */
+        using object_t = std::map<std::string, json>; /** A type for a json object value. */
+        using array_t = std::vector<json>;            /** A type for a json array value. */
+        using string_t = std::string;                 /** A type for a json string value. */
+        using number_t = double;                      /** A type for a json number value. */
+        using integer_t = int64_t;                    /** A type for a json interger value. */
+        using boolean_t = bool;                       /** A type for a json boolean value. */
         using null_t = std::nullptr_t;                /** A type for a json null value. */
 
         /* @} types */
@@ -2885,7 +3041,7 @@ namespace myjson
 
         /**
          * @name exceptions
-         * Classes to implement user-defined exceptions.
+         * @brief Classes to implement user-defined exceptions.
          * {@
          */
 
@@ -2898,46 +3054,78 @@ namespace myjson
     public:
         //========== Constructors ==========
 
-        /** @brief Construct a JSON null value. */
+        /**
+         * @brief Construct a JSON null value.
+         */
         json() noexcept;
 
-        /** @brief Construct JSON null explicitly. */
+        /**
+         * @brief Construct JSON null explicitly.
+         */
         json(std::nullptr_t) noexcept;
 
-        /** @brief Construct a JSON boolean value. */
+        /**
+         * @brief Construct a JSON boolean value.
+         */
         json(bool value) noexcept;
 
-        /** @brief Construct a JSON integer from int. */
+        /**
+         * @brief Construct a JSON integer from int.
+         */
         json(int value) noexcept;
 
-        /** @brief Construct an empty value of the requested JSON type. */
+        /**
+         * @brief Construct an empty value of the requested JSON type.
+         */
         json(value_t value) noexcept;
 
-        /** @brief Construct a JSON integer value. */
+        /**
+         * @brief Construct a JSON integer value.
+         */
         json(integer_t value) noexcept;
 
-        /** @brief Construct a JSON floating-point value. */
+        /**
+         * @brief Construct a JSON floating-point value.
+         */
         json(number_t value) noexcept;
 
-        /** @brief Construct a JSON string from a C string. */
+        /**
+         * @brief Construct a JSON string from a C string.
+         */
         json(const char *value);
 
-        /** @brief Construct a JSON string by copy. */
+        /**
+         * @brief Construct a JSON string by copy.
+         */
         json(const string_t &value);
 
-        /** @brief Construct a JSON string by move. */
+        /**
+         * @brief Construct a JSON string by move.
+         */
         json(const string_t &&value);
 
-        /** @brief Construct a JSON array by copy. */
-        json(const array_t &value);
+        /**
+         * @brief Construct a JSON array value from a copy an array object.
+         * @param[in] array A lvalue array node value.
+         * @return A json array node.
+         */
+        json(const array_t &array);
 
-        /** @brief Construct a JSON array by move. */
+        /**
+         * @brief Construct a JSON array value by moving a array object.
+         * @param[in] array A rvalue array node value.
+         * @return A json array node.
+         */
         json(const array_t &&value);
 
-        /** @brief Construct a JSON object by copy. */
+        /**
+         * @brief Construct a JSON object by copy.
+         */
         json(const object_t &value);
 
-        /** @brief Construct a JSON object by move. */
+        /**
+         * @brief Construct a JSON object by move.
+         */
         json(const object_t &&value);
 
         /**
@@ -2950,311 +3138,53 @@ namespace myjson
              bool type_deduction = true,
              value_t manual_type = value_t::array);
 
-        /** @brief Create an array value from initializer-list. */
-        static json array(initializer_list_t init = {});
-
-        /** @brief Create an object value from initializer-list. */
-        static json object(initializer_list_t init = {});
-
-        //========== Destructor and Assignment ==========
-
-        /** @brief Default destructor. */
-        ~json() noexcept;
-
-        /** @brief Copy constructor. */
+        /**
+         * @brief Copy constructor.
+         */
         json(const json &other);
 
-        /** @brief Move constructor. */
+        /**
+         * @brief Move constructor.
+         */
         json(json &&other) noexcept;
 
-        /** @brief Copy assignment. */
-        reference operator=(const json &other);
-
-        /** @brief Move assignment. */
-        reference operator=(json &&other) noexcept;
+        /**
+         * @brief Create an array value from initializer-list.
+         */
+        static json array(initializer_list_t init = {});
 
         /**
-         * @brief Assign JSON null.
+         * @brief Create an array value with lvalue array objects.
+         * @param[in] array A lvalue array node value.
+         * @return A json array node.
          */
-        reference operator=(std::nullptr_t) noexcept;
+        static json array(const array_t &array);
 
         /**
-         * @brief Assign a boolean value.
+         * @brief Create an array value with rvalue array objects.
+         * @param[in] array A rvalue array node value.
+         * @return A json array node.
          */
-        reference operator=(bool value) noexcept;
+        static json array(const array_t &&array);
 
         /**
-         * @brief Assign a signed integer value.
+         * @brief Create an object value from initializer-list.
          */
-        reference operator=(int value) noexcept;
+        static json object(initializer_list_t init = {});
 
         /**
-         * @brief Assign a 64-bit integer value.
+         * @brief Create an object value with lvalue object objects.
+         * @param[in] object A lvalue object node value.
+         * @return A json object node.
          */
-        reference operator=(integer_t value) noexcept;
+        static json object(const object_t &object);
 
         /**
-         * @brief Assign a floating-point numeric value.
+         * @brief Create an object value with rvalue object objects.
+         * @param[in] object A rvalue object node value.
+         * @return A json object node.
          */
-        reference operator=(number_t value) noexcept;
-
-        /**
-         * @brief Assign a UTF-8 string value.
-         */
-        reference operator=(const string_t &value);
-
-        /**
-         * @brief Assign a C-string value (nullptr becomes empty string).
-         */
-        reference operator=(const char *value);
-
-        /**
-         * @brief Assign an array value.
-         */
-        reference operator=(const array_t &value);
-
-        /**
-         * @brief Assign an object value.
-         */
-        reference operator=(const object_t &value);
-
-        /** @brief Assign from initializer-list with type deduction. */
-        reference operator=(initializer_list_t init);
-
-        //========== Type Information ==========
-
-        /** @brief Return the active JSON value type. */
-        MYJSON_NODISCARD value_t type() const noexcept;
-
-        /** @brief Check whether this value is null. */
-        MYJSON_NODISCARD bool is_null() const noexcept;
-
-        /** @brief Check whether this value is an object. */
-        MYJSON_NODISCARD bool is_object() const noexcept;
-
-        /** @brief Check whether this value is an array. */
-        MYJSON_NODISCARD bool is_array() const noexcept;
-
-        /** @brief Check whether this value is a string. */
-        MYJSON_NODISCARD bool is_string() const noexcept;
-
-        /** @brief Check whether this value is numeric (integer or floating point). */
-        MYJSON_NODISCARD bool is_number() const noexcept;
-
-        /** @brief Check whether this value is an integer. */
-        MYJSON_NODISCARD bool is_integer() const noexcept;
-
-        /** @brief Check whether this value is a boolean. */
-        MYJSON_NODISCARD bool is_boolean() const noexcept;
-
-        /** @brief Check whether this value is scalar (non-array/non-object). */
-        MYJSON_NODISCARD bool is_primitive() const noexcept;
-
-        /** @brief Check whether this value is container-like (array or object). */
-        MYJSON_NODISCARD bool is_structured() const noexcept;
-
-        //========== Type Conversions ==========
-
-        /**
-         * @brief Get value as target type T with default fallback.
-         * @tparam T The target type (bool, int, double, string, etc.)
-         * @param default_value The value to return if conversion fails.
-         * @return Converted value or default_value.
-         */
-        template <typename T>
-        T get(const T &default_value = T()) const noexcept;
-
-        /**
-         * @brief Get value as target type T with exception on failure.
-         * @tparam T The target type.
-         * @return Converted value.
-         * @throws std::runtime_error if conversion fails.
-         */
-        template <typename T>
-        T get_safe() const;
-
-        MYJSON_NODISCARD bool as_bool() const noexcept;
-
-        MYJSON_NODISCARD integer_t as_integer() const noexcept;
-
-        MYJSON_NODISCARD number_t as_number() const noexcept;
-
-        MYJSON_NODISCARD string_t as_string() const noexcept;
-
-        //========== Objects ==========
-
-        /** @brief Access object member by key with bounds checking. */
-        reference at(const std::string &key);
-
-        /** @brief Access object member by key with bounds checking (const). */
-        const_reference at(const std::string &key) const;
-
-        /** @brief Access/create object member by key. */
-        reference operator[](const std::string &key);
-
-        /** @brief Access object member by key; returns null json if missing. */
-        json operator[](const std::string &key) const;
-
-        /** @brief Access/create object member by C-string key. */
-        reference operator[](const char *key);
-
-        /** @brief Access object member by C-string key; returns null json if missing. */
-        json operator[](const char *key) const;
-
-        /** @brief Check whether an object contains @p key. */
-        MYJSON_NODISCARD bool contains(const std::string &key) const noexcept;
-
-        /** @brief Count occurrences of @p key (0 or 1 for object). */
-        MYJSON_NODISCARD size_t count(const std::string &key) const noexcept;
-
-        /** @brief Erase object member by key; returns removed count. */
-        size_t erase(const std::string &key) noexcept;
-
-        //========== Arrays ==========
-
-        /** @brief Access array element with bounds checking. */
-
-        reference &at(size_t index);
-
-        /** @brief Access array element with bounds checking (const). */
-        const_reference at(size_t index) const;
-
-        /** @brief Access array element by index and grow with null values if needed. */
-        reference operator[](size_t index);
-
-        /** @brief Access array element by index (const). */
-        const_reference operator[](size_t index) const;
-
-        /** @brief Access first array element. */
-        reference front();
-
-        /** @brief Access first array element (const). */
-        const_reference front() const;
-
-        /** @brief Access last array element. */
-        reference back();
-
-        /** @brief Access last array element (const). */
-        const_reference back() const;
-
-        /** @brief Append element to array. */
-        void push_back(const json &value);
-
-        /** @brief Append movable element to array. */
-        void push_back(json &&value);
-
-        /** @brief Insert element at the front of an array. */
-        void push_front(const json &value);
-
-        /** @brief Insert value at iterator position. */
-        iterator insert(const const_iterator &pos, const json &value);
-
-        /** @brief Insert movable value at iterator position. */
-        iterator insert(const const_iterator &pos, json &&value);
-
-        /** @brief Erase one element at iterator position. */
-        iterator erase(const_iterator pos);
-
-        /** @brief Erase range [first,last). */
-        iterator erase(const_iterator first, const_iterator last);
-
-        //========== Size and Capacity ==========
-        /** @brief Return number of elements for array/object, otherwise 0. */
-        MYJSON_NODISCARD size_type size() const noexcept;
-
-        /** @brief Return whether container size is zero. */
-        MYJSON_NODISCARD bool empty() const noexcept;
-
-        /** @brief Clear object/array contents. */
-        void clear() noexcept;
-
-        //========== Iteration ==========
-
-        /** @brief Begin iterator over object members. */
-        iterator begin();
-
-        /** @brief Begin const iterator over object members. */
-        MYJSON_NODISCARD const_iterator begin() const;
-
-        /** @brief Constant begin iterator over object members. */
-        MYJSON_NODISCARD const_iterator cbegin() const;
-
-        /** @brief End iterator over object members. */
-        iterator end();
-
-        /** @brief End const iterator over object members. */
-        MYJSON_NODISCARD const_iterator end() const;
-
-        /** @brief Constant end iterator over object members. */
-        MYJSON_NODISCARD const_iterator cend() const;
-
-        /** @brief Reverse begin iterator over object members. */
-        reverse_iterator rbegin();
-
-        /** @brief Reverse begin const iterator over object members. */
-        MYJSON_NODISCARD const_reverse_iterator rbegin() const;
-
-        MYJSON_NODISCARD const_reverse_iterator crbegin() const;
-
-        /** @brief Reverse end iterator over object members. */
-        reverse_iterator rend();
-
-        /** @brief Reverse end const iterator over object members. */
-        MYJSON_NODISCARD const_reverse_iterator rend() const;
-
-        MYJSON_NODISCARD const_reverse_iterator crend() const;
-
-        //========== Comparison ==========
-
-        /** @brief Equality comparison. */
-        bool operator==(const json &other) const noexcept;
-
-        /** @brief Inequality comparison. */
-        bool operator!=(const json &other) const noexcept;
-
-        /** @brief Strict weak ordering comparison. */
-        bool operator<(const json &other) const noexcept;
-
-        /** @brief Less-than-or-equal comparison. */
-        bool operator<=(const json &other) const noexcept;
-
-        /** @brief Greater-than comparison. */
-        bool operator>(const json &other) const noexcept;
-
-        /** @brief Greater-than-or-equal comparison. */
-        bool operator>=(const json &other) const noexcept;
-
-        /**
-         * @name serialization
-         * {@
-         */
-
-        /** @brief Serialize to JSON text (compact or pretty with indent). */
-        MYJSON_NODISCARD string_t dump(int indent = -1) const;
-
-        /** @brief Serialize with default pretty indentation. */
-        MYJSON_NODISCARD string_t dump_pretty() const;
-
-        /** @brief Serialize in compact form. */
-        MYJSON_NODISCARD string_t dump_compact() const;
-
-        static void dump(FILE *file);
-
-        static void dump(const char *str);
-
-        static void dump(const string_t &str);
-
-#ifndef MYJSON_NO_STL
-        static void dump(std::ostream &stream);
-#endif // MYJSON_NO_STL
-
-        static void dump(detail::oadapter &adapter);
-
-#ifndef MYJSON_NO_IO
-        friend std::ostream &operator<<(std::ostream &o, const json &j);
-#endif // MYJSON_NO_IO
-
-        /* @} serialization */
+        static json object(const object_t &&object);
 
         /**
          * @name deserialization
@@ -3311,6 +3241,410 @@ namespace myjson
         /* @} deserialization */
 
         /**
+         * @name serialization
+         * {@
+         */
+
+        /**
+         * @brief Serialize to JSON text (compact or pretty with indent).
+         */
+        MYJSON_NODISCARD string_t dump(int indent = -1) const;
+
+        /**
+         * @brief Serialize with default pretty indentation.
+         */
+        MYJSON_NODISCARD string_t dump_pretty() const;
+
+        /**
+         * @brief Serialize in compact form.
+         */
+        MYJSON_NODISCARD string_t dump_compact() const;
+
+        static void dump(FILE *file);
+
+        static void dump(const char *str);
+
+        static void dump(const string_t &str);
+
+#ifndef MYJSON_NO_STL
+        static void dump(std::ostream &stream);
+#endif // MYJSON_NO_STL
+
+        static void dump(detail::oadapter &adapter);
+
+#ifndef MYJSON_NO_IO
+        friend std::ostream &operator<<(std::ostream &o, const json &j);
+#endif // MYJSON_NO_IO
+
+        /* @} serialization */
+
+        //========== Assignment ==========
+
+        /**
+         * @brief Copy assignment.
+         */
+        reference operator=(const json &other);
+
+        /**
+         * @brief Move assignment.
+         */
+        reference operator=(json &&other) noexcept;
+
+        /**
+         * @brief Assign a null value.
+         */
+        reference operator=(std::nullptr_t) noexcept;
+
+        /**
+         * @brief Assign a boolean value.
+         */
+        reference operator=(bool value) noexcept;
+
+        /**
+         * @brief Assign a signed integer value.
+         */
+        reference operator=(int value) noexcept;
+
+        /**
+         * @brief Assign a 64-bit integer value.
+         */
+        reference operator=(integer_t value) noexcept;
+
+        /**
+         * @brief Assign a floating-point numeric value.
+         */
+        reference operator=(number_t value) noexcept;
+
+        /**
+         * @brief Assign a UTF-8 string value.
+         */
+        reference operator=(const string_t &value);
+
+        /**
+         * @brief Assign a C-string value (nullptr becomes empty string).
+         */
+        reference operator=(const char *value);
+
+        /**
+         * @brief Assign an array value.
+         */
+        reference operator=(const array_t &value);
+
+        /**
+         * @brief Assign an object value.
+         */
+        reference operator=(const object_t &value);
+
+        /**
+         * @brief Assign from initializer-list with type deduction.
+         */
+        reference operator=(initializer_list_t init);
+
+        //========== Type Information ==========
+
+        /**
+         * @brief Return the active JSON value type.
+         */
+        MYJSON_NODISCARD value_t type() const noexcept;
+
+        /**
+         * @brief Check whether this value is null.
+         */
+        MYJSON_NODISCARD bool is_null() const noexcept;
+
+        /**
+         * @brief Check whether this value is an object.
+         */
+        MYJSON_NODISCARD bool is_object() const noexcept;
+
+        /**
+         * @brief Check whether this value is an array.
+         */
+        MYJSON_NODISCARD bool is_array() const noexcept;
+
+        /**
+         * @brief Check whether this value is a string.
+         */
+        MYJSON_NODISCARD bool is_string() const noexcept;
+
+        /**
+         * @brief Check whether this value is numeric (integer or floating point).
+         */
+        MYJSON_NODISCARD bool is_number() const noexcept;
+
+        /**
+         * @brief Check whether this value is an integer.
+         */
+        MYJSON_NODISCARD bool is_integer() const noexcept;
+
+        /**
+         * @brief Check whether this value is a boolean.
+         */
+        MYJSON_NODISCARD bool is_boolean() const noexcept;
+
+        /**
+         * @brief Check whether this value is scalar (non-array/non-object).
+         */
+        MYJSON_NODISCARD bool is_primitive() const noexcept;
+
+        /**
+         * @brief Check whether this value is container-like (array or object).
+         */
+        MYJSON_NODISCARD bool is_structured() const noexcept;
+
+        //========== Type Conversions ==========
+
+        /**
+         * @brief Get value as target type T with default fallback.
+         * @tparam T The target type (bool, int, double, string, etc.)
+         * @param default_value The value to return if conversion fails.
+         * @return Converted value or default_value.
+         */
+        template <typename T>
+        T get(const T &default_value = T()) const noexcept;
+
+        /**
+         * @brief Get value as target type T with exception on failure.
+         * @tparam T The target type.
+         * @return Converted value.
+         * @throws std::runtime_error if conversion fails.
+         */
+        template <typename T>
+        T get_safe() const;
+
+        MYJSON_NODISCARD bool as_bool() const noexcept;
+
+        MYJSON_NODISCARD integer_t as_integer() const noexcept;
+
+        MYJSON_NODISCARD number_t as_number() const noexcept;
+
+        MYJSON_NODISCARD string_t as_string() const noexcept;
+
+        //========== Objects ==========
+
+        /**
+         * @brief Access object member by key with bounds checking.
+         */
+        reference at(const std::string &key);
+
+        /**
+         * @brief Access object member by key with bounds checking (const).
+         */
+        const_reference at(const std::string &key) const;
+
+        /**
+         * @brief Access/create object member by key.
+         */
+        reference operator[](const std::string &key);
+
+        /**
+         * @brief Access object member by key; returns null json if missing.
+         */
+        json operator[](const std::string &key) const;
+
+        /**
+         * @brief Access/create object member by C-string key.
+         */
+        reference operator[](const char *key);
+
+        /**
+         * @brief Access object member by C-string key; returns null json if missing.
+         */
+        json operator[](const char *key) const;
+
+        /**
+         * @brief Check whether an object contains @p key.
+         */
+        MYJSON_NODISCARD bool contains(const std::string &key) const noexcept;
+
+        /**
+         * @brief Count occurrences of @p key (0 or 1 for object).
+         */
+        MYJSON_NODISCARD size_t count(const std::string &key) const noexcept;
+
+        /**
+         * @brief Erase object member by key; returns removed count.
+         */
+        size_t erase(const std::string &key) noexcept;
+
+        //========== Arrays ==========
+
+        void assign(size_type n, const value_type &val);
+        template <typename _InputIterator>
+        void assign(_InputIterator first, _InputIterator last);
+        void assign(initializer_list_t l);
+
+        /**
+         * @brief Access array element with bounds checking.
+         */
+        reference &at(size_t index);
+
+        /**
+         * @brief Access array element with bounds checking (const).
+         */
+        const_reference at(size_t index) const;
+
+        /**
+         * @brief Access array element by index and grow with null values if needed.
+         */
+        reference operator[](size_t index);
+
+        /**
+         * @brief Access array element by index (const).
+         */
+        const_reference operator[](size_t index) const;
+
+        /**
+         * @brief Access first array element.
+         */
+        reference front();
+
+        /**
+         * @brief Access first array element (const).
+         */
+        const_reference front() const;
+
+        /**
+         * @brief Access last array element.
+         */
+        reference back();
+
+        /**
+         * @brief Access last array element (const).
+         */
+        const_reference back() const;
+
+        /**
+         * @brief Append element to array.
+         */
+        void push_back(const json &value);
+
+        void pop_back();
+
+        /**
+         * @brief Append movable element to array.
+         */
+        void push_back(json &&value);
+
+        /**
+         * @brief Insert element at the front of an array.
+         */
+        void push_front(const json &value);
+
+        /**
+         * @brief Insert value at iterator position.
+         */
+        iterator insert(const const_iterator &pos, const json &value);
+
+        /**
+         * @brief Insert movable value at iterator position.
+         */
+        iterator insert(const const_iterator &pos, json &&value);
+
+        /**
+         * @brief Erase one element at iterator position.
+         */
+        iterator erase(const_iterator pos);
+
+        /**
+         * @brief Erase range [first,last).
+         */
+        iterator erase(const_iterator first, const_iterator last);
+
+        //========== Size and Capacity ==========
+
+        /**
+         * @brief Return number of elements for array/object, otherwise 0.
+         */
+        MYJSON_NODISCARD size_type size() const noexcept;
+
+        /**
+         * @brief Return whether container size is zero.
+         */
+        MYJSON_NODISCARD bool empty() const noexcept;
+
+        /**
+         * @brief Clear object/array contents.
+         */
+        void clear() noexcept;
+
+        //========== Iteration ==========
+
+        /**
+         * @brief Begin iterator over object members.
+         */
+        iterator begin();
+
+        /**
+         * @brief Begin const iterator over object members.
+         */
+        MYJSON_NODISCARD const_iterator begin() const;
+
+        /**
+         * @brief Constant begin iterator over object members.
+         */
+        MYJSON_NODISCARD const_iterator cbegin() const;
+
+        /**
+         * @brief End iterator over object members.
+         */
+        iterator end();
+
+        /**
+         * @brief End const iterator over object members.
+         */
+        MYJSON_NODISCARD const_iterator end() const;
+
+        /**
+         * @brief Constant end iterator over object members.
+         */
+        MYJSON_NODISCARD const_iterator cend() const;
+
+        /**
+         * @brief Reverse begin iterator over object members.
+         */
+        reverse_iterator rbegin();
+
+        /**
+         * @brief Reverse begin const iterator over object members.
+         */
+        MYJSON_NODISCARD const_reverse_iterator rbegin() const;
+
+        MYJSON_NODISCARD const_reverse_iterator crbegin() const;
+
+        /**
+         * @brief Reverse end iterator over object members.
+         */
+        reverse_iterator rend();
+
+        /**
+         * @brief Reverse end const iterator over object members.
+         */
+        MYJSON_NODISCARD const_reverse_iterator rend() const;
+
+        MYJSON_NODISCARD const_reverse_iterator crend() const;
+
+        //========== Comparison ==========
+
+        /** @brief Equality comparison. */
+        bool operator==(const json &other) const noexcept;
+
+        /** @brief Inequality comparison. */
+        bool operator!=(const json &other) const noexcept;
+
+        /** @brief Strict weak ordering comparison. */
+        bool operator<(const json &other) const noexcept;
+
+        /** @brief Less-than-or-equal comparison. */
+        bool operator<=(const json &other) const noexcept;
+
+        /** @brief Greater-than comparison. */
+        bool operator>(const json &other) const noexcept;
+
+        /** @brief Greater-than-or-equal comparison. */
+        bool operator>=(const json &other) const noexcept;
+
+        /**
          * @name pointer
          * @brief JSON Pointer (RFC 6901)
          * {@
@@ -3324,25 +3658,39 @@ namespace myjson
 
         const_reference at(const json_pointer &ptr) const;
 
-        /** @brief Resolve and return reference at JSON Pointer path. */
+        /**
+         * @brief Resolve and return reference at JSON Pointer path.
+         */
         reference at_pointer(const std::string &pointer);
 
-        /** @brief Resolve and return const reference at JSON Pointer path. */
+        /**
+         * @brief Resolve and return const reference at JSON Pointer path.
+         */
         const_reference at_pointer(const std::string &pointer) const;
 
-        /** @brief Resolve pointer and return mutable pointer if found. */
+        /**
+         * @brief Resolve pointer and return mutable pointer if found.
+         */
         std::optional<pointer> find_pointer(const std::string &pointer) noexcept;
 
-        /** @brief Resolve pointer and return const pointer if found. */
+        /**
+         * @brief Resolve pointer and return const pointer if found.
+         */
         MYJSON_NODISCARD std::optional<const_pointer> find_pointer(const std::string &pointer) const noexcept;
 
-        /** @brief Find JSON Pointer string to a reachable nested node reference. */
+        /**
+         * @brief Find JSON Pointer string to a reachable nested node reference.
+         */
         MYJSON_NODISCARD std::string pointer_to(const json &value) const;
 
-        /** @brief Check whether a JSON Pointer can be resolved. */
+        /**
+         * @brief Check whether a JSON Pointer can be resolved.
+         */
         MYJSON_NODISCARD bool contains_pointer(const std::string &pointer) const noexcept;
 
-        /** @brief Erase value at JSON Pointer (root cannot be erased). */
+        /**
+         * @brief Erase value at JSON Pointer (root cannot be erased).
+         */
         bool erase_pointer(const std::string &pointer) noexcept;
 
         /* @} pointer */
@@ -3353,13 +3701,19 @@ namespace myjson
          * {@
          */
 
-        /** @brief Apply patch document to this value in-place. */
+        /**
+         * @brief Apply patch document to this value in-place.
+         */
         void patch_inplace(const json &patch);
 
-        /** @brief Apply patch document and return patched copy. */
+        /**
+         * @brief Apply patch document and return patched copy.
+         */
         json patch(const json &patch) const;
 
-        /** @brief Create patch operations from source to target with optional base path. */
+        /**
+         * @brief Create patch operations from source to target with optional base path.
+         */
         static json diff(const json &source, const json &target,
                          const string_t &path = "");
 
@@ -3386,7 +3740,10 @@ namespace myjson
          * @brief JSON Merge Patch (RFC 7386)
          * {@
          */
-        /** @brief Apply merge patch to this value in-place. */
+
+        /**
+         * @brief Apply merge patch to this value in-place.
+         */
         void merge_patch(const json &apply_patch);
 
         /**
@@ -3400,21 +3757,41 @@ namespace myjson
 
         //========== Utility ==========
 
-        /** @brief Deep-copy this JSON value. */
+        /**
+         * @brief Deep-copy this JSON value.
+         */
         MYJSON_NODISCARD json clone() const;
 
-        /** @brief Merge missing object keys from @p other. */
+        /**
+         * @brief Merge missing object keys from @p other.
+         */
         void merge(const json &other);
 
-        /** @brief Return object keys (empty for non-object). */
+        /**
+         * @brief Return object keys (empty for non-object).
+         */
         MYJSON_NODISCARD std::vector<std::string> keys() const;
 
-        /** @brief Return array values or object values in iteration order. */
+        /**
+         * @brief Return array values or object values in iteration order.
+         */
         MYJSON_NODISCARD std::vector<json> values() const;
 
-        /** @brief Visit active variant with callable visitor. */
+        /**
+         * @brief Returns the allocator associated with the container.
+         */
+        // static allocator_type get_allocator();
+
+        /**
+         * @brief Visit active variant with callable visitor.
+         */
         template <typename Visitor>
         auto apply_visitor(Visitor &&vis);
+
+        /**
+         * @brief Default destructor.
+         */
+        ~json() noexcept;
 
     private:
         void ensure_object();
@@ -3428,9 +3805,6 @@ namespace myjson
         object_t &get_object();
 
         array_t &get_array();
-
-        template <typename value_type>
-        value_type get_value();
 
     private:
         std::variant<
@@ -3462,10 +3836,10 @@ namespace myjson
         friend class json;
 
     public:
-        using pointer = json_pointer *;
-        using reference = json_pointer &;
-        using const_pointer = const json_pointer *;
-        using const_reference = const json_pointer &;
+        using pointer = json_pointer *;               /** A type for a pointer to a json_pointer object. */
+        using reference = json_pointer &;             /** A type for a reference to a json_pointer object. */
+        using const_pointer = const json_pointer *;   /** A type for a constant pointer to a json_pointer object. */
+        using const_reference = const json_pointer &; /** A type for a constant reference to a json_pointer object. */
 
     public:
         /**
@@ -3480,28 +3854,44 @@ namespace myjson
          */
         MYJSON_NODISCARD std::string to_string() const;
 
-        /** @brief Return unescaped pointer tokens. */
+        /**
+         * @brief Return unescaped pointer tokens.
+         */
         MYJSON_NODISCARD const std::vector<std::string> &tokens() const;
 
-        /** @brief Return pointer depth (token count). */
+        /**
+         * @brief Return pointer depth (token count).
+         */
         MYJSON_NODISCARD size_t depth() const;
 
-        /** @brief Check whether this is root pointer. */
+        /**
+         * @brief Check whether this is root pointer.
+         */
         MYJSON_NODISCARD bool is_root() const;
 
-        /** @brief Return parent pointer. */
+        /**
+         * @brief Return parent pointer.
+         */
         MYJSON_NODISCARD json_pointer parent() const;
 
-        /** @brief Return the last token or empty string for root. */
+        /**
+         * @brief Return the last token or empty string for root.
+         */
         MYJSON_NODISCARD std::string back() const;
 
-        /** @brief Return a pointer with token appended. */
+        /**
+         * @brief Return a pointer with token appended.
+         */
         MYJSON_NODISCARD json_pointer push(const std::string &token) const;
 
-        /** @brief Append one token to this pointer. */
+        /**
+         * @brief Append one token to this pointer.
+         */
         void push_back(const std::string &token);
 
-        /** @brief Append one movable token to this pointer. */
+        /**
+         * @brief Append one movable token to this pointer.
+         */
         void push_back(std::string &&token);
 
         /**
@@ -3510,52 +3900,82 @@ namespace myjson
          */
         json::reference ref(json &document);
 
-        /** @brief Resolve pointer against const document. */
+        /**
+         * @brief Resolve pointer against const document.
+         */
         json::const_reference ref(const json &document) const;
 
-        /** @brief Try to resolve pointer against mutable document. */
+        /**
+         * @brief Try to resolve pointer against mutable document.
+         */
         std::optional<json::pointer> try_ref(json &document) noexcept;
 
-        /** @brief Try to resolve pointer against const document. */
+        /**
+         * @brief Try to resolve pointer against const document.
+         */
         MYJSON_NODISCARD std::optional<json::const_pointer> try_ref(const json &document) const noexcept;
 
-        /** @brief Append one token. */
+        /**
+         * @brief Append one token.
+         */
         reference operator/=(std::string token);
 
-        /** @brief Append numeric array-index token. */
+        /**
+         * @brief Append numeric array-index token.
+         */
         reference operator/=(std::size_t index);
 
-        /** @brief Append all tokens from another pointer. */
+        /**
+         * @brief Append all tokens from another pointer.
+         */
         reference operator/=(const json_pointer &ptr);
 
-        /** @brief Return a concatenated pointer of @p lhs and @p rhs. */
+        /**
+         * @brief Return a concatenated pointer of @p lhs and @p rhs.
+         */
         friend json_pointer operator/(const json_pointer &lhs, const json_pointer &rhs);
 
-        /** @brief Return @p lhs with one token appended. */
+        /**
+         * @brief Return @p lhs with one token appended.
+         */
         friend json_pointer operator/(const json_pointer &lhs, std::string token);
 
-        /** @brief Return @p lhs with one array index token appended. */
+        /**
+         * @brief Return @p lhs with one array index token appended.
+         */
         friend json_pointer operator/(const json_pointer &lhs, std::size_t array_idx);
 
-        /** @brief Compare two pointers for equality. */
+        /**
+         * @brief Compare two pointers for equality.
+         */
         friend bool operator==(const json_pointer &lhs, const json_pointer &rhs) noexcept;
 
-        /** @brief Compare pointer string form with @p rhs. */
+        /**
+         * @brief Compare pointer string form with @p rhs.
+         */
         friend bool operator==(const json_pointer &lhs, const std::string &rhs);
 
-        /** @brief Compare pointer string form with @p lhs. */
+        /**
+         * @brief Compare pointer string form with @p lhs.
+         */
         friend bool operator==(const std::string &lhs,
                                const json_pointer &rhs);
 
-        /** @brief Compare two pointers for inequality. */
+        /**
+         * @brief Compare two pointers for inequality.
+         */
         friend bool operator!=(const json_pointer &lhs,
                                const json_pointer &rhs) noexcept;
 
-        /** @brief Compare pointer string form with @p rhs for inequality. */
+        /**
+         * @brief Compare pointer string form with @p rhs for inequality.
+         */
         friend bool operator!=(const json_pointer &lhs,
                                const std::string &rhs);
 
-        /** @brief Compare pointer string form with @p lhs for inequality. */
+        /**
+         * @brief Compare pointer string form with @p lhs for inequality.
+         */
         friend bool operator!=(const std::string &lhs,
                                const json_pointer &rhs);
 
@@ -3629,31 +4049,49 @@ namespace myjson
          */
         void apply_inplace(json &document) const;
 
-        /** @brief Access underlying patch operation array. */
+        /**
+         * @brief Access underlying patch operation array.
+         */
         MYJSON_NODISCARD json::const_reference operations() const;
 
-        /** @brief Number of operations. */
+        /**
+         * @brief Number of operations.
+         */
         MYJSON_NODISCARD size_t size() const;
 
-        /** @brief Whether there are no operations. */
+        /**
+         * @brief Whether there are no operations.
+         */
         MYJSON_NODISCARD bool empty() const;
 
-        /** @brief Create an RFC 6902 add operation. */
+        /**
+         * @brief Create an RFC 6902 add operation.
+         */
         static json add_operation(const std::string &path, const json &value);
 
-        /** @brief Create an RFC 6902 remove operation. */
+        /**
+         * @brief Create an RFC 6902 remove operation.
+         */
         static json remove_operation(const std::string &path);
 
-        /** @brief Create an RFC 6902 replace operation. */
+        /**
+         * @brief Create an RFC 6902 replace operation.
+         */
         static json replace_operation(const std::string &path, const json &value);
 
-        /** @brief Create an RFC 6902 move operation. */
+        /**
+         * @brief Create an RFC 6902 move operation.
+         */
         static json move_operation(const std::string &from_path, const std::string &to_path);
 
-        /** @brief Create an RFC 6902 copy operation. */
+        /**
+         * @brief Create an RFC 6902 copy operation.
+         */
         static json copy_operation(const std::string &from_path, const std::string &to_path);
 
-        /** @brief Create an RFC 6902 test operation. */
+        /**
+         * @brief Create an RFC 6902 test operation.
+         */
         static json test_operation(const std::string &path, const json &value);
 
     private:
@@ -3751,6 +4189,7 @@ namespace myjson
 #endif
 
     const char *string(encoding type);
+    const char *string(json::value_t type);
 
 #ifndef MYJSON_NO_STL
 
@@ -3761,6 +4200,14 @@ namespace myjson
      * @return Reference to the output stream object `ostream`.
      */
     std::ostream &operator<<(std::ostream &ostream, const encoding &type);
+
+    /**
+     * @brief Write the node type string into stream.
+     * @param[in] ostream An output stream object.
+     * @param[in] type A node type.
+     * @return Reference to the output stream object `ostream`.
+     */
+    std::ostream &operator<<(std::ostream &ostream, const json::value_t &type);
 
     /**
      * @brief A wrapper for the serialization feature.

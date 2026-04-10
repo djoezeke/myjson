@@ -1107,6 +1107,10 @@ namespace myjson
         template class reverse_iterator<iterator<json>>;
         template class reverse_iterator<iterator<const json>>;
 
+        //-------------------------------------------------------------------------
+        // [SECTION] Details : Input
+        //-------------------------------------------------------------------------
+
         //-----------------------------------------------------------------------------
         // [Class] file_iadapter
         //-----------------------------------------------------------------------------
@@ -2806,6 +2810,9 @@ namespace myjson
         m_value = std::move(array);
     }
 
+    json::json(const json &other) = default;
+    json::json(json &&other) noexcept = default;
+
     json json::object(initializer_list_t init)
     {
         return json(init, false, value_t::object);
@@ -2816,11 +2823,10 @@ namespace myjson
         return json(init, false, value_t::array);
     }
 
-    //========== Destructor and Assignment ==========
+    //========== Assignment ==========
 
     json::~json() noexcept = default;
-    json::json(const json &other) = default;
-    json::json(json &&other) noexcept = default;
+
     json &json::operator=(const json &other) = default;
     json &json::operator=(json &&other) noexcept = default;
 
@@ -4289,20 +4295,49 @@ namespace myjson
         }
     };
 
+    const char *string(json::value_t type)
+    {
+        switch (type)
+        {
+        case json::value_t::null:
+            return "null";
+        case json::value_t::object:
+            return "object";
+        case json::value_t::array:
+            return "array";
+        case json::value_t::string:
+            return "string";
+        case json::value_t::number:
+            return "number";
+        case json::value_t::integer:
+            return "integer";
+        case json::value_t::boolean:
+            return "boolean";
+        default:
+            return "unknown";
+        }
+    }
+
 #ifndef MYJSON_NO_STL
 
-    std::ostream &operator<<(std::ostream &ostream, const encoding &type)
+    std::ostream &operator<<(std::ostream &stream, const encoding &type)
     {
-        ostream << string(type);
-        return ostream;
+        stream << string(type);
+        return stream;
     };
 
-    std::ostream &operator<<(std::ostream &ostream, const json &node)
+    std::ostream &operator<<(std::ostream &stream, const json::value_t &type)
     {
-        detail::stream_oadapter adapter(ostream);
+        stream << string(type);
+        return stream;
+    };
+
+    std::ostream &operator<<(std::ostream &stream, const json &node)
+    {
+        detail::stream_oadapter adapter(stream);
         detail::serializer output(&adapter);
         output.serialize(node, -1);
-        return ostream;
+        return stream;
     };
 
     std::istream &operator>>(std::istream &stream, json &node)
