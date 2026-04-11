@@ -2028,7 +2028,7 @@ namespace myjson
                     {
                         if (it.value().is_boolean())
                         {
-                            return it.value().as_bool();
+                            return it.value().as_boolean();
                         }
                     }
                 }
@@ -2048,7 +2048,7 @@ namespace myjson
                     {
                         if (it.value().is_number() || it.value().is_integer())
                         {
-                            return it.value().as_number();
+                            return it.value().as_floating();
                         }
                     }
                 }
@@ -2253,14 +2253,14 @@ namespace myjson
                 write_raw("null", 4);
                 return;
             case value_t::boolean:
-                write_raw(value.as_bool() ? "true" : "false", value.as_bool() ? 4 : 5);
+                write_raw(value.as_boolean() ? "true" : "false", value.as_boolean() ? 4 : 5);
                 return;
             case value_t::integer:
                 write_raw(std::to_string(value.as_integer()));
                 return;
             case value_t::number:
             {
-                const auto number = value.as_number();
+                const auto number = value.as_floating();
                 if (std::isnan(number) || std::isinf(number))
                 {
                     write_raw("null", 4);
@@ -2353,7 +2353,7 @@ namespace myjson
 
         void from_json(const json &j, bool &v)
         {
-            v = j.as_bool();
+            v = j.as_boolean();
         }
 
         void from_json(const json &j, int64_t &v)
@@ -2368,7 +2368,7 @@ namespace myjson
 
         void from_json(const json &j, double &v)
         {
-            v = j.as_number();
+            v = j.as_floating();
         }
 
         void from_json(const json &j, std::string &v)
@@ -2681,56 +2681,91 @@ namespace myjson
     {
     }
 
-    json::json(std::nullptr_t) noexcept
-        : m_value(nullptr)
-    {
-    }
-
-    json::json(bool value) noexcept
-        : m_value(value)
-    {
-    }
-
-    json::json(int value) noexcept
-        : m_value(static_cast<integer_t>(value))
-    {
-    }
-
-    json::json(value_t value) noexcept
+    json::json(json::node_type value) noexcept
     {
         switch (value)
         {
-        case value_t::null:
+        case node_type::null:
             m_value = nullptr;
             break;
-        case value_t::boolean:
+        case node_type::boolean:
             m_value = false;
             break;
-        case value_t::integer:
+        case node_type::integer:
             m_value = static_cast<integer_t>(0);
             break;
-        case value_t::number:
+        case node_type::number:
             m_value = static_cast<number_t>(0.0);
             break;
-        case value_t::string:
+        case node_type::string:
             m_value = string_t();
             break;
-        case value_t::array:
+        case node_type::array:
             m_value = array_t();
             break;
-        case value_t::object:
+        case node_type::object:
             m_value = object_t();
             break;
         }
     }
 
-    json::json(integer_t value) noexcept
+    json::json(json::null_type value) noexcept
         : m_value(value)
     {
     }
 
-    json::json(number_t value) noexcept
+    json::json(json::array_type value) noexcept
         : m_value(value)
+    {
+    }
+
+    json::json(json::object_type value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(json::integer_type value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(json::boolean_type value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(json::floating_type value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(const json::array_type &value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(const json::array_type &&value) noexcept
+        : m_value(std::move(value))
+    {
+    }
+
+    json::json(const json::object_type &value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(const json::object_type &&value) noexcept
+        : m_value(std::move(value))
+    {
+    }
+
+    json::json(const json::string_type &value) noexcept
+        : m_value(value)
+    {
+    }
+
+    json::json(const json::string_type &&value) noexcept
+        : m_value(std::move(value))
     {
     }
 
@@ -2739,40 +2774,10 @@ namespace myjson
     {
     }
 
-    json::json(const string_t &value)
-        : m_value(value)
+    json::json(json::initializer_list init, bool type_deduction, json::node_type manual_type)
     {
-    }
-
-    json::json(const string_t &&value)
-        : m_value(std::move(value))
-    {
-    }
-
-    json::json(const array_t &value)
-        : m_value(value)
-    {
-    }
-
-    json::json(const array_t &&value)
-        : m_value(std::move(value))
-    {
-    }
-
-    json::json(const object_t &value)
-        : m_value(value)
-    {
-    }
-
-    json::json(const object_t &&value)
-        : m_value(std::move(value))
-    {
-    }
-
-    json::json(json::initializer_list_t init, bool type_deduction, json::value_t manual_type)
-    {
-        bool as_object = (manual_type == value_t::object);
-        if (manual_type != value_t::array && manual_type != value_t::object)
+        bool as_object = (manual_type == node_type::object);
+        if (manual_type != node_type::array && manual_type != node_type::object)
         {
             as_object = false;
         }
@@ -2811,17 +2816,38 @@ namespace myjson
     }
 
     json::json(const json &other) = default;
+
     json::json(json &&other) noexcept = default;
 
-    json json::object(initializer_list_t init)
+    json json::array(json::initializer_list init)
     {
-        return json(init, false, value_t::object);
-    }
+        return json(init, false, node_type::array);
+    };
 
-    json json::array(initializer_list_t init)
+    json json::array(const json::array_type &array)
     {
-        return json(init, false, value_t::array);
-    }
+        return json(array);
+    };
+
+    json json::array(json::array_type &&array)
+    {
+        return json(array);
+    };
+
+        json json::object(json::initializer_list init)
+    {
+        return json(init, false, node_type::object);
+    };
+
+        json json::object(const json::object_type &object)
+    {
+        return json(object);
+    };
+
+    json json::object(json::object_type &&object)
+    {
+        return json(object);
+    };
 
     //========== Assignment ==========
 
@@ -3013,9 +3039,9 @@ namespace myjson
         return get<int>(0);
     }
 
-    bool json::as_bool() const noexcept { return get<bool>(false); }
+    bool json::as_boolean() const noexcept { return get<bool>(false); }
     json::integer_t json::as_integer() const noexcept { return get<integer_t>(0); }
-    json::number_t json::as_number() const noexcept { return get<number_t>(0.0); }
+    json::number_t json::as_floating() const noexcept { return get<number_t>(0.0); }
     json::string_t json::as_string() const noexcept { return get<std::string>(std::string()); }
 
     //========== Helper Methods ==========
@@ -3293,11 +3319,11 @@ namespace myjson
         case value_t::null:
             return false;
         case value_t::boolean:
-            return as_bool() < other.as_bool();
+            return as_boolean() < other.as_boolean();
         case value_t::integer:
             return as_integer() < other.as_integer();
         case value_t::number:
-            return as_number() < other.as_number();
+            return as_floating() < other.as_floating();
         case value_t::string:
             return as_string() < other.as_string();
         case value_t::array:

@@ -906,8 +906,7 @@ namespace myjson
 
     //-----------------------------------------------------------------------------
     // [SECTION] Myjson Forward
-    //-----------------------------------------------------------------------------
-
+    //--------------------------------------------------------------------
     /** Enumerations */
 
     enum class encoding : uint8_t; /** enum encoding. */
@@ -2276,6 +2275,81 @@ namespace myjson
          */
         class parser
         {
+            /**
+             * @name container
+             * {@
+             */
+
+            /**
+             * @brief A type for a pointer to a parser object.
+             */
+            using pointer = parser *;
+
+            /**
+             * @brief A type for a reference to a parser object.
+             */
+            using reference = parser &;
+
+            /**
+             * @brief A type for a constant pointer to a parser object.
+             */
+            using const_pointer = const parser *;
+
+            /**
+             * @brief A type for a constant reference to a parser object.
+             */
+            using const_reference = const parser &;
+
+            /* @} container */
+
+        public:
+            /**
+             * @name types
+             * @brief Type aliases for convenience.
+             * {@
+             */
+
+            /**
+             * @brief A type for a json object.
+             */
+            using value_type = json;
+
+            /**
+             * @brief A type for a json null value.
+             */
+            using null_type = typename value_type::null_type;
+
+            /**
+             * @brief A type for a json array value.
+             */
+            using array_type = typename value_type::array_type;
+
+            /**
+             * @brief A type for a json object value.
+             */
+            using object_type = typename value_type::object_type;
+
+            /**
+             * @brief A type for a json string value.
+             */
+            using string_type = typename value_type::string_type;
+
+            /**
+             * @brief A type for a json integer value.
+             */
+            using integer_type = typename value_type::integer_type;
+
+            /**
+             * @brief A type for a json boolean value.
+             */
+            using boolean_type = typename value_type::boolean_type;
+
+            /**
+             * @brief A type for a json float number value.
+             */
+            using floating_type = typename value_type::floating_type;
+
+            /* @} types */
         public:
             /**
              * @brief Construct a parser from a lexer instance.
@@ -2324,10 +2398,81 @@ namespace myjson
 
         class deserializer
         {
-            using pointer = deserializer *;/** A type for a pointer to a deserializer object. */
-            using reference = deserializer &; /** A type for a reference to a deserializer object. */
-            using const_pointer = const deserializer *; /** A type for a constant pointer to a deserializer object. */
-            using const_reference = const deserializer &;/** A type for a constant reference to a deserializer object. */
+            /**
+             * @name container
+             * {@
+             */
+
+            /**
+             * @brief A type for a pointer to a deserializer object.
+             */
+            using pointer = deserializer *;
+
+            /**
+             * @brief A type for a reference to a deserializer object.
+             */
+            using reference = deserializer &;
+
+            /**
+             * @brief A type for a constant pointer to a deserializer object.
+             */
+            using const_pointer = const deserializer *;
+
+            /**
+             * @brief A type for a constant reference to a deserializer object.
+             */
+            using const_reference = const deserializer &;
+
+            /* @} container */
+
+        public:
+            /**
+             * @name types
+             * @brief Type aliases for convenience.
+             * {@
+             */
+
+            /**
+             * @brief A type for a json object.
+             */
+            using value_type = json;
+
+            /**
+             * @brief A type for a json null value.
+             */
+            using null_type = typename value_type::null_type;
+
+            /**
+             * @brief A type for a json array value.
+             */
+            using array_type = typename value_type::array_type;
+
+            /**
+             * @brief A type for a json object value.
+             */
+            using object_type = typename value_type::object_type;
+
+            /**
+             * @brief A type for a json string value.
+             */
+            using string_type = typename value_type::string_type;
+
+            /**
+             * @brief A type for a json integer value.
+             */
+            using integer_type = typename value_type::integer_type;
+
+            /**
+             * @brief A type for a json boolean value.
+             */
+            using boolean_type = typename value_type::boolean_type;
+
+            /**
+             * @brief A type for a json float number value.
+             */
+            using floating_type = typename value_type::floating_type;
+
+            /* @} types */
 
         public:
             /**
@@ -2584,10 +2729,81 @@ namespace myjson
 
         class serializer
         {
-            using pointer = serializer *;/** A type for a pointer to a serializer object. */
-            using reference = serializer &; /** A type for a reference to a serializer object. */
-            using const_pointer = const serializer *; /** A type for a constant pointer to a serializer object. */
-            using const_reference = const serializer &;/** A type for a constant reference to a serializer object. */
+            /**
+             * @name container
+             * {@
+             */
+
+            /**
+             * @brief A type for a pointer to a serializer object.
+             */
+            using pointer = serializer *;
+
+            /**
+             * @brief A type for a reference to a serializer object.
+             */
+            using reference = serializer &;
+
+            /**
+             * @brief A type for a constant pointer to a serializer object.
+             */
+            using const_pointer = const serializer *;
+
+            /**
+             * @brief A type for a constant reference to a serializer object.
+             */
+            using const_reference = const serializer &;
+
+            /* @} container */
+
+        public:
+            /**
+             * @name types
+             * @brief Type aliases for convenience.
+             * {@
+             */
+
+            /**
+             * @brief A type for a json object.
+             */
+            using value_type = json;
+
+            /**
+             * @brief A type for a json null value.
+             */
+            using null_type = typename value_type::null_type;
+
+            /**
+             * @brief A type for a json array value.
+             */
+            using array_type = typename value_type::array_type;
+
+            /**
+             * @brief A type for a json object value.
+             */
+            using object_type = typename value_type::object_type;
+
+            /**
+             * @brief A type for a json string value.
+             */
+            using string_type = typename value_type::string_type;
+
+            /**
+             * @brief A type for a json integer value.
+             */
+            using integer_type = typename value_type::integer_type;
+
+            /**
+             * @brief A type for a json boolean value.
+             */
+            using boolean_type = typename value_type::boolean_type;
+
+            /**
+             * @brief A type for a json float number value.
+             */
+            using floating_type = typename value_type::floating_type;
+
+            /* @} types */
 
         public:
             /**
@@ -2994,22 +3210,22 @@ namespace myjson
         friend class ::myjson::detail::parser;
         friend class ::myjson::detail::exception;
 
-        // using serializer = detail::serializer<json>;
-        // using deserializer = detail::deserializer<json>;
-        using initializer_list_t = std::initializer_list<json>;
+        /**
+         * @brief A type for a json serializer.
+         */
+        using serializer = detail::serializer;
+
+        /**
+         * @brief A type for a json deserializer.
+         */
+        using deserializer = detail::deserializer;
+
+        /**
+         * @brief A type for a json initializer list.
+         */
+        using initializer_list = std::initializer_list<json>;
 
     public:
-        using value_t = detail::value_t; /** A node value types. */
-
-        using value_type = json;                    /** A type for a json object. */
-        using pointer = value_type *;               /** A type for a pointer to a json object. */
-        using reference = value_type &;             /** A type for a reference to a json object. */
-        using const_pointer = const value_type *;   /** A type for a constant pointer to a json object. */
-        using const_reference = const value_type &; /** A type for a constant reference to a json object. */
-        using difference_type = std::ptrdiff_t;     /** A type for a differences between json iterators. */
-        using size_type = std::size_t;              /** A type for a type to represent json sizes. */
-                                                    // using allocator_type = ; /** The allocator type */
-
         /**
          * @name types
          * @brief Type aliases for convenience.
@@ -3025,19 +3241,114 @@ namespace myjson
         using boolean_t = bool;                       /** A type for a json boolean value. */
         using null_t = std::nullptr_t;                /** A type for a json null value. */
 
+        /**
+         * @brief A type for a json null value.
+         */
+        using null_type = std::nullptr_t;
+
+        /**
+         * @brief A type for a json array value.
+         */
+        using array_type = std::vector<json>;
+
+        /**
+         * @brief A type for a json object value.
+         */
+        using object_type = std::map<std::string, json>;
+
+        /**
+         * @brief A type for a json string value.
+         */
+        using string_type = std::string;
+
+        /**
+         * @brief A type for a json integer value.
+         */
+        using integer_type = int64_t;
+
+        /**
+         * @brief A type for a json boolean value.
+         */
+        using boolean_type = bool;
+
+        /**
+         * @brief A type for a json float number value.
+         */
+        using floating_type = double;
+
         /* @} types */
 
         /**
-         * @name containers
+         * @name container
          * {@
          */
 
-        using iterator = myjson::detail::iterator<json>;                                 /** An iterator type for json. */
-        using const_iterator = myjson::detail::iterator<const json>;                     /** A const iterator type for json. */
-        using reverse_iterator = myjson::detail::reverse_iterator<iterator>;             /** A reverse iterator type for json. */
+        /**
+         * @brief A type for a json node value type.
+         */
+        using node_type = detail::value_t;
+
+        /**
+         * @brief A type for a json object.
+         */
+        using value_type = json;
+
+        /**
+         * @brief A type for a pointer to a json object.
+         */
+        using pointer = value_type *;
+
+        /**
+         * @brief A type for a reference to a json object.
+         */
+        using reference = value_type &;
+
+        /**
+         * @brief A type for a constant pointer to a json object.
+         */
+        using const_pointer = const value_type *;
+
+        /**
+         * @brief A type for a constant reference to a json object.
+         */
+        using const_reference = const value_type &;
+
+        /**
+         * @brief A type to represent differences between json iterators.
+         */
+        using difference_type = std::ptrdiff_t;
+
+        /**
+         * @brief A type to represent json sizes.
+         */
+        using size_type = std::size_t;
+
+        /**
+         * @brief A type for a json allocator type.
+         */
+        // using allocator_type = ;
+
+        /**
+         * @brief A type for an iterator to a json object.
+         */
+        using iterator = myjson::detail::iterator<json>; /** An iterator type for json. */
+
+        /**
+         * @brief A type for a constant iterator to a json object.
+         */
+        using const_iterator = myjson::detail::iterator<const json>; /** A const iterator type for json. */
+
+        /**
+         * @brief A type for a reverse iterator to a json object.
+         */
+        using reverse_iterator = myjson::detail::reverse_iterator<iterator>; /** A reverse iterator type for json. */
+
+        /**
+         * @brief A type for a constant reverse iterator to a json object.
+         */
         using const_reverse_iterator = myjson::detail::reverse_iterator<const_iterator>; /** A const reverse iterator type for json. */
 
-        /* @} containers */
+        /* @} container */
 
         /**
          * @name exceptions
@@ -3060,34 +3371,81 @@ namespace myjson
         json() noexcept;
 
         /**
-         * @brief Construct JSON null explicitly.
-         */
-        json(std::nullptr_t) noexcept;
-
-        /**
-         * @brief Construct a JSON boolean value.
-         */
-        json(bool value) noexcept;
-
-        /**
-         * @brief Construct a JSON integer from int.
-         */
-        json(int value) noexcept;
-
-        /**
          * @brief Construct an empty value of the requested JSON type.
          */
-        json(value_t value) noexcept;
+        json(node_type value) noexcept;
+
+        /**
+         * @brief Construct JSON null explicitly.
+         */
+        json(null_type value) noexcept;
+
+        /**
+         * @brief Construct a JSON array value.
+         */
+        json(array_type value) noexcept;
+
+        /**
+         * @brief Construct a JSON object value.
+         */
+        json(object_type value) noexcept;
 
         /**
          * @brief Construct a JSON integer value.
          */
-        json(integer_t value) noexcept;
+        json(integer_type value) noexcept;
+
+        /**
+         * @brief Construct a JSON boolean value.
+         */
+        json(boolean_type value) noexcept;
 
         /**
          * @brief Construct a JSON floating-point value.
          */
-        json(number_t value) noexcept;
+        json(floating_type value) noexcept;
+
+        /**
+         * @brief Construct a JSON array value from a copy an array object.
+         * @param[in] value A lvalue array node value.
+         * @return A json array node.
+         */
+        json(const array_type &value);
+
+        /**
+         * @brief Construct a JSON array value by moving a array object.
+         * @param[in] value A rvalue array node value.
+         * @return A json array node.
+         */
+        json(const array_type &&value);
+
+        /**
+         * @brief Construct a JSON object by copy.
+         * @param[in] value A lvalue object node value.
+         * @return A json object node.
+         */
+        json(const object_type &value);
+
+        /**
+         * @brief Construct a JSON object by move.
+         * @param[in] value A rvalue object node value.
+         * @return A json object node.
+         */
+        json(const object_type &&value);
+
+        /**
+         * @brief Construct a JSON string by copy.
+         * @param[in] value A lvalue string node value.
+         * @return A json string node.
+         */
+        json(const string_type &value);
+
+        /**
+         * @brief Construct a JSON string by move.
+         * @param[in] value A rvalue string node value.
+         * @return A json string node.
+         */
+        json(const string_type &&value);
 
         /**
          * @brief Construct a JSON string from a C string.
@@ -3095,48 +3453,14 @@ namespace myjson
         json(const char *value);
 
         /**
-         * @brief Construct a JSON string by copy.
-         */
-        json(const string_t &value);
-
-        /**
-         * @brief Construct a JSON string by move.
-         */
-        json(const string_t &&value);
-
-        /**
-         * @brief Construct a JSON array value from a copy an array object.
-         * @param[in] array A lvalue array node value.
-         * @return A json array node.
-         */
-        json(const array_t &array);
-
-        /**
-         * @brief Construct a JSON array value by moving a array object.
-         * @param[in] array A rvalue array node value.
-         * @return A json array node.
-         */
-        json(const array_t &&value);
-
-        /**
-         * @brief Construct a JSON object by copy.
-         */
-        json(const object_t &value);
-
-        /**
-         * @brief Construct a JSON object by move.
-         */
-        json(const object_t &&value);
-
-        /**
          * @brief Construct from initializer-list.
          * @param init Values to store.
          * @param type_deduction Detect object-vs-array form from @p init.
          * @param manual_type Explicitly force array or object type.
          */
-        json(initializer_list_t init,
+        json(initializer_list init,
              bool type_deduction = true,
-             value_t manual_type = value_t::array);
+             node_type manual_type = node_type::array);
 
         /**
          * @brief Copy constructor.
@@ -3151,40 +3475,40 @@ namespace myjson
         /**
          * @brief Create an array value from initializer-list.
          */
-        static json array(initializer_list_t init = {});
+        static json array(initializer_list init = {});
 
         /**
          * @brief Create an array value with lvalue array objects.
          * @param[in] array A lvalue array node value.
          * @return A json array node.
          */
-        static json array(const array_t &array);
+        static json array(const array_type &array);
 
         /**
          * @brief Create an array value with rvalue array objects.
          * @param[in] array A rvalue array node value.
          * @return A json array node.
          */
-        static json array(const array_t &&array);
+        static json array(const array_type &&array);
 
         /**
          * @brief Create an object value from initializer-list.
          */
-        static json object(initializer_list_t init = {});
+        static json object(initializer_list init = {});
 
         /**
          * @brief Create an object value with lvalue object objects.
          * @param[in] object A lvalue object node value.
          * @return A json object node.
          */
-        static json object(const object_t &object);
+        static json object(const object_type &object);
 
         /**
          * @brief Create an object value with rvalue object objects.
          * @param[in] object A rvalue object node value.
          * @return A json object node.
          */
-        static json object(const object_t &&object);
+        static json object(const object_type &&object);
 
         /**
          * @name deserialization
@@ -3293,102 +3617,118 @@ namespace myjson
         /**
          * @brief Assign a null value.
          */
-        reference operator=(std::nullptr_t) noexcept;
-
-        /**
-         * @brief Assign a boolean value.
-         */
-        reference operator=(bool value) noexcept;
-
-        /**
-         * @brief Assign a signed integer value.
-         */
-        reference operator=(int value) noexcept;
-
-        /**
-         * @brief Assign a 64-bit integer value.
-         */
-        reference operator=(integer_t value) noexcept;
-
-        /**
-         * @brief Assign a floating-point numeric value.
-         */
-        reference operator=(number_t value) noexcept;
-
-        /**
-         * @brief Assign a UTF-8 string value.
-         */
-        reference operator=(const string_t &value);
-
-        /**
-         * @brief Assign a C-string value (nullptr becomes empty string).
-         */
-        reference operator=(const char *value);
+        reference operator=(null_type value);
 
         /**
          * @brief Assign an array value.
          */
-        reference operator=(const array_t &value);
+        reference operator=(array_type value);
 
         /**
          * @brief Assign an object value.
          */
-        reference operator=(const object_t &value);
+        reference operator=(object_type value);
+
+        /**
+         * @brief Assign a string value.
+         */
+        reference operator=(string_type value);
+
+        /**
+         * @brief Assign a integer value.
+         */
+        reference operator=(integer_type value);
+
+        /**
+         * @brief Assign a boolean value.
+         */
+        reference operator=(boolean_type value);
+
+        /**
+         * @brief Assign a floating-point numeric value.
+         */
+        reference operator=(floating_type value);
+
+        /**
+         * @brief Assign a C-string value.
+         * @note nullptr becomes empty string.
+         */
+        reference operator=(const char *value);
 
         /**
          * @brief Assign from initializer-list with type deduction.
          */
-        reference operator=(initializer_list_t init);
+        reference operator=(initializer_list value);
+
+        /**
+         * @brief Assign an array value.
+         */
+        reference operator=(const array_type &value);
+
+        /**
+         * @brief Assign an object value.
+         */
+        reference operator=(const object_type &value);
 
         //========== Type Information ==========
 
         /**
-         * @brief Return the active JSON value type.
+         * @brief Check this value type.
+         * @return the json value type.
          */
-        MYJSON_NODISCARD value_t type() const noexcept;
+        MYJSON_NODISCARD node_type type() const noexcept;
 
         /**
          * @brief Check whether this value is null.
+         * @return true if value is null else false.
          */
         MYJSON_NODISCARD bool is_null() const noexcept;
 
         /**
          * @brief Check whether this value is an object.
+         * @return true if value is an object else false.
          */
         MYJSON_NODISCARD bool is_object() const noexcept;
 
         /**
          * @brief Check whether this value is an array.
+         * @return true if value is an array else false.
          */
         MYJSON_NODISCARD bool is_array() const noexcept;
 
         /**
          * @brief Check whether this value is a string.
+         * @return true if value is a string else false.
          */
         MYJSON_NODISCARD bool is_string() const noexcept;
 
         /**
-         * @brief Check whether this value is numeric (integer or floating point).
-         */
-        MYJSON_NODISCARD bool is_number() const noexcept;
-
-        /**
          * @brief Check whether this value is an integer.
+         * @return true if value is an integer else false.
          */
         MYJSON_NODISCARD bool is_integer() const noexcept;
 
         /**
          * @brief Check whether this value is a boolean.
+         * @return true if value is null else false.
          */
         MYJSON_NODISCARD bool is_boolean() const noexcept;
 
         /**
+         * @brief Check whether this value is a float number.
+         * @return true if value is a float number else false.
+         */
+        MYJSON_NODISCARD bool is_floating() const noexcept;
+
+        /**
          * @brief Check whether this value is scalar (non-array/non-object).
+         * @return true if value is scalar else false.
          */
         MYJSON_NODISCARD bool is_primitive() const noexcept;
 
         /**
          * @brief Check whether this value is container-like (array or object).
+         * @return true if value is container-like else false.
          */
         MYJSON_NODISCARD bool is_structured() const noexcept;
 
@@ -3412,13 +3752,54 @@ namespace myjson
         template <typename T>
         T get_safe() const;
 
-        MYJSON_NODISCARD bool as_bool() const noexcept;
+        /**
+         * @brief Get value as an array type .
+         * @return The converted array value.
+         * @throws cast_error if conversion fails.
+         */
+        array_type &as_array();
 
-        MYJSON_NODISCARD integer_t as_integer() const noexcept;
+        /**
+         * @brief Get value as an object type .
+         * @return The converted object value.
+         * @throws cast_error if conversion fails.
+         */
+        object_type &as_object();
 
-        MYJSON_NODISCARD number_t as_number() const noexcept;
+        /**
+         * @brief Get value as a string type .
+         * @return The converted string value.
+         * @throws cast_error if conversion fails.
+         */
+        string_type &as_string();
 
-        MYJSON_NODISCARD string_t as_string() const noexcept;
+        /**
+         * @brief Get value as an integer type .
+         * @return The converted integer value.
+         * @throws cast_error if conversion fails.
+         */
+        integer_type &as_integer();
+
+        /**
+         * @brief Get value as a boolean type .
+         * @return The converted boolean value.
+         * @throws cast_error if conversion fails.
+         */
+        boolean_type &as_boolean();
+
+        /**
+         * @brief Get value as a float number type .
+         * @return The converted float number value.
+         * @throws cast_error if conversion fails.
+         */
+        floating_type &as_floating();
+
+        const array_type &as_array() const;
+        const object_type &as_object() const;
+        const string_type &as_string() const;
+        const integer_type &as_integer() const;
+        const boolean_type &as_boolean() const;
+        const floating_type &as_floating() const;
 
         //========== Objects ==========
 
@@ -3472,7 +3853,7 @@ namespace myjson
         void assign(size_type n, const value_type &val);
         template <typename _InputIterator>
         void assign(_InputIterator first, _InputIterator last);
-        void assign(initializer_list_t l);
+        void assign(initializer_list l);
 
         /**
          * @brief Access array element with bounds checking.
@@ -4189,7 +4570,7 @@ namespace myjson
 #endif
 
     const char *string(encoding type);
-    const char *string(json::value_t type);
+    const char *string(json::node_type type);
 
 #ifndef MYJSON_NO_STL
 
@@ -4207,7 +4588,7 @@ namespace myjson
      * @param[in] type A node type.
      * @return Reference to the output stream object `ostream`.
      */
-    std::ostream &operator<<(std::ostream &ostream, const json::value_t &type);
+    std::ostream &operator<<(std::ostream &ostream, const json::node_type &type);
 
     /**
      * @brief A wrapper for the serialization feature.
