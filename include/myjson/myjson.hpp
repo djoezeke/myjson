@@ -2304,54 +2304,6 @@ namespace myjson
 
         public:
             /**
-             * @name types
-             * @brief Type aliases for convenience.
-             * {@
-             */
-
-            /**
-             * @brief A type for a json object.
-             */
-            using value_type = json;
-
-            /**
-             * @brief A type for a json null value.
-             */
-            using null_type = typename value_type::null_type;
-
-            /**
-             * @brief A type for a json array value.
-             */
-            using array_type = typename value_type::array_type;
-
-            /**
-             * @brief A type for a json object value.
-             */
-            using object_type = typename value_type::object_type;
-
-            /**
-             * @brief A type for a json string value.
-             */
-            using string_type = typename value_type::string_type;
-
-            /**
-             * @brief A type for a json integer value.
-             */
-            using integer_type = typename value_type::integer_type;
-
-            /**
-             * @brief A type for a json boolean value.
-             */
-            using boolean_type = typename value_type::boolean_type;
-
-            /**
-             * @brief A type for a json float number value.
-             */
-            using floating_type = typename value_type::floating_type;
-
-            /* @} types */
-        public:
-            /**
              * @brief Construct a parser from a lexer instance.
              * @param lexer Lexer producing JSON tokens.
              */
@@ -2426,54 +2378,6 @@ namespace myjson
             /* @} container */
 
         public:
-            /**
-             * @name types
-             * @brief Type aliases for convenience.
-             * {@
-             */
-
-            /**
-             * @brief A type for a json object.
-             */
-            using value_type = json;
-
-            /**
-             * @brief A type for a json null value.
-             */
-            using null_type = typename value_type::null_type;
-
-            /**
-             * @brief A type for a json array value.
-             */
-            using array_type = typename value_type::array_type;
-
-            /**
-             * @brief A type for a json object value.
-             */
-            using object_type = typename value_type::object_type;
-
-            /**
-             * @brief A type for a json string value.
-             */
-            using string_type = typename value_type::string_type;
-
-            /**
-             * @brief A type for a json integer value.
-             */
-            using integer_type = typename value_type::integer_type;
-
-            /**
-             * @brief A type for a json boolean value.
-             */
-            using boolean_type = typename value_type::boolean_type;
-
-            /**
-             * @brief A type for a json float number value.
-             */
-            using floating_type = typename value_type::floating_type;
-
-            /* @} types */
-
         public:
             /**
              * @brief Construct a deserializer view over an existing JSON value.
@@ -2757,54 +2661,6 @@ namespace myjson
             /* @} container */
 
         public:
-            /**
-             * @name types
-             * @brief Type aliases for convenience.
-             * {@
-             */
-
-            /**
-             * @brief A type for a json object.
-             */
-            using value_type = json;
-
-            /**
-             * @brief A type for a json null value.
-             */
-            using null_type = typename value_type::null_type;
-
-            /**
-             * @brief A type for a json array value.
-             */
-            using array_type = typename value_type::array_type;
-
-            /**
-             * @brief A type for a json object value.
-             */
-            using object_type = typename value_type::object_type;
-
-            /**
-             * @brief A type for a json string value.
-             */
-            using string_type = typename value_type::string_type;
-
-            /**
-             * @brief A type for a json integer value.
-             */
-            using integer_type = typename value_type::integer_type;
-
-            /**
-             * @brief A type for a json boolean value.
-             */
-            using boolean_type = typename value_type::boolean_type;
-
-            /**
-             * @brief A type for a json float number value.
-             */
-            using floating_type = typename value_type::floating_type;
-
-            /* @} types */
-
         public:
             /**
              * @brief Construct a serializer from an output adapter.
@@ -3381,19 +3237,14 @@ namespace myjson
         json(null_type value) noexcept;
 
         /**
-         * @brief Construct a JSON array value.
-         */
-        json(array_type value) noexcept;
-
-        /**
-         * @brief Construct a JSON object value.
-         */
-        json(object_type value) noexcept;
-
-        /**
          * @brief Construct a JSON integer value.
          */
         json(integer_type value) noexcept;
+
+        /**
+         * @brief Construct a JSON integer value from int.
+         */
+        json(int value) noexcept;
 
         /**
          * @brief Construct a JSON boolean value.
@@ -3410,42 +3261,42 @@ namespace myjson
          * @param[in] value A lvalue array node value.
          * @return A json array node.
          */
-        json(const array_type &value);
+        json(const array_type &value) noexcept;
 
         /**
          * @brief Construct a JSON array value by moving a array object.
          * @param[in] value A rvalue array node value.
          * @return A json array node.
          */
-        json(const array_type &&value);
+        json(array_type &&value) noexcept;
 
         /**
          * @brief Construct a JSON object by copy.
          * @param[in] value A lvalue object node value.
          * @return A json object node.
          */
-        json(const object_type &value);
+        json(const object_type &value) noexcept;
 
         /**
          * @brief Construct a JSON object by move.
          * @param[in] value A rvalue object node value.
          * @return A json object node.
          */
-        json(const object_type &&value);
+        json(object_type &&value) noexcept;
 
         /**
          * @brief Construct a JSON string by copy.
          * @param[in] value A lvalue string node value.
          * @return A json string node.
          */
-        json(const string_type &value);
+        json(const string_type &value) noexcept;
 
         /**
          * @brief Construct a JSON string by move.
          * @param[in] value A rvalue string node value.
          * @return A json string node.
          */
-        json(const string_type &&value);
+        json(string_type &&value) noexcept;
 
         /**
          * @brief Construct a JSON string from a C string.
@@ -3489,7 +3340,7 @@ namespace myjson
          * @param[in] array A rvalue array node value.
          * @return A json array node.
          */
-        static json array(const array_type &&array);
+        static json array(array_type &&array);
 
         /**
          * @brief Create an object value from initializer-list.
@@ -3508,7 +3359,7 @@ namespace myjson
          * @param[in] object A rvalue object node value.
          * @return A json object node.
          */
-        static json object(const object_type &&object);
+        static json object(object_type &&object);
 
         /**
          * @name deserialization
@@ -3559,7 +3410,7 @@ namespace myjson
         static json parse(detail::iadapter &adapter);
 
 #ifndef MYJSON_NO_IO
-        friend std::istream &operator>>(std::istream &i, const json &j);
+        friend std::istream &operator>>(std::istream &i, json &j);
 #endif // MYJSON_NO_IO
 
         /* @} deserialization */
@@ -3581,20 +3432,21 @@ namespace myjson
 
         /**
          * @brief Serialize in compact form.
+         * @return Compact JSON text with no extra whitespace.
          */
         MYJSON_NODISCARD string_t dump_compact() const;
 
-        static void dump(FILE *file);
+        void dump(FILE *file) const;
 
-        static void dump(const char *str);
+        void dump(const char *str) const;
 
-        static void dump(const string_t &str);
+        void dump(const string_t &str) const;
 
 #ifndef MYJSON_NO_STL
-        static void dump(std::ostream &stream);
+        void dump(std::ostream &stream) const;
 #endif // MYJSON_NO_STL
 
-        static void dump(detail::oadapter &adapter);
+        void dump(detail::oadapter &adapter) const;
 
 #ifndef MYJSON_NO_IO
         friend std::ostream &operator<<(std::ostream &o, const json &j);
@@ -3617,7 +3469,7 @@ namespace myjson
         /**
          * @brief Assign a null value.
          */
-        reference operator=(null_type value);
+        reference operator=(null_type value) noexcept;
 
         /**
          * @brief Assign an array value.
@@ -3637,17 +3489,22 @@ namespace myjson
         /**
          * @brief Assign a integer value.
          */
-        reference operator=(integer_type value);
+        reference operator=(integer_type value) noexcept;
+
+        /**
+         * @brief Assign an int value.
+         */
+        reference operator=(int value) noexcept;
 
         /**
          * @brief Assign a boolean value.
          */
-        reference operator=(boolean_type value);
+        reference operator=(boolean_type value) noexcept;
 
         /**
          * @brief Assign a floating-point numeric value.
          */
-        reference operator=(floating_type value);
+        reference operator=(floating_type value) noexcept;
 
         /**
          * @brief Assign a C-string value.
@@ -3659,16 +3516,6 @@ namespace myjson
          * @brief Assign from initializer-list with type deduction.
          */
         reference operator=(initializer_list value);
-
-        /**
-         * @brief Assign an array value.
-         */
-        reference operator=(const array_type &value);
-
-        /**
-         * @brief Assign an object value.
-         */
-        reference operator=(const object_type &value);
 
         //========== Type Information ==========
 
@@ -3707,6 +3554,12 @@ namespace myjson
          * @return true if value is an integer else false.
          */
         MYJSON_NODISCARD bool is_integer() const noexcept;
+
+        /**
+         * @brief Check whether this value is a number.
+         * @return true if value is a number else false.
+         */
+        MYJSON_NODISCARD bool is_number() const noexcept;
 
         /**
          * @brief Check whether this value is a boolean.
@@ -3780,12 +3633,23 @@ namespace myjson
          */
         integer_type &as_integer();
 
+        integer_type &as_int() { return as_integer(); }
+
+        /**
+         * @brief Get value as a number type .
+         * @return The converted float number value.
+         * @throws cast_error if conversion fails.
+         */
+        floating_type &as_number();
+
         /**
          * @brief Get value as a boolean type .
          * @return The converted boolean value.
          * @throws cast_error if conversion fails.
          */
         boolean_type &as_boolean();
+
+        boolean_type &as_bool() { return as_boolean(); }
 
         /**
          * @brief Get value as a float number type .
@@ -3794,11 +3658,50 @@ namespace myjson
          */
         floating_type &as_floating();
 
+        /**
+         * @brief Get value as an array type .
+         * @return The converted array value (const).
+         * @throws cast_error if conversion fails.
+         */
         const array_type &as_array() const;
+
+        /**
+         * @brief Get value as an object type .
+         * @return The converted object value (const).
+         * @throws cast_error if conversion fails.
+         */
         const object_type &as_object() const;
+
+        /**
+         * @brief Get value as a string type .
+         * @return The converted string value (const).
+         * @throws cast_error if conversion fails.
+         */
         const string_type &as_string() const;
+
+        /**
+         * @brief Get value as an integer type .
+         * @return The converted integer value (const).
+         * @throws cast_error if conversion fails.
+         */
         const integer_type &as_integer() const;
+
+        const integer_type &as_int() const { return as_integer(); }
+
+        /**
+         * @brief Get value as a boolean type .
+         * @return The converted boolean value (const).
+         * @throws cast_error if conversion fails.
+         */
         const boolean_type &as_boolean() const;
+
+        const boolean_type &as_bool() const { return as_boolean(); }
+
+        /**
+         * @brief Get value as a float number type .
+         * @return The converted float number value (const).
+         * @throws cast_error if conversion fails.
+         */
         const floating_type &as_floating() const;
 
         //========== Objects ==========
@@ -3850,9 +3753,28 @@ namespace myjson
 
         //========== Arrays ==========
 
+        /**
+         * @brief Replace array contents with @p n copies of @p val.
+         * @param n Number of elements to assign.
+         * @param val Value copied into each element.
+         * @throws std::runtime_error if this value is not an array.
+         */
         void assign(size_type n, const value_type &val);
         template <typename _InputIterator>
+        /**
+         * @brief Replace array contents from iterator range.
+         * @tparam _InputIterator Input iterator type.
+         * @param first Range begin iterator.
+         * @param last Range end iterator.
+         * @throws std::runtime_error if this value is not an array.
+         */
         void assign(_InputIterator first, _InputIterator last);
+
+        /**
+         * @brief Replace array contents from initializer-list.
+         * @param l Elements copied into the array.
+         * @throws std::runtime_error if this value is not an array.
+         */
         void assign(initializer_list l);
 
         /**
@@ -3900,6 +3822,10 @@ namespace myjson
          */
         void push_back(const json &value);
 
+        /**
+         * @brief Remove last element from array.
+         * @throws std::runtime_error if this value is not an array.
+         */
         void pop_back();
 
         /**

@@ -2,7 +2,7 @@
  * @file myjson.cpp
  * @brief JSON For Modern C/C++.
  * @details All public API, types, macros, and configuration.
- * @author Sackey Ezekiel Etrue (djoezeke)
+ * @author Sackey Ezekiel  Etrue (djoezeke)
  * @version 0.1.0
  * @see https://www.github.com/djoezeke/myjson
  * @copyright Copyright (c) 2025 Sackey Ezekiel Etrue
@@ -1865,7 +1865,7 @@ namespace myjson
 
                 if (is_integer)
                 {
-                    return myjson::json(static_cast<myjson::json::integer_t>(std::stoll(text)));
+                    return myjson::json(static_cast<myjson::json::integer_type>(std::stoll(text)));
                 }
                 return myjson::json(static_cast<myjson::json::number_t>(std::stod(text)));
             }
@@ -2036,7 +2036,7 @@ namespace myjson
                 {
                     for (auto it = m_value.begin(); it != m_value.end(); ++it)
                     {
-                        if (it.value().is_integer() || it.value().is_number())
+                        if (it.value().is_integer() || it.value().is_floating())
                         {
                             return static_cast<T>(it.value().as_integer());
                         }
@@ -2046,7 +2046,7 @@ namespace myjson
                 {
                     for (auto it = m_value.begin(); it != m_value.end(); ++it)
                     {
-                        if (it.value().is_number() || it.value().is_integer())
+                        if (it.value().is_floating() || it.value().is_integer())
                         {
                             return it.value().as_floating();
                         }
@@ -2398,7 +2398,7 @@ namespace myjson
 
         void to_json(json &j, const int &v)
         {
-            j = v;
+            j = static_cast<json::integer_type>(v);
         }
 
         void to_json(json &j, const double &v)
@@ -2423,32 +2423,32 @@ namespace myjson
 
         void external_constructor<value_t::object>::construct(json &j, const std::map<std::string, json> &type) noexcept
         {
-            j = json(type);
+            j = type;
         }
 
         void external_constructor<value_t::array>::construct(json &j, const std::vector<json> &type) noexcept
         {
-            j = json(type);
+            j = type;
         }
 
         void external_constructor<value_t::string>::construct(json &j, const std::string &type) noexcept
         {
-            j = json(type);
+            j = type;
         }
 
         void external_constructor<value_t::number>::construct(json &j, double type) noexcept
         {
-            j = json(type);
+            j = static_cast<json::floating_type>(type);
         }
 
         void external_constructor<value_t::integer>::construct(json &j, int64_t type) noexcept
         {
-            j = json(type);
+            j = static_cast<json::integer_type>(type);
         }
 
         void external_constructor<value_t::boolean>::construct(json &j, bool type) noexcept
         {
-            j = json(type);
+            j = static_cast<json::boolean_type>(type);
         }
 
         //-----------------------------------------------------------------------------
@@ -2692,19 +2692,19 @@ namespace myjson
             m_value = false;
             break;
         case node_type::integer:
-            m_value = static_cast<integer_t>(0);
+            m_value = static_cast<integer_type>(0);
             break;
         case node_type::number:
             m_value = static_cast<number_t>(0.0);
             break;
         case node_type::string:
-            m_value = string_t();
+            m_value = string_type();
             break;
         case node_type::array:
-            m_value = array_t();
+            m_value = array_type();
             break;
         case node_type::object:
-            m_value = object_t();
+            m_value = object_type();
             break;
         }
     }
@@ -2714,18 +2714,13 @@ namespace myjson
     {
     }
 
-    json::json(json::array_type value) noexcept
-        : m_value(value)
-    {
-    }
-
-    json::json(json::object_type value) noexcept
-        : m_value(value)
-    {
-    }
-
     json::json(json::integer_type value) noexcept
         : m_value(value)
+    {
+    }
+
+    json::json(int value) noexcept
+        : m_value(static_cast<integer_type>(value))
     {
     }
 
@@ -2744,7 +2739,7 @@ namespace myjson
     {
     }
 
-    json::json(const json::array_type &&value) noexcept
+    json::json(json::array_type &&value) noexcept
         : m_value(std::move(value))
     {
     }
@@ -2754,7 +2749,7 @@ namespace myjson
     {
     }
 
-    json::json(const json::object_type &&value) noexcept
+    json::json(json::object_type &&value) noexcept
         : m_value(std::move(value))
     {
     }
@@ -2764,13 +2759,13 @@ namespace myjson
     {
     }
 
-    json::json(const json::string_type &&value) noexcept
+    json::json(json::string_type &&value) noexcept
         : m_value(std::move(value))
     {
     }
 
     json::json(const char *value)
-        : m_value(string_t(value != nullptr ? value : ""))
+        : m_value(string_type(value != nullptr ? value : ""))
     {
     }
 
@@ -2797,7 +2792,7 @@ namespace myjson
 
         if (as_object)
         {
-            object_t object;
+            object_type object;
             for (const auto &element : init)
             {
                 object[element[static_cast<size_t>(0)].as_string()] = element[static_cast<size_t>(1)];
@@ -2806,7 +2801,7 @@ namespace myjson
             return;
         }
 
-        array_t array;
+        array_type array;
         array.reserve(init.size());
         for (const auto &element : init)
         {
@@ -2831,22 +2826,22 @@ namespace myjson
 
     json json::array(json::array_type &&array)
     {
-        return json(array);
+        return json(std::move(array));
     };
 
-        json json::object(json::initializer_list init)
+    json json::object(json::initializer_list init)
     {
         return json(init, false, node_type::object);
     };
 
-        json json::object(const json::object_type &object)
+    json json::object(const json::object_type &object)
     {
         return json(object);
     };
 
     json json::object(json::object_type &&object)
     {
-        return json(object);
+        return json(std::move(object));
     };
 
     //========== Assignment ==========
@@ -2854,15 +2849,22 @@ namespace myjson
     json::~json() noexcept = default;
 
     json &json::operator=(const json &other) = default;
+
     json &json::operator=(json &&other) noexcept = default;
 
-    json &json::operator=(std::nullptr_t) noexcept
+    json &json::operator=(null_type value) noexcept
     {
-        m_value = nullptr;
+        m_value = value;
         return *this;
     }
 
-    json &json::operator=(bool value) noexcept
+    json &json::operator=(boolean_type value) noexcept
+    {
+        m_value = value;
+        return *this;
+    }
+
+    json &json::operator=(integer_type value) noexcept
     {
         m_value = value;
         return *this;
@@ -2870,47 +2872,41 @@ namespace myjson
 
     json &json::operator=(int value) noexcept
     {
-        m_value = static_cast<integer_t>(value);
+        m_value = static_cast<integer_type>(value);
         return *this;
     }
 
-    json &json::operator=(integer_t value) noexcept
+    json &json::operator=(floating_type value) noexcept
     {
         m_value = value;
         return *this;
     }
 
-    json &json::operator=(number_t value) noexcept
+    json &json::operator=(string_type value)
     {
-        m_value = value;
-        return *this;
-    }
-
-    json &json::operator=(const string_t &value)
-    {
-        m_value = value;
+        m_value = std::move(value);
         return *this;
     }
 
     json &json::operator=(const char *value)
     {
-        m_value = string_t(value != nullptr ? value : "");
+        m_value = string_type(value != nullptr ? value : "");
         return *this;
     }
 
-    json &json::operator=(const array_t &value)
+    json &json::operator=(array_type value)
     {
-        m_value = value;
+        m_value = std::move(value);
         return *this;
     }
 
-    json &json::operator=(const object_t &value)
+    json &json::operator=(object_type value)
     {
-        m_value = value;
+        m_value = std::move(value);
         return *this;
     }
 
-    json &json::operator=(initializer_list_t init)
+    json &json::operator=(initializer_list init)
     {
         *this = json(init);
         return *this;
@@ -2918,100 +2914,81 @@ namespace myjson
 
     //========== Type Information ==========
 
-    json::value_t json::type() const noexcept
+    json::node_type json::type() const noexcept
     {
         switch (m_value.index())
         {
         case 0:
-            return value_t::null;
+            return node_type::null;
         case 1:
-            return value_t::boolean;
+            return node_type::boolean;
         case 2:
-            return value_t::integer;
+            return node_type::integer;
         case 3:
-            return value_t::number;
+            return node_type::number;
         case 4:
-            return value_t::string;
+            return node_type::string;
         case 5:
-            return value_t::array;
+            return node_type::array;
         case 6:
-            return value_t::object;
+            return node_type::object;
         default:
-            return value_t::null;
+            return node_type::null;
         }
-    }
+    };
 
-    bool json::is_null() const noexcept { return std::holds_alternative<null_t>(m_value); }
-    bool json::is_object() const noexcept { return std::holds_alternative<object_t>(m_value); }
-    bool json::is_array() const noexcept { return std::holds_alternative<array_t>(m_value); }
-    bool json::is_string() const noexcept { return std::holds_alternative<string_t>(m_value); }
-    bool json::is_number() const noexcept
-    {
-        return std::holds_alternative<number_t>(m_value) || std::holds_alternative<integer_t>(m_value);
-    }
-    bool json::is_integer() const noexcept { return std::holds_alternative<integer_t>(m_value); }
-    bool json::is_boolean() const noexcept { return std::holds_alternative<boolean_t>(m_value); }
-    bool json::is_primitive() const noexcept { return !is_array() && !is_object(); }
-    bool json::is_structured() const noexcept { return is_array() || is_object(); }
+    bool json::is_null() const noexcept { return std::holds_alternative<null_type>(m_value); };
+
+    bool json::is_array() const noexcept { return std::holds_alternative<array_type>(m_value); };
+
+    bool json::is_object() const noexcept { return std::holds_alternative<object_type>(m_value); };
+
+    bool json::is_string() const noexcept { return std::holds_alternative<string_type>(m_value); };
+
+    bool json::is_integer() const noexcept { return std::holds_alternative<integer_type>(m_value); };
+
+    bool json::is_number() const noexcept { return is_integer() || is_floating(); };
+
+    bool json::is_boolean() const noexcept { return std::holds_alternative<boolean_type>(m_value); };
+
+    bool json::is_floating() const noexcept { return std::holds_alternative<floating_type>(m_value); };
+
+    bool json::is_primitive() const noexcept { return !is_array() && !is_object(); };
+
+    bool json::is_structured() const noexcept { return !is_primitive(); };
 
     //========== Type Conversions ==========
 
     template <>
-    bool json::get<bool>(const bool &default_value) const noexcept
+    json::array_type json::get<json::array_type>(const array_type &default_value) const noexcept
     {
-        if (is_boolean())
-            return std::get<boolean_t>(m_value);
-        if (is_integer())
-            return std::get<integer_t>(m_value) != 0;
-        if (is_number())
-            return std::get<number_t>(m_value) != 0.0;
+        if (is_array())
+            return std::get<array_type>(m_value);
         return default_value;
-    }
+    };
 
     template <>
-    json::integer_t json::get<json::integer_t>(const integer_t &default_value) const noexcept
+    json::object_type json::get<json::object_type>(const object_type &default_value) const noexcept
     {
-        if (is_integer())
-            return std::get<integer_t>(m_value);
-        if (is_boolean())
-            return std::get<boolean_t>(m_value) ? 1 : 0;
-        if (is_number())
-            return static_cast<integer_t>(std::get<number_t>(m_value));
+        if (is_object())
+            return std::get<object_type>(m_value);
         return default_value;
-    }
+    };
 
     template <>
-    int json::get<int>(const int &default_value) const noexcept
-    {
-        return static_cast<int>(get<integer_t>(static_cast<integer_t>(default_value)));
-    }
-
-    template <>
-    json::number_t json::get<json::number_t>(const number_t &default_value) const noexcept
-    {
-        if (std::holds_alternative<number_t>(m_value))
-            return std::get<number_t>(m_value);
-        if (is_integer())
-            return static_cast<number_t>(std::get<integer_t>(m_value));
-        if (is_boolean())
-            return std::get<boolean_t>(m_value) ? 1.0 : 0.0;
-        return default_value;
-    }
-
-    template <>
-    std::string json::get<std::string>(const std::string &default_value) const noexcept
+    json::string_type json::get<json::string_type>(const string_type &default_value) const noexcept
     {
         if (is_string())
-            return std::get<string_t>(m_value);
+            return std::get<string_type>(m_value);
         if (is_null())
             return "null";
         if (is_boolean())
-            return std::get<boolean_t>(m_value) ? "true" : "false";
+            return std::get<boolean_type>(m_value) ? "true" : "false";
         if (is_integer())
-            return std::to_string(std::get<integer_t>(m_value));
-        if (is_number())
+            return std::to_string(std::get<integer_type>(m_value));
+        if (is_floating())
         {
-            auto num = std::get<number_t>(m_value);
+            auto num = std::get<floating_type>(m_value);
             if (std::isnan(num))
                 return "NaN";
             if (std::isinf(num))
@@ -3019,71 +2996,235 @@ namespace myjson
             return std::to_string(num);
         }
         return default_value;
-    }
+    };
+
+    template <>
+    json::integer_type json::get<json::integer_type>(const integer_type &default_value) const noexcept
+    {
+        if (is_integer())
+            return std::get<integer_type>(m_value);
+        if (is_boolean())
+            return std::get<boolean_type>(m_value) ? 1 : 0;
+        if (is_floating())
+            return static_cast<integer_type>(std::get<floating_type>(m_value));
+        return default_value;
+    };
+
+    template <>
+    json::boolean_type json::get<json::boolean_type>(const boolean_type &default_value) const noexcept
+    {
+        if (is_boolean())
+            return std::get<boolean_type>(m_value);
+        if (is_integer())
+            return std::get<integer_type>(m_value) != 0;
+        if (is_floating())
+            return std::get<floating_type>(m_value) != 0.0;
+        return default_value;
+    };
+
+    template <>
+    json::floating_type json::get<json::floating_type>(const floating_type &default_value) const noexcept
+    {
+        if (is_floating())
+            return std::get<floating_type>(m_value);
+        if (is_integer())
+            return static_cast<floating_type>(std::get<integer_type>(m_value));
+        if (is_boolean())
+            return std::get<boolean_type>(m_value) ? 1.0 : 0.0;
+        return default_value;
+    };
 
     template <typename T>
     T json::get(const T &default_value) const noexcept
     {
         return default_value;
-    }
+    };
 
     template <typename T>
     T json::get_safe() const
     {
         return get<T>(T{});
+    };
+
+    template <>
+    json::array_type json::get_safe<json::array_type>() const
+    {
+        if (!is_array())
+            MYJSON_THROW(std::runtime_error("Cannot convert JSON value to array"));
+        return std::get<array_type>(m_value);
     }
 
     template <>
-    int json::get_safe<int>() const
+    json::object_type json::get_safe<json::object_type>() const
     {
-        return get<int>(0);
+        if (!is_object())
+            MYJSON_THROW(std::runtime_error("Cannot convert JSON value to object"));
+        return std::get<object_type>(m_value);
     }
 
-    bool json::as_boolean() const noexcept { return get<bool>(false); }
-    json::integer_t json::as_integer() const noexcept { return get<integer_t>(0); }
-    json::number_t json::as_floating() const noexcept { return get<number_t>(0.0); }
-    json::string_t json::as_string() const noexcept { return get<std::string>(std::string()); }
+    template <>
+    json::string_type json::get_safe<json::string_type>() const
+    {
+        if (!is_string())
+            MYJSON_THROW(std::runtime_error("Cannot convert JSON value to string"));
+        return std::get<string_type>(m_value);
+    }
+
+    template <>
+    json::integer_type json::get_safe<json::integer_type>() const
+    {
+        if (!is_integer())
+            MYJSON_THROW(std::runtime_error("Cannot convert JSON value to integer"));
+        return std::get<integer_type>(m_value);
+    }
+
+    template <>
+    json::boolean_type json::get_safe<json::boolean_type>() const
+    {
+        if (!is_boolean())
+            MYJSON_THROW(std::runtime_error("Cannot convert JSON value to boolean"));
+        return std::get<boolean_type>(m_value);
+    }
+
+    template <>
+    json::floating_type json::get_safe<json::floating_type>() const
+    {
+        if (!is_floating())
+            MYJSON_THROW(std::runtime_error("Cannot convert JSON value to floating"));
+        return std::get<floating_type>(m_value);
+    }
+
+    json::array_type &json::as_array()
+    {
+        if (!is_array())
+            MYJSON_THROW(std::runtime_error("Cannot access as array"));
+        return std::get<array_type>(m_value);
+    }
+
+    json::object_type &json::as_object()
+    {
+        if (!is_object())
+            MYJSON_THROW(std::runtime_error("Cannot access as object"));
+        return std::get<object_type>(m_value);
+    }
+
+    json::string_type &json::as_string()
+    {
+        if (!is_string())
+            MYJSON_THROW(std::runtime_error("Cannot access as string"));
+        return std::get<string_type>(m_value);
+    }
+
+    json::integer_type &json::as_integer()
+    {
+        if (!is_integer())
+            MYJSON_THROW(std::runtime_error("Cannot access as integer"));
+        return std::get<integer_type>(m_value);
+    }
+
+    json::floating_type &json::as_number()
+    {
+        if (!is_number())
+            MYJSON_THROW(std::runtime_error("Cannot access as number"));
+        return std::get<floating_type>(m_value);
+    }
+
+    json::boolean_type &json::as_boolean()
+    {
+        if (!is_boolean())
+            MYJSON_THROW(std::runtime_error("Cannot access as boolean"));
+        return std::get<boolean_type>(m_value);
+    }
+
+    json::floating_type &json::as_floating()
+    {
+        if (!is_floating())
+            MYJSON_THROW(std::runtime_error("Cannot access as floating"));
+        return std::get<floating_type>(m_value);
+    }
+
+    const json::array_type &json::as_array() const
+    {
+        if (!is_array())
+            MYJSON_THROW(std::runtime_error("Cannot access as array"));
+        return std::get<array_type>(m_value);
+    }
+
+    const json::object_type &json::as_object() const
+    {
+        if (!is_object())
+            MYJSON_THROW(std::runtime_error("Cannot access as object"));
+        return std::get<object_type>(m_value);
+    }
+
+    const json::string_type &json::as_string() const
+    {
+        if (!is_string())
+            MYJSON_THROW(std::runtime_error("Cannot access as string"));
+        return std::get<string_type>(m_value);
+    }
+
+    const json::integer_type &json::as_integer() const
+    {
+        if (!is_integer())
+            MYJSON_THROW(std::runtime_error("Cannot access as integer"));
+        return std::get<integer_type>(m_value);
+    }
+
+    const json::boolean_type &json::as_boolean() const
+    {
+        if (!is_boolean())
+            MYJSON_THROW(std::runtime_error("Cannot access as boolean"));
+        return std::get<boolean_type>(m_value);
+    }
+
+    const json::floating_type &json::as_floating() const
+    {
+        if (!is_floating())
+            MYJSON_THROW(std::runtime_error("Cannot access as floating"));
+        return std::get<floating_type>(m_value);
+    }
 
     //========== Helper Methods ==========
 
     void json::ensure_object()
     {
         if (!is_object())
-            m_value = object_t();
+            m_value = object_type();
     }
 
     void json::ensure_array()
     {
         if (!is_array())
-            m_value = array_t();
+            m_value = array_type();
     }
 
-    const json::object_t &json::get_object() const
+    const json::object_type &json::get_object() const
     {
         if (!is_object())
             MYJSON_THROW(std::runtime_error("Cannot access as object"));
-        return std::get<object_t>(m_value);
+        return std::get<object_type>(m_value);
     }
 
-    const json::array_t &json::get_array() const
+    const json::array_type &json::get_array() const
     {
         if (!is_array())
             MYJSON_THROW(std::runtime_error("Cannot access as array"));
-        return std::get<array_t>(m_value);
+        return std::get<array_type>(m_value);
     }
 
-    json::object_t &json::get_object()
+    json::object_type &json::get_object()
     {
         if (!is_object())
             MYJSON_THROW(std::runtime_error("Cannot access as object"));
-        return std::get<object_t>(m_value);
+        return std::get<object_type>(m_value);
     }
 
-    json::array_t &json::get_array()
+    json::array_type &json::get_array()
     {
         if (!is_array())
             MYJSON_THROW(std::runtime_error("Cannot access as array"));
-        return std::get<array_t>(m_value);
+        return std::get<array_type>(m_value);
     }
 
     //========== Container Access (Objects) ==========
@@ -3157,6 +3298,15 @@ namespace myjson
         get_array().push_back(value);
     }
 
+    void json::pop_back()
+    {
+        if (!is_array())
+            MYJSON_THROW(std::runtime_error("Cannot pop_back on non-array value"));
+        auto &array = get_array();
+        if (!array.empty())
+            array.pop_back();
+    }
+
     void json::push_back(json &&value)
     {
         ensure_array();
@@ -3167,6 +3317,25 @@ namespace myjson
     {
         ensure_array();
         get_array().insert(get_array().begin(), value);
+    }
+
+    void json::assign(size_type n, const value_type &val)
+    {
+        ensure_array();
+        get_array().assign(n, val);
+    }
+
+    template <typename _InputIterator>
+    void json::assign(_InputIterator first, _InputIterator last)
+    {
+        ensure_array();
+        get_array().assign(first, last);
+    }
+
+    void json::assign(initializer_list l)
+    {
+        ensure_array();
+        get_array().assign(l.begin(), l.end());
     }
 
     json::iterator json::insert(const const_iterator &pos, const json &value)
@@ -3253,7 +3422,7 @@ namespace myjson
         {
             return iterator(get_array().begin());
         }
-        return iterator(typename object_t::iterator{});
+        return iterator(typename object_type::iterator{});
     }
 
     json::const_iterator json::begin() const { return cbegin(); }
@@ -3268,7 +3437,7 @@ namespace myjson
         {
             return const_iterator(get_array().cbegin());
         }
-        return const_iterator(typename object_t::const_iterator{});
+        return const_iterator(typename object_type::const_iterator{});
     }
 
     json::iterator json::end()
@@ -3281,7 +3450,7 @@ namespace myjson
         {
             return iterator(get_array().end());
         }
-        return iterator(typename object_t::iterator{});
+        return iterator(typename object_type::iterator{});
     }
 
     json::const_iterator json::end() const { return cend(); }
@@ -3295,7 +3464,7 @@ namespace myjson
         {
             return const_iterator(get_array().cend());
         }
-        return const_iterator(typename object_t::const_iterator{});
+        return const_iterator(typename object_type::const_iterator{});
     }
 
     json::reverse_iterator json::rbegin() { return reverse_iterator(end()); }
@@ -3316,19 +3485,19 @@ namespace myjson
 
         switch (type())
         {
-        case value_t::null:
+        case node_type::null:
             return false;
-        case value_t::boolean:
+        case node_type::boolean:
             return as_boolean() < other.as_boolean();
-        case value_t::integer:
+        case node_type::integer:
             return as_integer() < other.as_integer();
-        case value_t::number:
+        case node_type::number:
             return as_floating() < other.as_floating();
-        case value_t::string:
+        case node_type::string:
             return as_string() < other.as_string();
-        case value_t::array:
+        case node_type::array:
             return get_array() < other.get_array();
-        case value_t::object:
+        case node_type::object:
             return get_object() < other.get_object();
         }
 
@@ -3352,15 +3521,15 @@ namespace myjson
     std::string json::dump_pretty() const { return dump(2); }
     std::string json::dump_compact() const { return dump(-1); }
 
-    void json::dump(FILE *file)
+    void json::dump(FILE *file) const
     {
         if (file != nullptr)
         {
-            std::fputs("null", file);
+            std::fputs(dump().c_str(), file);
         }
     };
 
-    void json::dump(const char *str)
+    void json::dump(const char *str) const
     {
         if (str != nullptr)
         {
@@ -3368,22 +3537,22 @@ namespace myjson
         }
     };
 
-    void json::dump(const string_t &str)
+    void json::dump(const string_type &str) const
     {
         std::puts(str.c_str());
     };
 
 #ifndef MYJSON_NO_STL
-    void json::dump(std::ostream &stream)
+    void json::dump(std::ostream &stream) const
     {
-        stream << "null";
+        stream << dump();
     };
 #endif // MYJSON_NO_STL
 
-    void json::dump(detail::oadapter &adapter)
+    void json::dump(detail::oadapter &adapter) const
     {
-        const char text[] = "null";
-        adapter.write(text, 4);
+        const std::string text = dump();
+        adapter.write(text.data(), text.size());
     };
 
     //========== Parsing ==========
@@ -3406,7 +3575,7 @@ namespace myjson
         return parse(adapter);
     }
 
-    json json::parse(const string_t &str)
+    json json::parse(const string_type &str)
     {
         detail::memory_iadapter adapter(const_cast<char *>(str.data()), str.size());
         return parse(adapter);
@@ -3581,7 +3750,7 @@ namespace myjson
         return apply_patch(patch);
     }
 
-    json json::diff(const json &source, const json &target, const string_t &path)
+    json json::diff(const json &source, const json &target, const string_type &path)
     {
         json result = myjson::diff(source, target);
         if (path.empty() || !result.is_array())
@@ -4321,23 +4490,23 @@ namespace myjson
         }
     };
 
-    const char *string(json::value_t type)
+    const char *string(json::node_type type)
     {
         switch (type)
         {
-        case json::value_t::null:
+        case json::node_type::null:
             return "null";
-        case json::value_t::object:
+        case json::node_type::object:
             return "object";
-        case json::value_t::array:
+        case json::node_type::array:
             return "array";
-        case json::value_t::string:
+        case json::node_type::string:
             return "string";
-        case json::value_t::number:
+        case json::node_type::number:
             return "number";
-        case json::value_t::integer:
+        case json::node_type::integer:
             return "integer";
-        case json::value_t::boolean:
+        case json::node_type::boolean:
             return "boolean";
         default:
             return "unknown";
@@ -4352,7 +4521,7 @@ namespace myjson
         return stream;
     };
 
-    std::ostream &operator<<(std::ostream &stream, const json::value_t &type)
+    std::ostream &operator<<(std::ostream &stream, const json::node_type &type)
     {
         stream << string(type);
         return stream;
