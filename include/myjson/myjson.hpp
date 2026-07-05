@@ -571,7 +571,7 @@
  * @{
  */
 
- /** compiler builtin check */
+/** compiler builtin check */
 #ifndef MYJSON_HAS_BUILTIN
 	#ifdef __has_builtin
     	#define MYJSON_HAS_BUILTIN(x) __has_builtin(x)
@@ -1316,7 +1316,7 @@ namespace myjson
              * @param size Number of bytes available.
              * @param[out] value Decoded Unicode code point on success.
              * @return Number of bytes consumed (1..4) or -1 on error.
-             */
+               */
             static int decode(const char *data, size_t size, unsigned int &value);
 
             /**

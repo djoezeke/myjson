@@ -40,14 +40,14 @@ int main()
     // Type checking
     std::cout << "\nType checking:" << std::endl;
     std::cout << "  name is string: " << person["name"].is_string() << std::endl;
-    std::cout << "  age is number: " << person["age"].is_floating() << std::endl;
+    std::cout << "  age is number: " << person["age"].is_integer() << std::endl;
     std::cout << "  active is boolean: " << person["active"].is_boolean() << std::endl;
     std::cout << "  missing_key is null: " << person["missing_key"].is_null() << std::endl;
 
     // Value access
     std::cout << "\nValue access:" << std::endl;
     std::cout << "  Name: " << person["name"].as_string() << std::endl;
-    std::cout << "  Age: " << person["age"].as_floating() << std::endl;
+    std::cout << "  Age: " << person["age"].as_integer() << std::endl;
     std::cout << "  Active: " << person["active"].as_boolean() << std::endl;
 
     // Pretty-print with indentation
