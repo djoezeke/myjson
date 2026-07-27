@@ -15,7 +15,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         # allow the job to continue on a single axis failure if desired
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
